@@ -1,0 +1,16 @@
+{
+    "etlversion": 139,
+    "summary": {
+        "archive_out_dir": "/tmp/supremm_test",
+        "subdir_out_format": "%r/%j"
+    },
+    "xdmodroot": "/etc/xdmod",
+    "datawarehouse": {
+        "include": "xdmod://datawarehouse"
+    },
+    "outputdatabase": {
+        "type": "mongodb",
+        "uri": "mongodb://mongodb:27017/supremm",
+        "dbname": "supremm"
+    }
+}
