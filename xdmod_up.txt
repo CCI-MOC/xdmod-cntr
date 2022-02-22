@@ -1,0 +1,245 @@
+docker rm -f $(docker ps -a -q)   
+docker rmi -f $(docker images -q)
+docker build -f Dockerfile.centos7:xdmod-base -t moc-xdmod-base .
+docker build -f Dockerfile -t moc-xdmod .  
+docker compose up -d 
+mysql -h localhost --protocol=tcp -u root -p -e "CREATE USER 'xdmod'@'%' IDENTIFIED BY 'pass';"
+
+
+
+docker run -it --network=xdmod-cntr_compute moc-xdmod /bin/bash
+
+--------- useful mysql commands -----------
+
+mysql -h mariadb --protocol=tcp -u root -p
+mysql -h localhost --protocol=tcp -u root -p
+
+show databases;
+select host,user,password from mysql.user;
+
+--------------------  creates the databases work-a-round for xdmod-startup script ---------------
+
+create user 'xdmod'@'mariadb' identified by 'pass';
+create user 'xdmod'@'%' identified by 'pass';
+
+create database mod_shredder;
+create database mod_hpcdb;
+create database moddb;
+create database modw;
+create database modw_aggregates;
+create database modw_filters;
+create database mod_logger;
+
+grant all on mod_shredder.* to 'xdmod'@'mariadb';
+grant all on mod_shredder.* to 'xdmod'@'%';
+
+grant all on mod_hpcdb.* to 'xdmod'@'mariadb';
+grant all on mod_hpcdb.* to 'xdmod'@'%';
+
+grant all on moddb.* to 'xdmod'@'mariadb';
+grant all on moddb.* to 'xdmod'@'%';
+
+grant all on modw.* to 'xdmod'@'mariadb';
+grant all on modw.* to 'xdmod'@'%';
+
+grant all on modw_aggregates.* to 'xdmod'@'mariadb';
+grant all on modw_aggregates.* to 'xdmod'@'%';
+
+grant all on modw_filters.* to 'xdmod'@'mariadb';
+grant all on modw_filters.* to 'xdmod'@'%';
+
+grant all on mod_logger.* to 'xdmod'@'mariadb';
+grant all on mod_logger.* to 'xdmod'@'%';
+
+---------------------
+
+#creates the sshd keys
+ssh-keygen -t rsa -N '' -f /etc/ssh/ssh_host_rsa_key
+ssh-keygen -t ecdsa -N '' -f /etc/ssh/ssh_host_ecdsa_key
+ssh-keygen -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key
+chgrp ssh_keys /etc/ssh/ssh_host_rsa_key
+chgrp ssh_keys /etc/ssh/ssh_host_ecdsa_key
+chgrp ssh_keys /etc/ssh/ssh_host_ed25519_key
+
+#startup sshd
+/usr/sbin/sshd
+
+#copy my ssh to /root/.ssh/authorized
+mkdir /root/.ssh
+echo "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" > /root/.ssh/authorized_keys
+
+#startup httpd (from the tutorial)
+#------------------------
+# The container includes an apache configuration file that enables SSL on
+# port 4443. A production Open XDMoD install must use SSL, but there are no port
+# number restrictions.
+#
+# The httpd rpm is configured to listen to port 443. Remove this configuration since
+# we use a different port for the tutorial.
+#------------------------
+
+-----
+
+overwrote the ssl.conf with the xdmod-httpd.conf
+
+the ssl.conf uses port 443 as does the xdmod-httpd.conf - no sense in having both
+
+----
+
+modified the http port to run xdmod as a test as I am not doing authentication quite like xdmod
+
+makint the <Directory /> look like the following:
+
+<Directory />
+        Options FollowSymLinks
+        AllowOverride All
+        DirectoryIndex index.php
+        Require all granted
+</Directory>
+
+brought php up and running.
+
+----
+
+The xdmod-setup indicates that /etc/xdmod/portal_settings.ini is created, however it either doesn't
+create it i correctly or it is not able to overwirte it (since the file is read only).  I was unable to
+modify it using vi as it is read only, so I have added it to the repository so as to modify
+the db_host to mariadb as well as the mogodb host to mongodb (when I get there).
+
+---
+
+suprememm-setup
+
+
+----
+
+xdmod-openstack
+
+pip3 install python3-keystoneauth
+pip3 install python3-keystoneclient
+pip3 install python-keystoneclient
+pip3 install python-novaclient
+pip3 install python-openstacksdk
+pip3 install mysqlclient
+
+python3 hypervisor_facts.py 
+
+hypervisor_facts.py is now somewhat working (hard coded the cloud from my clouds.yaml file -- need to change this)
+
+------
+
+opnstack_api_reporting.py   - just broken.
+
+So to create this from scratch, here is the output json format:
+
+
+    {
+    "node_controller": "IP address of node controller",
+    "public_ip": "Publically available IP address",
+    "account": "Account that user is logged into",
+    "event_type": "Type of event",
+    "event_time": "Time that event happened",
+    "instance_type": {
+        "name": "Name of VM",
+        "cpu": "Number of CPU's the instance has",
+        "memory": "Amount of memory the instance has",
+        "disk": "Amount of storage space in GB this instance has",
+        "networkInterfaces": "Number of network interfaces"
+    },
+    "image_type": "Name of the type of image this instance uses",
+    "instance_id": "ID for the VM instance",
+    "record_type": "Type of record from list in modw_cloud.record_type table",
+    "block_devices": [{
+        "account": "Account that the storage device belongs to",
+        "attach_time": "Time that the storage device was attached to this instance",
+        "backing": "type of storage used for this block device, either ebs or instance-store",
+        "create_time": "Time the storage device was created",
+        "user": "User that the storage device was created by",
+        "id": "ID of the storage volume",
+        "size": "Size in GB of the storage volume"
+    }],
+    "private_ip": "Private IP address used by the instance",
+    "root_type": "Type of storage initial storage volume is, either ebs or instance-store"
+    }
+
+To ingest it, one json record per line like:
+
+{ "node_controller": ..., "public_ip": ..., "account": ...,  ...  ,"root_type": ... }
+{ "node_controller": ..., "public_ip": ..., "account": ...,  ...  ,"root_type": ... }
+
+------ event_type ------------
+
+[
+    ["event_type_id", "event_type", "display", "description"],
+    [-1, "unknown",                           "Unknown",                       "Unknown event type" ],
+    [1,  "REQUEST_START",                     "Request Start",                 "Request to start instance" ],
+    [2,  "START",                             "Start",                         "Instance started" ],
+    [3,  "REQUEST_STOP",                      "Request Stop",	                 "Request to stop instance" ],
+    [4,  "STOP",                              "Stop",	                         "Instance stopped" ],
+    [5,  "REQUEST_TERMINATE",                 "Request Terminate", 	           "Request to terminate instance" ],
+    [6,  "TERMINATE",                         "Terminate",                     "Instance terminated" ],
+    [7,  "REQUEST_RESUME",                    "Request Resume",	               "Request to resume suspended instance" ],
+    [8,  "RESUME",                            "Resume",                        "Resume suspended instance" ],
+    [9,  "REQUEST_IP_ATTACH",                 "Request Attach IP",	           "Request to attach IP address" ],
+    [10, "REQUEST_VOLUME_ATTACH",             "Attach Volume to Instance",    "Request to attach storage volume" ],
+    [11, "VOLUME_ATTACH",                     "Volume Attach",                 "Storage volume attached" ],
+    [12, "REQUEST_VOLUME_DETACH",             "Detach Volume from Instance",         "Request to detach storage volume" ],
+    [13, "REQUEST_MIGRATE",                   "Request Migrate",               "Request to migrate instance to another host" ],
+    [14, "START_MIGRATE",                     "Start Migrate",                 "Start migrating an instance to another host" ],
+    [15, "STOP_MIGRATE",                      "Stop Migrate",                  "Migration of an instance to another host completed" ],
+    [16, "STATE_REPORT",                      "State Report",                  "Instance state report" ],
+    [17, "SUSPEND",                           "Suspend",                       "Suspend an instance"],
+    [18, "ALLOCATION_SOURCE_CHANGED",         "Allocation Source Changed",     "Change allocaion source"],
+    [19, "SHELVE",                            "Shelve",	                       "Shelve an instance"],
+    [20, "UNSHELVE",                          "Unshelve",                      "Unshelve an instance"],
+    [21, "VOLUME_DETACH_START",               "Volume Detach Start",	         "Start detaching a volume"],
+    [22, "VOLUME_DETACH_END",                 "Volume Detach End",	           "End detaching a volume"],
+    [23, "VOLUME_CREATE_START",               "Volume Create Start",	         "Start creating a volume"],
+    [24, "VOLUME_CREATE_END",                 "Volume Create End",	           "End creating a volume"],
+    [25, "VOLUME_UPDATE_START",               "Volume Update Start",           "Start updating a volume"],
+    [26, "VOLUME_UPDATE_END",                 "Volume Update End",             "End updating a volume"],
+    [27, "VOLUME_ATTACH_START",               "Volume Attach Start",           "Start attaching a volume"],
+    [28, "VOLUME_DELETE_START",               "Volume Attach Start",           "Start attaching a volume"],
+    [29, "VOLUME_DELETE_END",                 "Volume Attach Start",           "Start attaching a volume"],
+    [30, "VOLUME_TYPE_CREATE",                "Create Volume Type",            "Create a volume type"],
+    [31, "IMAGE_ACTIVATE",                    "Activate Image",                "Activate image"],
+    [32, "IMAGE_CREATE",                      "Create Image",                  "Create image"],
+    [33, "IMAGE_DELETE",                      "Delete Image",                  "Delete image"],
+    [34, "IMAGE_PREPARE",                     "Prepare Image",                 "Prepare image"],
+    [35, "IMAGE_UPDATE",                      "Update Image",                  "Update image"],
+    [36, "IMAGE_UPLOAD",                      "Upload Image",                  "Upload image"],
+    [37, "SNAPSHOT_CREATE_START",             "Create Snapshot Start",         "Start creating a snapshot"],
+    [38, "SNAPSHOT_CREATE_END",               "Create Snapshot End",           "End creating a snapshot"],
+    [39, "SNAPSHOT_DELETE_START",             "Delete Snapshot Start",         "Start deleting a snapshot"],
+    [40, "SNAPSHOT_DELETE_END",       	      "Delete Snapshot End",           "End deleting a snapshot"],
+    [41, "START_ERROR",                       "Error Creating Instance",       "Error creating an instance"],
+    [42, "RESIZE_INSTANCE_START",             "Resize Instance Start",         "Start resizing an instance"],
+    [43, "RESIZE_INSTANCE_END",               "Resize Instance End", 	         "Finish resizing an instance"],
+    [44, "POWER_OFF_START",                   "Power Off Start",               "Start powering off an instance"],
+    [45, "POWER_OFF_END",                     "Power Off End",                 "Finish powering off an instance"],
+    [46, "REBUILD_START",                     "Rebuild Start",                 "Start rebuild of instance"],
+    [47, "REBUILD_END",                       "Rebuild End",                   "End rebuild of instance"],
+    [48, "RESIZE_CONFIRM_START",              "Confirm Resize Start",          "Confirm Resizing of instance"],
+    [49, "RESIZE_CONFIRM_END",                "Confirm Resize End",            "Confirm Resizing of instance"],
+    [50, "RESIZE_START",                      "Resize Instance Start",         "Start resizing of instance"],
+    [51, "RESIZE_END",                        "Resize Instance End",           "End resizing of instance"],
+    [52, "RESIZE_PREP_START",                 "Instance Resize Prep Start",    "Start prep for resizing instance"],
+    [53, "RESIZE_PREP_END",                   "Instance Resize Prep End",	     "End prep for resizing instance"],
+    [54, "PAUSE_START",                       "Start Pause Instance",          "Start pausing an instance"],
+    [55, "PAUSE_END",                         "End Pause Instance",            "End pausing an instance"],
+    [56, "UNPAUSE_START",                     "Start Unpause Instance",        "Start Unpausing an instance"],
+    [57, "UNPAUSE_END",                       "End Unpause Instance",          "End Unpausing an instance"],
+    [58, "POWER_ON_START",                    "Power On Instance Start",       "Start powering on an instance"],
+    [59, "POWER_ON_END",                      "Power On Instance End",         "End powering on an instance"],
+    [60, "UNSUSPEND_START",                   "Unsuspend Instance Start",      "Start unsuspending an instance"],
+    [61, "UNSUSPEND_END",                     "Unsuspend Instance End",        "End unsuspending an instance"],
+    [62, "SUSPEND_START",                     "Suspend Instance Start",        "Start suspending an instance"],
+    [63, "UNSHELVE_START",                    "Unshelve Instance Start",       "Start unshelving an instance"],
+    [64, "SHELVE_START",                      "Shelve Instance Start",         "Start shelving an instance"]
+]
+
+
+--------- 
+
+openstack server list --all-projects                                             # gets the list of VMs
+openstack server event list ab01d0a1-d234-465d-a2eb-f9e7fc507153                 # gets the events of a particular VMs indexed via request_id

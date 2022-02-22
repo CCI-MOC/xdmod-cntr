@@ -76,8 +76,58 @@ Here I am explaining parts of the docker compose files and the rationale.
 
         mongosh "mongodb://localhost:27017"
 
-    4) Configure xdmod to use mariadb
+    4) Configure xdmod 
 
+        xdmod-setup doesn't change the php.ini file as the php.ini is read only.  This needed to be configured when the container
+        is created.
+
+        had to change the httpd.conf - to run php as a stop-gap measure 
+        overwrite the ssl.conf - am not authenticaing users correctly, nor do I have ssl setup correctly 
+        overwrite the php.ini  - this sets the database host (mariadb), user (xdmod) and pass (pass) for each of the database connections.
+
+        this will bring up the interface with the following error indicating that the ingestion script needs to be run first
+
+        Here is a chicken vs egg issue, supremeMM indicates that xdmod needs to be configured and running first before install, however
+        to install for openstack, supremeMM needs to be in place to ingest the data from OpenStack.
+
+    5) install and configure supremeMM
+
+      a) setup mongodb
+
+            - need to setup an administrative user correctly
+
+            mongosh "mongodb://localhost:27017"
+
+                use admin;
+
+                db.createUser({
+                  user: 'xdmod', 
+                  pwd: 'pass', 
+                  roles: [{role: 'readWrite', db: 'supremm'}]
+                }); 
+                db.createUser({
+                  user: 'xdmod-ro', 
+                  pwd: 'pass', 
+                  roles: [{role: 'read', db: 'supremm'}]
+                });
+
+      b) installing of supremm in the docker file using instructions here:
+           https://supremm.xdmod.org/9.5/supremm-install.html
+           https://supremm.xdmod.org/9.5/supremm-processing-configuration.html
+
+      c) configuring supremm see (supremmconfig.json)
+       
+      This requires some data and the RPM install doesn't provide the supremm-setup script as described in the install/configuration 
+
+    6) install and configure xdmod-openstack script
+
+        a) modified hypervisor_facts.py to use the currently supported keystone api.
+
+        b) rewriting openstack_api_reporting.py
+            
+            i) modified to use the currently supported keystone api.
+
+            ii) modifying to use the standard openstack API
     
 ----------------  I am currently here ------------------    
     
