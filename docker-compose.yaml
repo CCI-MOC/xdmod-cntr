@@ -13,7 +13,7 @@ services:
     networks:
       - compute
     volumes:
-      - ./mongodb:/docker-entrypoint-initdb.d 
+      - ./mongodb:/docker-entrypoint-initdb.d
     ports:
       - "27017:27017"
     expose:
@@ -33,18 +33,20 @@ services:
       - "3306:3306"
     expose:
       - "3306"
-
   #xdmod:
   #  image: moc-xdmod
   #  restart: always
-  #  command: [/usr/sbin/httpde -DFOREGROUND]
+  #  command: [ /usr/sbin/httpd -DFOREGROUND ]
   #  networks:
   #    - compute
   #  expose:
   #    - "4443"
   #    - "443"
   #    - "22"
+  #  volumes:
+  #    - ~/.config/openstack/clouds.yaml:/root/.config/openstack/cloouds.yaml
   #  ports:
+  #    - "127.0.0.1:8080:80"
   #    - "127.0.0.1:4443:443"
   #  depends_on:
   #    - mongodb

@@ -5,9 +5,33 @@ docker build -f Dockerfile -t moc-xdmod .
 docker compose up -d 
 mysql -h localhost --protocol=tcp -u root -p -e "CREATE USER 'xdmod'@'%' IDENTIFIED BY 'pass';"
 
+docker build -f Dockerfile -t moc-xdmod .  
+docker run -it --network=xdmod-cntr_compute -p 8080:80 --volume ~/.config/openstack/clouds.yaml:/root/.config/openstack/clouds.yaml:ro moc-xdmod /bin/bash
+
+------ podman/kubectl commands -----
+
+kubectl apply -f ./k8s/overlays/minikube/mysqldb-pv.yaml
+MYSQL_ROOT_PASSWORD=pass kubectl apply -k ./k8s/overlays/minikube
+
+kubectl -n xdmod get all
+
+ minikube start --kubernetes-version=v1.22.2 
+
+ minikube start --kubernetes-version=v1.22.2 --insecure-registry
+
+ minikube status
+ minikube delete
 
 
-docker run -it --network=xdmod-cntr_compute moc-xdmod /bin/bash
+  minikube addons enable registry  
+
+eval $(minikube docker-env)
+podman run --rm -it --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
+
+# note this will use the docker instance on minikube to build the containers.
+podman build -f Dockerfile.centos7:xdmod-base -t moc-xdmod-base .
+podman build -f Dockerfile -t $(minikube ip):5000/moc-xdmod .  
+podman push $(minikube ip):5000/moc-xdmod 
 
 --------- useful mysql commands -----------
 
@@ -26,6 +50,7 @@ create database mod_shredder;
 create database mod_hpcdb;
 create database moddb;
 create database modw;
+create database modw_cloud;
 create database modw_aggregates;
 create database modw_filters;
 create database mod_logger;
@@ -41,6 +66,9 @@ grant all on moddb.* to 'xdmod'@'%';
 
 grant all on modw.* to 'xdmod'@'mariadb';
 grant all on modw.* to 'xdmod'@'%';
+
+grant all on modw_cloud.* to 'xdmod'@'mariadb';
+grant all on modw_cloud.* to 'xdmod'@'%';
 
 grant all on modw_aggregates.* to 'xdmod'@'mariadb';
 grant all on modw_aggregates.* to 'xdmod'@'%';
@@ -114,15 +142,6 @@ suprememm-setup
 ----
 
 xdmod-openstack
-
-pip3 install python3-keystoneauth
-pip3 install python3-keystoneclient
-pip3 install python-keystoneclient
-pip3 install python-novaclient
-pip3 install python-openstacksdk
-pip3 install mysqlclient
-
-python3 hypervisor_facts.py 
 
 hypervisor_facts.py is now somewhat working (hard coded the cloud from my clouds.yaml file -- need to change this)
 
@@ -241,5 +260,260 @@ To ingest it, one json record per line like:
 
 --------- 
 
-openstack server list --all-projects                                             # gets the list of VMs
-openstack server event list ab01d0a1-d234-465d-a2eb-f9e7fc507153                 # gets the events of a particular VMs indexed via request_id
+xdmod-setup:
+
+1) run the sql statements at the top of this file
+2) run xdmod-setup
+select 3 to add an organization
+
+========================================================================
+Organization Setup
+========================================================================
+
+Organization Name: MOC
+Organization Abbreviation: MOC
+
+Overwrite config file '/etc/xdmod/organization.json' (yes, no)? [yes] 
+Writing configuration to '/etc/xdmod/organization.json'
+
+Settings saved.
+
+Press ENTER to continue. 
+
+
+3) setup databases
+    2.1) select option 2, Database portal_settings
+    2.2) prompts:
+         DB Hostname or IP: [mariadb]           <enter> 
+         DB Port: [3306]                        <enter>
+         DB Username: [xdmod]                   <enter>
+         DB Password:                           pass
+         (confirm) DB Password:                 pass
+
+         Please provide the password for the administrative account that will be
+         used to create the MySQL user and databases.
+
+         DB Admin Username: [root] 
+         DB Admin Password: 
+         (confirm) DB Admin Password: 
+         Creating User xdmod
+         Drop and recreate database (yes, no)? [no] 
+
+         Database `mod_hpcdb` already exists.
+         Drop and recreate database (yes, no)? [no] 
+
+         Database `moddb` already exists.
+         Drop and recreate database (yes, no)? [no] 
+
+         Database `modw` already exists.
+         Drop and recreate database (yes, no)? [no] 
+
+         Database `modw_aggregates` already exists.
+         Drop and recreate database (yes, no)? [no] 
+
+         Database `modw_filters` already exists.
+         Drop and recreate database (yes, no)? [no] 
+
+         Database `mod_logger` already exists.
+         Drop and recreate database (yes, no)? [no] 
+
+         Overwrite config file '/etc/xdmod/portal_settings.ini' (yes, no)? [yes] yes
+
+4)  Add a cloud resource.  
+    3.1) Select option 4, Resources, on Open XDMoD Setup screen.
+    3.2) select option 1, Add a new resource.
+    3.3) Enter information for the prompts that follow. 
+         3.3. )When you see the Resource Type prompt, enter cloud as the resource type.
+    3.4) Once you finish with all the prompts you will be redirected to the Resource Setup screen. At this screen choose the s option to save the information you just entered to the resources.json configuration file.
+    3.5) Run the following command from the command line to load data from resources.json file into the database: php /usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resources
+        3.5.1) run: /usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations
+        3.5.2) run: /usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resource-types
+        3.5.3) run: /usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resources
+
+
+
+---------
+
+
+Running the hypervisor script:
+
+    python3 /usr/bin/xdmod-openstack-hypervisor.py 
+
+Here is the xdmod-openstack-hypervisor produced:
+{
+  "hypervisors": [
+    {
+      "hypervisor_hostname": "neu-3-35-stackcomp.kzn.moc",
+      "id": "773c944a-f8fd-493e-a0df-604aea5c37a0",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-3-37-stackcomp.kzn.moc",
+      "id": "398d6be2-b953-4739-a983-402f2f3c3769",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-5-36-stackcomp.kzn.moc",
+      "id": "ee8515b6-7aee-45e8-8bc0-cce946f216f1",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-5-38-stackcomp.kzn.moc",
+      "id": "ecbe38af-9557-4e3f-81b9-058439d5f75c",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-15-34-stackcomp.kzn.moc",
+      "id": "fbed3533-3f64-4908-9421-83a10ecf897e",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-5-34-stackcomp.kzn.moc",
+      "id": "74db1cf5-2dde-4c50-8eeb-936104898781",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-15-38-stackcomp.kzn.moc",
+      "id": "c94e1e11-523c-41e3-891b-ab941eeb8b18",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-5-35-stackcomp.kzn.moc",
+      "id": "6210de3a-94ec-4065-8ab4-2134620daac8",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-3-38-stackcomp.kzn.moc",
+      "id": "18c8e6a9-086a-4dff-b187-6c681b51c004",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-3-34-stackcomp.kzn.moc",
+      "id": "7b7d5d08-454f-4585-874d-ae92e5bad59c",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-5-37-stackcomp.kzn.moc",
+      "id": "2f34e110-db50-4e01-a928-8b2f56259fc9",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-15-36-stackcomp.kzn.moc",
+      "id": "f3603a83-5204-43f6-bbf4-5a64c34cdc51",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-15-37-stackcomp.kzn.moc",
+      "id": "1b720176-0388-4068-991f-ffe4c621a3b6",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-3-36-stackcomp.kzn.moc",
+      "id": "4a0f7c9e-7ad3-4d64-9a5e-1561a92d8960",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-15-35-stackcomp.kzn.moc",
+      "id": "004081a5-025a-4b35-9f23-356658ceaf4f",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-15-12-gcomp.kzn.moc",
+      "id": "b25996dd-8332-48de-9735-feda3b8ca1ed",
+      "memory_mb": 128609,
+      "vcpus": 56
+    },
+    {
+      "hypervisor_hostname": "neu-17-2-stackcomp.kzn.moc",
+      "id": "577f9f20-b21c-4688-87af-37403fdfd96e",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-17-1-stackcomp.kzn.moc",
+      "id": "40a081ac-e855-4d1d-9e14-edcc2f832857",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-19-1-stackcomp.kzn.moc",
+      "id": "9887aa4e-16dc-4d2b-8bd4-e79118ed4683",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-19-3-stackcomp.kzn.moc",
+      "id": "afd468e2-df3b-4ff0-85cd-9c45ca4ee5cb",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-19-5-stackcomp.kzn.moc",
+      "id": "093e8e85-e6e4-4472-ace0-7c2ff4469813",
+      "memory_mb": 677104,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-17-4-stackcomp.kzn.moc",
+      "id": "a2fbe0fb-cb9d-4b6e-a49e-239772937bb9",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-17-3-stackcomp.kzn.moc",
+      "id": "8f3d408d-8376-4711-b8a6-82f31090dd0b",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-19-2-stackcomp.kzn.moc",
+      "id": "ddab6ed6-1350-4103-9b28-018d357c93ab",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-19-4-stackcomp.kzn.moc",
+      "id": "0a80d255-bb37-4ffe-b866-b51589b198c8",
+      "memory_mb": 773866,
+      "vcpus": 40
+    },
+    {
+      "hypervisor_hostname": "neu-19-12-gcomp.kzn.moc",
+      "id": "ed02366b-4486-43a5-9f68-4b769cedc3e5",
+      "memory_mb": 128609,
+      "vcpus": 56
+    }
+  ],
+  "ts": "2022-02-24T23:09:25Z"
+}
+
+---------
+
+running the xdmod-openstack-reporting:
+
+    python3 /usr/bin/xdmod-openstack-reporting.py 
+
+
+
+sudo /opt/xdmod/bin/xdmod-shredder -f openstack -d ~/openstack-logs/ -r openstack-test
+sudo /opt/xdmod/bin/xdmod-ingestor
+
+
+-----
+the shredder will create the tables in modw_cloud!
+
