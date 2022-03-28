@@ -1,0 +1,41 @@
+FROM moc-xdmod-base
+
+#COPY assets /tmp/assets
+#RUN /tmp/assets/copy-caches.sh
+#COPY bin /root/bin
+
+WORKDIR /root
+
+
+# This installs a barebones 9.5 instance of XDmod
+RUN mkdir -p /root/rpmbuild/RPMS/noarch \
+    && mkdir /tmp/supremm \
+    && yum -y install openssh-server openssh-clients pcp pcp-manager pcp-conf pcp-libs python-pcp perl-PCP-PMDA pcp-system-tools pcp-pmda-gpfs pcp-pmda-lustre pcp-pmda-infiniband pcp-pmda-mic pcp-pmda-nvidia-gpu \
+    pcp-pmda-nfsclient pcp-pmda-perfevent pcp-pmda-json python3 \
+    && pip3 install --upgrade pip \
+    && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk mysql-connector-python
+
+# RPM install of XDMod
+RUN cd /root/rpmbuild/RPMS/noarch \
+    && wget -nv https://github.com/ubccr/xdmod/releases/download/v9.5.0/xdmod-9.5.0-1.0.el7.noarch.rpm \
+    && yum -y install xdmod-9.5.0-1.0.el7.noarch.rpm
+
+# All of this will get copied onto the xdmod configuration volume 
+# Here we are just copying this to overwrite what xdmod installs by default
+COPY ./moc_xdmod_conf/portal_settings.ini /etc/xdmod/portal_settings.ini
+RUN chmod 777 /etc/xdmod/portal_settings.ini
+COPY ./moc_xdmod_conf/etc-xdmod-resources.json /etc/xdmod/resources.json
+COPY ./moc_xdmod_conf/etc-xdmod-resource-specs.json /etc/xdmod/resource_specs.json
+COPY ./moc_xdmod_conf/etc-xdmod-organization.json /etc/xdmod/organization.json
+
+COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
+COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
+RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
+    && chmod 777 /usr/bin/xdmod-openstack-reporting \
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting
+
+# this is done so to log into the container and manually run xdmod-setup
+ENTRYPOINT ["sleep", "300000"]
+
+WORKDIR /
