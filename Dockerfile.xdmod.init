@@ -38,6 +38,7 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod 777 /usr/bin/xdmod-openstack-reporting \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \
     && chmod -R 777 /usr/bin \
+    && chmod -R 777 /var/lib \
     && chmod -R 777 /var/log
 
 # this is done so to log into the container and manually run xdmod-setup
