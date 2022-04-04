@@ -7,7 +7,7 @@ FROM moc-xdmod-base
 WORKDIR /root
 
 
-# This installs a barebones 9.5 instance of XDmod
+# This installs a barebones 10.0 instance of XDmod
 RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && mkdir /tmp/supremm \
     && yum -y install openssh-server openssh-clients pcp pcp-manager pcp-conf pcp-libs python-pcp perl-PCP-PMDA pcp-system-tools pcp-pmda-gpfs pcp-pmda-lustre pcp-pmda-infiniband pcp-pmda-mic pcp-pmda-nvidia-gpu \
@@ -17,13 +17,14 @@ RUN mkdir -p /root/rpmbuild/RPMS/noarch \
 
 # RPM install of XDMod
 RUN cd /root/rpmbuild/RPMS/noarch \
-    && wget -nv https://github.com/ubccr/xdmod/releases/download/v9.5.0/xdmod-9.5.0-1.0.el7.noarch.rpm \
-    && yum -y install xdmod-9.5.0-1.0.el7.noarch.rpm
+    && wget -nv https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm \
+    && yum -y install xdmod-10.0.0-1.0.el7.noarch.rpm
 
 COPY ./moc_xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
 # am copying the xdmod-httpd conf file to ssl.conf as both use *:443
 # and this is easier than just deleting the ssl.conf
-RUN rm -f /etc/httpd/conf.d/ssl.conf
+RUN rm -f /etc/httpd/conf.d/ssl.conf \
+    && rm -f /run/httpd/httpd.pid
 
 COPY ./test_data/openstack.2018-04-17T00-00-00_2018-04-30T23-59-59.json /root/test/openstack/2018-04-17T00-00-00_2018-04-30T23-59-59.json
 
@@ -32,9 +33,19 @@ COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
     && chmod 777 /usr/bin/xdmod-openstack-reporting \
-    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \ 
+    && chmod -R 777 /usr/bin \
+    && chmod -R 777 /var/log \
+    && chmod -R 777 /run/httpd
+
+EXPOSE 8080
 
 # this is done so to log into the container and manually run xdmod-setup
-ENTRYPOINT ["sleep", "300000"]
+#ENTRYPOINT ["systemctl", "start", "httpd.serivce"]
+#ENTRYPOINT ["apachectl", "start"]
+#ENTRYPOINT ["sleep", "1000000"]
+
+CMD ["-D", "FOREGROUND"]
+ENTRYPOINT ["/usr/sbin/httpd"]
 
 WORKDIR /

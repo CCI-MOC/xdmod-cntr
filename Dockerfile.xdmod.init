@@ -17,23 +17,28 @@ RUN mkdir -p /root/rpmbuild/RPMS/noarch \
 
 # RPM install of XDMod
 RUN cd /root/rpmbuild/RPMS/noarch \
-    && wget -nv https://github.com/ubccr/xdmod/releases/download/v9.5.0/xdmod-9.5.0-1.0.el7.noarch.rpm \
-    && yum -y install xdmod-9.5.0-1.0.el7.noarch.rpm
+    && wget -nv https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm \
+    && yum -y install xdmod-10.0.0-1.0.el7.noarch.rpm
 
 # All of this will get copied onto the xdmod configuration volume 
 # Here we are just copying this to overwrite what xdmod installs by default
-COPY ./moc_xdmod_conf/portal_settings.ini /etc/xdmod/portal_settings.ini
-RUN chmod 777 /etc/xdmod/portal_settings.ini
-COPY ./moc_xdmod_conf/etc-xdmod-resources.json /etc/xdmod/resources.json
-COPY ./moc_xdmod_conf/etc-xdmod-resource-specs.json /etc/xdmod/resource_specs.json
-COPY ./moc_xdmod_conf/etc-xdmod-organization.json /etc/xdmod/organization.json
+#COPY ./moc_xdmod_conf/portal_settings.ini /etc/xdmod/portal_settings.ini
+#COPY ./moc_xdmod_conf/etc-xdmod-resources.json /etc/xdmod/resources.json
+#COPY ./moc_xdmod_conf/etc-xdmod-resource-specs.json /etc/xdmod/resource_specs.json
+#COPY ./moc_xdmod_conf/etc-xdmod-organization.json /etc/xdmod/organization.json
+
+RUN chmod -R 777 /etc/xdmod/*
 
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
+COPY ./test_data/openstack.2018-04-17T00-00-00_2018-04-30T23-59-59.json /root/test/openstack/2018-04-17T00-00-00_2018-04-30T23-59-59.json
 RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
+    && chmod -R 777 /etc/xdmod \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
     && chmod 777 /usr/bin/xdmod-openstack-reporting \
-    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \
+    && chmod -R 777 /usr/bin \
+    && chmod -R 777 /var/log
 
 # this is done so to log into the container and manually run xdmod-setup
 ENTRYPOINT ["sleep", "300000"]
