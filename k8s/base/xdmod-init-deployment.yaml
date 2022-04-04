@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moc-xdmod-init
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: xdmod
+    spec:
+      containers:
+        - image: docker.io/robertbartlettbaron/moc-xdmod-init
+          name: xdmod
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: xdmod-conf-vol
+              mountPath: /mnt/conf
+            - name: mariadb-vol
+              mountPath: /mnt/mysql
+            - name: xdmod-src-vol
+              mountPath: /mnt/xdmod_src
+            #- name: "etc-xdmod-organization-vol"
+            #  mountPath: "/root/etc-xdmod-organization.json"
+            #  subPath: "etc-xdmod-organization.json"
+            #- name: "etc-xdmod-resources-vol"
+            #  mountPath: "/root/etc-xdmod-resources.json"
+            #  subPath: "etc-xdmod-resources.json"
+            #- name: "etc-xdmod-resource-specs-vol"
+            #  mountPath: "/root/etc-xdmod-resource-specs.json"
+            #  subPath: "etc-xdmod-resource-specs.json"
+            #- name: "portal-settings-vol"
+            #  mountPath: "/root/portal_settings.ini"
+            #  subPath: "portal_settings.ini"
+          restartPolicy: Always
+      volumes:
+        - name: xdmod-conf-vol
+          persistentVolumeClaim:
+            claimName: xdmod-conf-pvc
+        - name: mariadb-vol
+          persistentVolumeClaim:
+            claimName: mariadb-pvc
+        - name: xdmod-src-vol
+          persistentVolumeClaim:
+            claimName: xdmod-src-pvc
+        #- name: "portal-settings-vol"
+        #  configMap:
+        #    name: "portal-settings-cm"

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moc-xdmod
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: xdmod
+    spec:
+      containers:
+        - image: docker.io/robertbartlettbaron/moc-xdmod
+          name: xdmod
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: xdmod-conf-vol
+              mountPath: /etc/xdmod
+            - name: xdmod-src-vol
+              mountPath: /usr/share/xdmod
+            - name: xdmod-httpd-conf-vol
+              mountPath: /etc/httpd/conf/httpd.conf
+              subPath: httpd.conf
+            #- name: cloud-config-vol
+            #  subPath: clouds.yaml
+            #  mountPath: /root/.config/openstack
+      volumes:
+        - name: xdmod-conf-vol
+          persistentVolumeClaim:
+            claimName: xdmod-conf-pvc
+        - name: xdmod-src-vol
+          persistentVolumeClaim:
+            claimName: xdmod-src-pvc
+        - name: xdmod-httpd-conf-vol
+          configMap:
+            name: "etc-httpd-conf-cm"
+        #- name: cloud-config-vol
+        #  configMap:
+        #    name: cloud-config-configmap
+        #    items:
+        #      - key: clouds.yaml
+        #        path: clouds.yaml

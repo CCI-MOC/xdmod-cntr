@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moc-xdmod-setup
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: xdmod
+    spec:
+      containers:
+        # Reuses init docker container, however the volumes are mounted differently
+        - image: docker.io/robertbartlettbaron/moc-xdmod-init
+          name: xdmod
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: xdmod-conf-vol
+              mountPath: /etc/xdmod
+            - name: xdmod-src-vol
+              mountPath: /mnt/xdmod_src
+          restartPolicy: Always
+      volumes:
+        - name: xdmod-conf-vol
+          persistentVolumeClaim:
+            claimName: xdmod-conf-pvc
+        - name: xdmod-src-vol
+          persistentVolumeClaim:
+            claimName: xdmod-src-pvc
+        #- name: "portal-settings-vol"
+        #  configMap:
+        #    name: "portal-settings-cm"
