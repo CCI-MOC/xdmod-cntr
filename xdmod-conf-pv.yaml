@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: xdmod-conf-pv
+  labels:
+    type: local
+spec:
+  storageClassName: xdmod-conf
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/host/xdmod"

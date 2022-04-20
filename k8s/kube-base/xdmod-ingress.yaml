@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: xdmod-ingress
+  namespace: xdmod
+spec:
+  rules:
+    - host: localhost
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: xdmod
+                port:
+                  number: 8080
