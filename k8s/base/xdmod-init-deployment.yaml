@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: moc-xdmod-init
+  name: moc-xdmod
 spec:
   selector:
     matchLabels:
@@ -10,6 +10,7 @@ spec:
     type: Recreate
   template:
     metadata:
+      namespace: xdmod
       labels:
         app: xdmod
     spec:
@@ -17,15 +18,18 @@ spec:
         - image: docker.io/robertbartlettbaron/moc-xdmod-init
           name: xdmod
           imagePullPolicy: IfNotPresent
+          command:
+            - sleep
+          args:
+            - "1000000"
           ports:
             - containerPort: 8080
           volumeMounts:
             - name: xdmod-conf-vol
               mountPath: /mnt/conf
-            - name: mariadb-vol
-              mountPath: /mnt/mysql
             - name: xdmod-src-vol
               mountPath: /mnt/xdmod_src
+
             #- name: "etc-xdmod-organization-vol"
             #  mountPath: "/root/etc-xdmod-organization.json"
             #  subPath: "etc-xdmod-organization.json"
@@ -43,12 +47,10 @@ spec:
         - name: xdmod-conf-vol
           persistentVolumeClaim:
             claimName: xdmod-conf-pvc
-        - name: mariadb-vol
-          persistentVolumeClaim:
-            claimName: mariadb-pvc
         - name: xdmod-src-vol
           persistentVolumeClaim:
             claimName: xdmod-src-pvc
+
         #- name: "portal-settings-vol"
         #  configMap:
         #    name: "portal-settings-cm"

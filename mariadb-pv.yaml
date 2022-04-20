@@ -5,7 +5,7 @@ metadata:
   labels:
     type: local
 spec:
-  storageClassName: manual
+  storageClassName: xdmod-mariadb
   capacity:
     storage: 5Gi
   accessModes:

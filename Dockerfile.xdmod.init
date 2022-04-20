@@ -1,4 +1,4 @@
-FROM moc-xdmod-base
+FROM centos:7.9.2009
 
 #COPY assets /tmp/assets
 #RUN /tmp/assets/copy-caches.sh
@@ -11,7 +11,7 @@ WORKDIR /root
 RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && mkdir /tmp/supremm \
     && yum -y install openssh-server openssh-clients pcp pcp-manager pcp-conf pcp-libs python-pcp perl-PCP-PMDA pcp-system-tools pcp-pmda-gpfs pcp-pmda-lustre pcp-pmda-infiniband pcp-pmda-mic pcp-pmda-nvidia-gpu \
-    pcp-pmda-nfsclient pcp-pmda-perfevent pcp-pmda-json python3 \
+    pcp-pmda-nfsclient pcp-pmda-perfevent pcp-pmda-json python3-devel.x86_64 \
     && pip3 install --upgrade pip \
     && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk mysql-connector-python
 
@@ -31,7 +31,7 @@ RUN chmod -R 777 /etc/xdmod/*
 
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
-COPY ./test_data/openstack.2018-04-17T00-00-00_2018-04-30T23-59-59.json /root/test/openstack/2018-04-17T00-00-00_2018-04-30T23-59-59.json
+COPY ./test_data/openstack.2018-04-17T00:00:00_2018-04-30T23:59:59.json /root/test/openstack/2018-04-17T00:00:00_2018-04-30T23:59:59.json
 RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod -R 777 /etc/xdmod \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
