@@ -4,7 +4,6 @@ metadata:
   name: mariadb-pvc
   namespace: xdmod
 spec:
-  storageClassName: xdmod-mariadb
   accessModes:
     - ReadWriteOnce
   resources:

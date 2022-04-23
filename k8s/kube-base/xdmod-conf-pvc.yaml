@@ -4,8 +4,6 @@ metadata:
   name: xdmod-conf-pvc
   namespace: xdmod
 spec:
-  volumeName: xdmod-conf-pv
-  storageClassName: xdmod-conf
   accessModes:
     - ReadWriteOnce
   resources:

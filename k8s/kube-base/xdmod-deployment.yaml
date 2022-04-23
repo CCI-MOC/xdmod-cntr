@@ -30,16 +30,26 @@ spec:
           name: xdmod-init
           imagePullPolicy: Never
           command:
-            - python3
-          args:
             - "/usr/bin/xdmod-init"
           ports:
             - containerPort: 8080
           volumeMounts:
             - name: xdmod-conf-vol
-              mountPath: /mnt/xdmod-conf
+              mountPath: /mnt/xdmod_conf
             - name: xdmod-src-vol
               mountPath: /mnt/xdmod_src
+        - image: moc-xdmod
+          name: xdmod-setup
+          imagePullPolicy: Never
+          command:
+            - "/usr/bin/xdmod-init"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: xdmod-conf-vol
+              mountPath: /etc/xdmod
+            - name: xdmod-src-vol
+              mountPath: /usr/share/xdmod
       volumes:
         - name: xdmod-conf-vol
           persistentVolumeClaim:
