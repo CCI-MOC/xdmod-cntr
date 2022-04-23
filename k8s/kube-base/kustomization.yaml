@@ -1,0 +1,12 @@
+commonLabels:
+  app: xdmod
+namespace: xdmod
+
+resources:
+  - mariadb-pvc.yaml
+  - xdmod-conf-pvc.yaml
+  - xdmod-src-pvc.yaml
+  - mariadb-service.yaml
+  - xdmod-service.yaml
+  - mariadb-deployment.yaml
+  - xdmod-deployment.yaml
