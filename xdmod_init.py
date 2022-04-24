@@ -8,21 +8,23 @@ import mysql.connector
 import pprint
 
 
-
 def xdmod_setup_admin_account(admin_account):
     xdmod_admin_account_json = {
         "cmd": "xdmod-setup",
         "do_list": [
-            {"prompt": "Select an option (1, 2, 3, 4, 5, 6, 7, 8, q): ", "resp": "5"},
+            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "5"},
             {"prompt": "Username: ", "resp": admin_account["admin_username"]},
             {"prompt": "Password: ", "resp": admin_account["admin_password"]},
-            {"prompt": "(confirm) Password: ", "resp": admin_account["admin_password"]},
+            {"prompt": "\(confirm\) Password: ", "resp": admin_account["admin_password"]},
             {"prompt": "First name: ", "resp": admin_account["first_name"]},
             {"prompt": "Last name: ", "resp": admin_account["last_name"]},
-            {"prompt": "Email address: ", "resp": admin_account["email_address"]}
-        ]
+            {"prompt": "Email address: ", "resp": admin_account["email_address"]},
+            {"prompt": "Press ENTER to continue.", "resp": ""},
+            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "q", "timeout": 600},
+        ],
     }
     run_pexpect_json(xdmod_admin_account_json)
+
 
 def xdmod_setup_general_settings(general_settings):
     xdmod_general_settings_json = {
@@ -41,6 +43,7 @@ def xdmod_setup_general_settings(general_settings):
     }
     run_pexpect_json(xdmod_general_settings_json)
 
+
 def xdmod_setup_organization(organization):
     xdmod_setup_organization_json = {
         "cmd": "xdmod-setup",
@@ -50,10 +53,11 @@ def xdmod_setup_organization(organization):
             {"prompt": "Organization Abbreviation: ", "resp": organization["abbreviation"]},
             {"prompt": "Overwrite config file '/etc/xdmod/organization.json' \(yes, no\)\? \[.*\]", "resp": "yes"},
             {"prompt": "Press ENTER to continue.*", "resp": ""},
-            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "q"},
+            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "q", "timeout": 600},
         ],
     }
     run_pexpect_json(xdmod_setup_organization_json)
+
 
 def xdmod_setup_database(database):
     xdmod_setup_databases_json = {
@@ -68,16 +72,16 @@ def xdmod_setup_database(database):
             {"prompt": "DB Admin Username: \[root\] ", "resp": ""},
             {"prompt": "DB Admin Password: ", "resp": database["admin_password"]},
             {"prompt": "\(confirm\) DB Admin Password: ", "resp": database["admin_password"]},
-            {"prompt": "Database `mod_shredder` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\] ", "resp": "yes"},
-            {"prompt": "Database `mod_hpcdb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes"},
-            {"prompt": "Database `moddb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes"},
-            {"prompt": "Database `modw` already exists..*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes"},
-            {"prompt": "Database `modw_aggregates` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes"},
-            {"prompt": "Database `modw_filters` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes"},
-            {"prompt": "Database `mod_logger` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes"},
+            {"prompt": "Database `mod_shredder` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\] ", "resp": "yes", "timeout": 600},
+            {"prompt": "Database `mod_hpcdb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
+            {"prompt": "Database `moddb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
+            {"prompt": "Database `modw` already exists..*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
+            {"prompt": "Database `modw_aggregates` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
+            {"prompt": "Database `modw_filters` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
+            {"prompt": "Database `mod_logger` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
             {"prompt": "Overwrite config file '/etc/xdmod/portal_settings.ini' \(yes, no\)\? \[.*\]", "resp": "yes"},
             {"prompt": "Press ENTER to continue.", "resp": ""},
-            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "q"},
+            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "q", "timeout": 1200},  # not sure why this takes so long!!!
         ],
     }
     run_pexpect_json(xdmod_setup_databases_json)
@@ -91,14 +95,15 @@ def xdmod_setup_resource(resource):
             {"prompt": "Select an option \(1, 2, s\): ", "resp": "1"},
             {"prompt": "Resource Name: ", "resp": resource["name"]},
             {"prompt": "Formal Name:", "resp": resource["formal_name"]},
-            {"prompt": "Resource Type \(hpc, htc, dic, grid, cloud, vis, vm, tape, disk, stgrid, us, gateway\): [hpc] ", "resp": resource["type"]},
-            {"prompt": "How many nodes does this resource have? ", "resp": "0"},
-            {"prompt": "How many total processors \(cpu cores\) does this resource have? ", "resp": "0"},
+            {"prompt": "Resource Type \(.*\): \[.*\] ", "resp": resource["type"]},
+            {"prompt": "How many nodes does this resource have\? ", "resp": "0"},
+            {"prompt": "How many total processors \(cpu cores\) does this resource have\? ", "resp": "0"},
             {"prompt": "Select an option \(1, 2, s\): ", "resp": "s"},
             {"prompt": "Overwrite config file '/etc/xdmod/resources.json' \(yes, no\)\? \[yes\] ", "resp": "yes"},
             {"prompt": "Press ENTER to continue. ", "resp": ""},
             {"prompt": "Overwrite config file '/etc/xdmod/resource_specs.json' \(yes, no\)\? \[yes\] ", "resp": "yes"},
             {"prompt": "Press ENTER to continue. ", "resp": ""},
+            {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\):", "resp": "q", "timeout": 600},
         ],
     }
     run_pexpect_json(xdmod_setup_resource_json)
@@ -109,8 +114,11 @@ def run_pexpect_json(pexpect_json):
     print(f"running comand {pexpect_json['cmd']}")
     for prompt_resp in pexpect_json["do_list"]:
         print(f"{prompt_resp['prompt']}\n")
+        t = 30
+        if "timeout" in prompt_resp:
+            t = prompt_resp["timeout"]
         try:
-            setup.expect(prompt_resp["prompt"])
+            setup.expect(prompt_resp["prompt"], timeout=t)
         except Exception as e:
             print(f"{setup.before} -->  {prompt_resp['resp']}")
             print(str(e))
@@ -243,51 +251,50 @@ def initialize_database(database, db_list):
 
 def main():
 
-    xdmod_init_json={
+    xdmod_init_json = {
         "admin_account": {
             "admin_username": "Admin",
             "admin_password": "pass",
             "first_name": "ad",
             "last_name": "min",
-            "eamil_address": "nobody@massopen.cloud"
+            "email_address": "nobody@massopen.cloud",
         },
-        "general_settings":{
-            "site_address":"xdmod.apps.nerc-shift-0.rc.fas.harvard.edu",
+        "general_settings": {
+            "site_address": "xdmod.apps.nerc-shift-0.rc.fas.harvard.edu",
             "contact_email_address": "robbaron@bu.edu",
             "center_logo_path": "",
-            "enable_dashboard": "no"
+            "enable_dashboard": "off",  # on/off
         },
-        "organization": { 
-            "name":"Mass Open Cloud",
-            "abbreviation": "MOC"
-        },
-        "database": {
-            "database_host": "mariadb", 
-            "xdmod_password": "pass", 
-            "admin_password": "pass"
-        },
-        "resource":[ 
-            { "name": "kaizen", "formal_name": "kaizen", "type": "cloud" }
-        ]
+        "organization": {"name": "Mass Open Cloud", "abbreviation": "MOC"},
+        "database": {"host": "mariadb", "xdmod_password": "pass", "admin_password": "pass"},
+        "resource": [{"name": "kaizen", "formal_name": "kaizen", "type": "cloud"}],
     }
 
     if os.path.isdir("/mnt/xdmod_conf"):
         # This can only be on the first init container
+        # On the NERC there is a 'lost+found', '.', '..' directories that can be ignored
+        #     the simplest check is to see that the directory contains less than 5 items
         print("Found /mnt/xdmod* ")
-        if len(os.listdir("/mnt/xdmod_conf")) == 0:
+        nap_time = 0
+        if len(os.listdir("/mnt/xdmod_conf")) < 5:
             print(" empty directory xdmod_conf found - initializing")
             os.popen("cp -r /etc/xdmod/* /mnt/xdmod_conf")
+            nap_time = 120
 
         # this only exists in development
-        if os.path.isdir("/mnt/xdmod_src") and len(os.listdir("/mnt/xdmod_src")) == 0:
+        if os.path.isdir("/mnt/xdmod_src") and len(os.listdir("/mnt/xdmod_src")) < 5:
             print(" empty directory xdmod_src - inializing")
             os.popen("cp -r /usr/share/xdmod/* /mnt/xdmod_src")
+            nap_time = 120
+        if sleep_time > 0:
+            print(f" wait {nap_time} seconds for buffers to flush ")
+            time.sleep(nap_time)
         return
     print("Intializing general settings")
-    run_pexpect_json(xdmod_general_settings)
+    xdmod_setup_general_settings(xdmod_init_json["general_settings"])
 
     print("Databases:")
-    db_list = ["mod_shredder", "mod_hpcdb", "moddb", "modw", "modw_aggregates", "modw_filters", "mod_logger"]
+    db_list = ["mod_shredder", "mod_hpcdb", "moddb", "modw", "modw_aggregates", "modw_filters", "mod_logger", "modw_cloud"]
     table_count = initialize_database(xdmod_init_json["database"], db_list)
     print(f"   table_count = {table_count}")
     init_resources = False
@@ -296,18 +303,18 @@ def main():
         xdmod_setup_database(xdmod_init_json["database"])
 
         # Using the database initialization instead of searching for each resource in the database and only adding the ones that don't exist
-    for resource in xdmod_init_json["resource"]:
-        xdmod_setup_resources(resource)
-    init_resources = True
+        for resource in xdmod_init_json["resource"]:
+            xdmod_setup_resource(resource)
+            init_resources = True
     # yet again, should be using the database for this one
     print("Administrative Account:")
-    xdmod_setup_admin(xdmod_init_json["admin_account"])
+    xdmod_setup_admin_account(xdmod_init_json["admin_account"])
 
     print(" Organization: ")
     if not os.path.isfile("/etc/xdmod/organizations.json"):
         # Using the presence of the organization.json file instead of searching for the organization in the database(s)
         print("    No organization found, initilizing organization")
-        xdmod_setup_organization(xdmod_init_json["organization"]))
+        xdmod_setup_organization(xdmod_init_json["organization"])
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
 
     print("Resources: ")
