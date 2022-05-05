@@ -19,9 +19,9 @@ spec:
           name: xdmod
           imagePullPolicy: Never
           command:
-            - python3
+            - sleep
           args:
-            - "/usr/bin/xdmod-init"
+            - "1000"
           ports:
             - containerPort: 8080
           volumeMounts:
