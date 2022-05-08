@@ -3,10 +3,11 @@ commonLabels:
 namespace: xdmod
 
 resources:
-  - mariadb-pvc.yaml
-  - xdmod-conf-pvc.yaml
-  - xdmod-src-pvc.yaml
-  - mariadb-service.yaml
-  - xdmod-service.yaml
-  - mariadb-deployment.yaml
-  - xdmod-deployment.yaml
+  - pvc-mariadb.yaml
+  - pvc-xdmod-conf.yaml
+  - pvc-xdmod-src.yaml
+  - pvc-xdmod-data.yaml
+  - svc-mariadb.yaml
+  - svc-xdmod.yaml
+  - deployment-mariadb.yaml
+  #- deployment-xdmod.yaml

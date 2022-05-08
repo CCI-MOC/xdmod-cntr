@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moc-xdmod
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: xdmod
+    spec:
+      containers:
+        - image: moc-xdmod
+          name: xdmod
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: vol-xdmod-conf
+              mountPath: /etc/xdmod
+            - name: vol-xdmod-src
+              mountPath: /usr/share/xdmod
+            - name: vol-cloud-config
+              mountPath: /root/.configure/openstack/clouds.yaml
+      initContainers:
+        - image: moc-xdmod
+          name: xdmod-init
+          imagePullPolicy: Always
+          command:
+            - "/usr/bin/xdmod-init"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: vol-xdmod-conf
+              mountPath: /mnt/xdmod_conf
+            - name: vol-xdmod-src
+              mountPath: /mnt/xdmod_src
+            - name: vol-xdmod-init
+              mountPath: /root/xdmod_init.json
+        - image: moc-xdmod
+          name: xdmod-setup
+          imagePullPolicy: Never
+          command:
+            - "/usr/bin/xdmod-init"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: xdmod-conf-vol
+              mountPath: /etc/xdmod
+            - name: xdmod-src-vol
+              mountPath: /usr/share/xdmod
+            - name: xdmod-os-app-cred
+              readOnly: true
+              mountPath: "/root/nerc_shift_0/"
+      volumes:
+        - name: vol-xdmod-conf
+          persistentVolumeClaim:
+            claimName: pvc-xdmod-conf-pvc
+        - name: vol-xdmod-src
+          persistentVolumeClaim:
+            claimName: pvc-xdmod-src
+        - name: vod-xdmod-data
+          persistentVolumeClaim:
+            claimName: pvc-xdmod-data
+        - name: vod-xdmod-init
+          configmap:
+            items:
+              - key: xdmod_init.json
+                path: xdmod_init.json
+            name: cm-xdmod-init-json
+        - name: vol-nerc-shift-0-cred
+          secret:
+            secretName: xdmod-os-app-cred

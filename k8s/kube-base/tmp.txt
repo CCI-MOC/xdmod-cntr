@@ -1,0 +1,208 @@
+
+
+% oc get all                       
+I0422 18:36:08.394010    9906 request.go:645] Throttling request took 1.099840088s, request: GET:https://api.nerc-shift-0.rc.fas.harvard.edu:6443/apis/networking.k8s.io/v1beta1?timeout=32s
+NAME                             READY   STATUS                  RESTARTS   AGE
+pod/mariadb-6899bd768d-ncbjq     1/1     Running                 0          51m
+pod/moc-xdmod-5bff49b8b7-jd8s2   0/1     Init:CrashLoopBackOff   11         32m
+
+NAME              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/mariadb   ClusterIP   172.30.112.14   <none>        3306/TCP   51m
+service/xdmod     ClusterIP   172.30.118.98   <none>        8080/TCP   51m
+
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/mariadb     1/1     1            1           51m
+deployment.apps/moc-xdmod   0/1     1            0           51m
+
+NAME                                   DESIRED   CURRENT   READY   AGE
+replicaset.apps/mariadb-6899bd768d     1         1         1       51m
+replicaset.apps/moc-xdmod-544bbb87c9   0         0         0       51m
+replicaset.apps/moc-xdmod-568547b8c8   0         0         0       46m
+replicaset.apps/moc-xdmod-5999b78c99   0         0         0       41m
+replicaset.apps/moc-xdmod-5bff49b8b7   1         1         0       32m
+replicaset.apps/moc-xdmod-5d6884b4f7   0         0         0       34m
+replicaset.apps/moc-xdmod-7fb59cbd46   0         0         0       43m
+replicaset.apps/moc-xdmod-8458c598c6   0         0         0       45m
+
+NAME                                   HOST/PORT                                    PATH   SERVICES   PORT    TERMINATION   WILDCARD
+route.route.openshift.io/xdmod-route   xdmod.apps.nerc-shift-0.rc.fas.harvard.edu          xdmod      <all>                 None
+Rob@Roberts-Computer kube-base % oc logs moc-xdmod-5bff49b8b7-jd8s2 
+Error from server (BadRequest): container "xdmod" in pod "moc-xdmod-5bff49b8b7-jd8s2" is waiting to start: PodInitializing
+
+----------------------------------
+
+% oc logs moc-xdmod-5bff49b8b7-jd8s2 
+Error from server (BadRequest): container "xdmod" in pod "moc-xdmod-5bff49b8b7-jd8s2" is waiting to start: PodInitializing
+Rob@Roberts-Computer kube-base % oc describe pod/moc-xdmod-5bff49b8b7-jd8s2
+Name:         moc-xdmod-5bff49b8b7-jd8s2
+Namespace:    xdmod
+Priority:     0
+Node:         os-ctl-1/10.255.0.229
+Start Time:   Fri, 22 Apr 2022 18:03:32 -0400
+Labels:       app=xdmod
+              pod-template-hash=5bff49b8b7
+Annotations:  k8s.v1.cni.cncf.io/network-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.129.0.255"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              k8s.v1.cni.cncf.io/networks-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.129.0.255"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              openshift.io/scc: restricted
+Status:       Pending
+IP:           10.129.0.255
+IPs:
+  IP:           10.129.0.255
+Controlled By:  ReplicaSet/moc-xdmod-5bff49b8b7
+Init Containers:
+  xdmod-init:
+    Container ID:  cri-o://4e9fae7f26a3791494d27a6cdf96b37f59da5180ef43b1b2310255607429cf75
+    Image:         docker.io/robertbartlettbaron/moc-xdmod
+    Image ID:      docker.io/robertbartlettbaron/moc-xdmod@sha256:a135cc7066892105a53b35a507c2bf985dfbcdb71da8b0cfdfc113dd00d0ffd0
+    Port:          8080/TCP
+    Host Port:     0/TCP
+    Command:
+      /usr/bin/xdmod-init
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Fri, 22 Apr 2022 18:35:03 -0400
+      Finished:     Fri, 22 Apr 2022 18:35:03 -0400
+    Ready:          False
+    Restart Count:  11
+    Environment:    <none>
+    Mounts:
+      /mnt/xdmod_conf from xdmod-conf-vol (rw)
+      /mnt/xdmod_src from xdmod-src-vol (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-7pszd (ro)
+Containers:
+  xdmod:
+    Container ID:   
+    Image:          docker.io/robertbarlettbaron/moc-xdmod
+    Image ID:       
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       PodInitializing
+    Ready:          False
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /etc/xdmod from xdmod-conf-vol (rw)
+      /usr/share/xdmod from xdmod-src-vol (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-7pszd (ro)
+Conditions:
+  Type              Status
+  Initialized       False 
+  Ready             False 
+  ContainersReady   False 
+  PodScheduled      True 
+Volumes:
+  xdmod-conf-vol:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  xdmod-conf-pvc
+    ReadOnly:   false
+  xdmod-src-vol:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  xdmod-src-pvc
+    ReadOnly:   false
+  cloud-config-vol:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      cloud-config-configmap
+    Optional:  false
+  kube-api-access-7pszd:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+    ConfigMapName:           openshift-service-ca.crt
+    ConfigMapOptional:       <nil>
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason                  Age                    From                     Message
+  ----     ------                  ----                   ----                     -------
+  Normal   Scheduled               34m                    default-scheduler        Successfully assigned xdmod/moc-xdmod-5bff49b8b7-jd8s2 to os-ctl-1
+  Normal   SuccessfulAttachVolume  34m                    attachdetach-controller  AttachVolume.Attach succeeded for volume "pvc-11c6ebe9-51a1-47f2-bca0-c9d29518a4ad"
+  Normal   SuccessfulAttachVolume  34m                    attachdetach-controller  AttachVolume.Attach succeeded for volume "pvc-81736944-6a35-4dbb-ba30-e789b6467197"
+  Normal   AddedInterface          34m                    multus                   Add eth0 [10.129.0.255/23] from openshift-sdn
+  Normal   Pulled                  33m (x5 over 34m)      kubelet                  Container image "docker.io/robertbartlettbaron/moc-xdmod" already present on machine
+  Normal   Created                 33m (x5 over 34m)      kubelet                  Created container xdmod-init
+  Normal   Started                 33m (x5 over 34m)      kubelet                  Started container xdmod-init
+  Warning  BackOff                 4m18s (x140 over 34m)  kubelet                  Back-off restarting failed container
+
+
+
+  ----- modify the container to not use the init pod ------
+  spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: xdmod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: xdmod
+      namespace: xdmod
+    spec:
+      containers:
+      - image: docker.io/robertbarlettbaron/moc-xdmod
+        imagePullPolicy: Always
+        name: xdmod
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /mnt/xdmod_conf
+          name: xdmod-conf-vol
+        - mountPath: /mnt/xdmod_src
+          name: xdmod-src-vol
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: xdmod-conf-vol
+        persistentVolumeClaim:
+          claimName: xdmod-conf-pvc
+      - name: xdmod-src-vol
+        persistentVolumeClaim:
+          claimName: xdmod-src-pvc
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: clouds.yaml
+            path: clouds.yaml
+          name: cloud-config-configmap
+        name: cloud-config-vol
+status:
+
+----------------------------------------------
+
