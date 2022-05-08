@@ -19,7 +19,10 @@ RUN yum makecache && \
     rsync \
     sudo \
     vim \
-    wget && \
+    wget \
+    rh-python38.x86_64 \
+    python3-pip.noarch \
+    openssh-clients.x86_64 && \
     yum -y install https://repo.ius.io/ius-release-el7.rpm && \
     yum -y install git224 && \
     yum -y remove ius-release && \
@@ -60,15 +63,13 @@ WORKDIR /root
 # This installs a barebones 10.0 instance of XDmod
 RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && mkdir /tmp/supremm \
-    && yum -y install openssh-server openssh-clients pcp pcp-manager pcp-conf pcp-libs python-pcp perl-PCP-PMDA pcp-system-tools pcp-pmda-gpfs pcp-pmda-lustre pcp-pmda-infiniband pcp-pmda-mic pcp-pmda-nvidia-gpu \
-    pcp-pmda-nfsclient pcp-pmda-perfevent pcp-pmda-json python3-devel.x86_64 \
     && pip3 install --upgrade pip \
     && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk mysql-connector-python pexpect
 
 # RPM install of xdmod
 RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm 
 
-COPY ./moc_xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
+COPY ./xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
 RUN rm -f /etc/httpd/conf.d/ssl.conf \
     && rm -f /run/httpd/httpd.pid
 
@@ -87,7 +88,8 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod -R 777 /var/log \
     && chmod -R 777 /var/lib \
     && chmod -R 777 /root \
-    && chmod -R 777 /run/httpd
+    && chmod -R 777 /run/httpd \
+    && chmod -R 777 /etc/xdmod
 
 EXPOSE 8080
 
