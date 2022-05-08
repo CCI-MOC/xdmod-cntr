@@ -4,6 +4,8 @@ import os
 import shutil
 import pexpect
 import time
+import json
+import yaml
 import mysql.connector
 import pprint
 
@@ -72,13 +74,28 @@ def xdmod_setup_database(database):
             {"prompt": "DB Admin Username: \[root\] ", "resp": ""},
             {"prompt": "DB Admin Password: ", "resp": database["admin_password"]},
             {"prompt": "\(confirm\) DB Admin Password: ", "resp": database["admin_password"]},
-            {"prompt": "Database `mod_shredder` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\] ", "resp": "yes", "timeout": 600},
-            {"prompt": "Database `mod_hpcdb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
-            {"prompt": "Database `moddb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
-            {"prompt": "Database `modw` already exists..*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
-            {"prompt": "Database `modw_aggregates` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
-            {"prompt": "Database `modw_filters` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
-            {"prompt": "Database `mod_logger` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600},
+            {
+                "prompt": "Database `mod_shredder` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\] ",
+                "resp": "yes",
+                "timeout": 600,
+                "sleep": 30,
+            },
+            {"prompt": "Database `mod_hpcdb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600, "sleep": 30},
+            {"prompt": "Database `moddb` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600, "sleep": 30},
+            {"prompt": "Database `modw` already exists..*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600, "sleep": 30},
+            {
+                "prompt": "Database `modw_aggregates` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]",
+                "resp": "yes",
+                "timeout": 600,
+                "sleep": 30,
+            },
+            {
+                "prompt": "Database `modw_filters` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]",
+                "resp": "yes",
+                "timeout": 600,
+                "sleep": 30,
+            },
+            {"prompt": "Database `mod_logger` already exists.*\r\nDrop and recreate database \(yes, no\)\? \[.*\]", "resp": "yes", "timeout": 600, "sleep": 30},
             {"prompt": "Overwrite config file '/etc/xdmod/portal_settings.ini' \(yes, no\)\? \[.*\]", "resp": "yes"},
             {"prompt": "Press ENTER to continue.", "resp": ""},
             {"prompt": "Select an option \(1, 2, 3, 4, 5, 6, 7, 8, q\): ", "resp": "q", "timeout": 1200},  # not sure why this takes so long!!!
@@ -123,8 +140,39 @@ def run_pexpect_json(pexpect_json):
             print(f"{setup.before} -->  {prompt_resp['resp']}")
             print(str(e))
             exit(1)
-        time.sleep(0.2)
+        nap_time = 0.2
+        if "sleep" in prompt_resp:
+            nap_time = prompt_resp["sleep"]
+        time.sleep(nap_time)
         setup.sendline(prompt_resp["resp"])
+
+
+def exec_sql(cursor, sql_stmt, params, error_msg):
+    try:
+        cursor.execute(sql_stmt, params)
+    except Exception as e:
+        print(f"{str(e)} \n {error_msg}")
+        exit(1)
+
+
+def exec_fetchall(cursor, sql_stmt, params, error_msg):
+    exec_sql(cursor, sql_stmt, params, error_msg)
+    try:
+        result = cursor.fetchall()
+    except Exception as e:
+        print(f"{str(e)} \n {error_msg}")
+        exit(1)
+    return result
+
+
+def exec_fetchone(cursor, sql_stmt, params, error_msg):
+    exec_sql(cursor, sql_stmt, params, error_msg)
+    try:
+        result = cursor.fetchone()
+    except Exception as e:
+        print(f"{str(e)} \n {error_msg}")
+        exit(1)
+    return result
 
 
 def initialize_database(database, db_list):
@@ -137,112 +185,50 @@ def initialize_database(database, db_list):
     try:
         cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
     except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+        if err.errno == err.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+        elif err.errno == err.ER_BAD_DB_ERROR:
             print("Database does not exist")
         else:
             print(err)
     print("Connected to database ")
     cursor = cnx.cursor()
 
-    try:
-        cursor.execute("select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", (host, acct))
-        user_count = cursor.fetchone()
-    except Exception as e:
-        print(f"failed to fetch user count")
-        exit(1)
+    user_count = exec_fetchone(
+        cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", (host, acct), "failed to fetch user count(1)"
+    )
 
     print(f"    user_count(1) = {user_count}")
     if user_count == 0:
-        try:
-            cursor.execute(f"create user %s@%s identified by %s", (acct, host, password))
-        except Exception as e:
-            print(f"Failed creating user 1: {acct}@{host}/{password}")
-            exit(1)
-    try:
-        cursor.execute("select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", ("%", acct))
-        user_count = cursor.fetchone()
-    except Exception as e:
-        print(f"failed to fetch user count")
-        exit(1)
+        exec_sql(cursor, f"create user %s@%s identified by %s", (acct, host, password), f"Failed creating user 1: {acct}@{host}/{password}")
 
+    user_count = exec_fetchone(
+        cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", ("%", acct), "failed to fetch user count(2)"
+    )
     print(f"    user_count(2) = {user_count}")
     if user_count == 0:
-        try:
-            cursor.execute(f"create user %s@%s identified by %s", (acct, "%", password))
-        except Exception as e:
-            print(f"Failed creating user 2: {acct}@'%'/{password}")
-            exit(1)
+        exec_sql(cursor, f"create user %s@%s identified by %s", (acct, "%", password), f"Failed creating user 1: {acct}@'%'/{password}")
 
-    try:
-        cursor.execute(f"set global sql_mode=''")
-    except Exception as e:
-        print("Failed to set global sql_mode")
-        exit(1)
-
-    try:
-        cursor.execute(f"set local sql_mode=''")
-    except Exception as e:
-        print("Failed to set local sql_mode")
-        exit(1)
+    exec_sql(cursor, "set global sql_mode=''", None, "Failed to set global sql_mode")
+    exec_sql(cursor, "set local sql_mode=''", None, "Failed to set local sql_mode")
 
     print("sql mode set")
-    database_names = []
-    try:
-        cursor.execute("select schema_name from information_schema.schemata")
-        result = cursor.fetchall()
-        for db_name in result:
-            database_names.append(db_name[0])
-    except Exception as e:
-        print(f"Failed fetching databases")
-        exit(1)
+    database_names = exec_fetchall(cursor, "select schema_name from information_schema.schemata", None, "Failed fetching databases")
 
     print(f"database list: ")
     pprint.pprint(database_names)
     for dbname in db_list:
-
         if dbname not in database_names:
-            # create the database
-            try:
-                cursor.execute(f"create database {dbname} default character set 'utf8'")
-            except Exception as e:
-                print(f"Failed creating database: {dbname}")
-                pprint.pprint(e)
-                exit(1)
+            exec_sql(cursor, f"create database {dbname} default character set 'utf8'", None, f"Failed creating database: {dbname}")
+        exec_sql(cursor, f"grant all on {dbname}.* to %s@%s identified by %s", (acct, host, password), f"Failed granting {acct}@{host} on database {dbname}")
+        exec_sql(cursor, f"grant all on {dbname}.* to %s@%s identified by %s", (acct, "%", password), f"Failed granting {acct}@'%' on database {dbname}")
 
-        # grant all on admin and acct
-        try:
-            cursor.execute(f"grant all on {dbname}.* to %s@%s identified by %s", (acct, host, password))
-        except Exception as e:
-            print(f"Failed granting {acct}@{host} on database {dbname}")
-            exit(1)
-
-        try:
-            cursor.execute(f"grant all on {dbname}.* to %s@%s identified by %s", (acct, "%", password))
-        except Exception as e:
-            print(f"Failed granting {acct}@'%' on database {dbname}")
-            exit(1)
-
-    try:
-        cursor.execute("flush privileges")
-    except Exception as e:
-        print(f"Failed to flush privileges")
-        exit(1)
+    exec_sql(cursor, "flush privileges", None, f"Failed to flush privileges")
 
     # check to see if there are any table defined in any of the schemas
     table_count = 0
     for dbname in db_list:
-        try:
-            cursor.execute("select count(*) from information_schema.tables where table_schema=%s", (dbname,))
-        except Exception as e:
-            print(f"Failed to get count tables in xdmod's databases: {str(e)}")
-            exit(1)
-        try:
-            table_count += cursor.fetchone()[0]
-        except Exception as e:
-            print(f"fetchone from cursor failed: {str(e)}")
-            exit(1)
+        table_count += exec_fetchone(cursor, "select count(*) from information_schema.tables where table_schema=%s", (dbname,), "Unable to get table count")
 
     cnx.close()
     print(f"table_count = {table_count}")
@@ -250,26 +236,6 @@ def initialize_database(database, db_list):
 
 
 def main():
-
-    xdmod_init_json = {
-        "admin_account": {
-            "admin_username": "Admin",
-            "admin_password": "pass",
-            "first_name": "ad",
-            "last_name": "min",
-            "email_address": "nobody@massopen.cloud",
-        },
-        "general_settings": {
-            "site_address": "xdmod.apps.nerc-shift-0.rc.fas.harvard.edu",
-            "contact_email_address": "robbaron@bu.edu",
-            "center_logo_path": "",
-            "enable_dashboard": "off",  # on/off
-        },
-        "organization": {"name": "Mass Open Cloud", "abbreviation": "MOC"},
-        "database": {"host": "mariadb", "xdmod_password": "pass", "admin_password": "pass"},
-        "resource": [{"name": "kaizen", "formal_name": "kaizen", "type": "cloud"}],
-    }
-
     if os.path.isdir("/mnt/xdmod_conf"):
         # This can only be on the first init container
         # On the NERC there is a 'lost+found', '.', '..' directories that can be ignored
@@ -279,48 +245,100 @@ def main():
         if len(os.listdir("/mnt/xdmod_conf")) < 5:
             print(" empty directory xdmod_conf found - initializing")
             os.popen("cp -r /etc/xdmod/* /mnt/xdmod_conf")
-            nap_time = 120
+            if os.path.isfile("/root/xdmod_init.json"):
+                os.popen("cp /root/xdmod_init.json /mnt/xdmod_conf/xdmod_init.json")
+            nap_time = 30
 
         # this only exists in development
         if os.path.isdir("/mnt/xdmod_src") and len(os.listdir("/mnt/xdmod_src")) < 5:
             print(" empty directory xdmod_src - inializing")
             os.popen("cp -r /usr/share/xdmod/* /mnt/xdmod_src")
-            nap_time = 120
-        if sleep_time > 0:
+            nap_time = 30
+
+        if os.path.isfile("/root/xdmod_init.json"):
+            print(" copy over xdmod_init.json")
+            os.popen("cp /root/xdmod_init.json /mnt/xdmod_conf")
+            nap_time = 30
+
+        if nap_time > 0:
             print(f" wait {nap_time} seconds for buffers to flush ")
             time.sleep(nap_time)
         return
-    print("Intializing general settings")
-    xdmod_setup_general_settings(xdmod_init_json["general_settings"])
 
-    print("Databases:")
-    db_list = ["mod_shredder", "mod_hpcdb", "moddb", "modw", "modw_aggregates", "modw_filters", "mod_logger", "modw_cloud"]
-    table_count = initialize_database(xdmod_init_json["database"], db_list)
-    print(f"   table_count = {table_count}")
-    init_resources = False
-    if table_count == 0:
-        print("    seting up databases (and resources)")
-        xdmod_setup_database(xdmod_init_json["database"])
+    if os.path.isfile("/etc/xdmod/xdmod_init.json"):
+        print("xdmod_init.json found, attempting to initialize xdmod ")
+        with open("/etc/xdmod/xdmod_init.json") as json_file:
+            xdmod_init_json = json.load(json_file)
+            print("Intializing general settings")
+            xdmod_setup_general_settings(xdmod_init_json["general_settings"])
 
-        # Using the database initialization instead of searching for each resource in the database and only adding the ones that don't exist
-        for resource in xdmod_init_json["resource"]:
-            xdmod_setup_resource(resource)
-            init_resources = True
-    # yet again, should be using the database for this one
-    print("Administrative Account:")
-    xdmod_setup_admin_account(xdmod_init_json["admin_account"])
+            print("Databases:")
+            db_list = ["mod_shredder", "mod_hpcdb", "moddb", "modw", "modw_aggregates", "modw_filters", "mod_logger", "modw_cloud"]
+            table_count = initialize_database(xdmod_init_json["database"], db_list)
+            print(f"   table_count = {table_count}")
 
-    print(" Organization: ")
-    if not os.path.isfile("/etc/xdmod/organizations.json"):
-        # Using the presence of the organization.json file instead of searching for the organization in the database(s)
-        print("    No organization found, initilizing organization")
-        xdmod_setup_organization(xdmod_init_json["organization"])
-        os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
+            if table_count == 0:
+                print("    seting up databases (and resources)")
+                xdmod_setup_database(xdmod_init_json["database"])
 
-    print("Resources: ")
-    if init_resources:
+                print("Administrative Account:")
+                xdmod_setup_admin_account(xdmod_init_json["admin_account"])
+
+            resource_dict = {}
+            if os.path.isfile("/etc/xdmod/resources.json"):
+                with open("/etc/xdmod/resrouces.json") as resource_file:
+                    resources = json.load(resource_file)
+                    for r in resources:
+                        resource_dict[r[resource]].r
+            cloud_conf_dict = {}
+            if os.path.isfile("/root/xdmod_data/.config/openstack/cloud.yaml"):
+                with open("/root/xdmod_data/.config/openstack/cloud.yaml") as cloud_conf_file:
+                    cloud_conf_dict = yaml.load(cloud_conf_file)
+
+            for resource in xdmod_init_json["resource"]:
+                if resource not in resource_dict:
+                    xdmod_setup_resource(resource)  # this has the side effect of updating the resources.json config filef
+                if resource not in cloud_conf_dict and resource["auth_url"]:
+                    # find the app creds or username/password
+                    if os.path.isfile(f"/root/resource/{resource}/client_id") and os.path.isfile(f"/root/resource/{resource}/client_secret"):
+                        with open(f"/root/resource/{resource}/client_id") as f:
+                            client_id = f.readline()
+                        with open(f"/root/resource/{resource}/client_secret") as f:
+                            client_secret = f.readline()
+                        cloud_conf_dict.append(
+                            {
+                                resource: {
+                                    "auth": {
+                                        "auth_url": resource_dict["auth_url"],
+                                        "application_credential_id": client_id,
+                                        "application_credential_secret": client_secret,
+                                    },
+                                    "interface": "public",
+                                    "identity_api_version": 3,
+                                    "auth_type": "v3applicationcredential",
+                                }
+                            }
+                        )
+                        with open("/root/xdmod_data/.config/openstack/cloud.yaml") as f:
+                            yaml.dump(cloud_conf_dict, "/root/xdmod_data/.config/openstack/cloud.yaml")
+                if not os.path.isdir(f"/root/xdmod_data/{resource}"):
+                    os.popen(f"mkdir /root/xdmod_data/{resource}")
+
+            print(" Organization: ")
+            if not os.path.isfile("/etc/xdmod/organization.json"):
+                # Using the presence of the organization.json file instead of searching for the organization in the database(s)
+                print("    No organization found, initilizing organization")
+                xdmod_setup_organization(xdmod_init_json["organization"])
+                os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
+
         print("   Ingesting resources")
+        os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resource-types")
+        os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resources")
+
+        print("  Ingesting Sample data")
+        os.popen("xdmod-shredder --debug -f openstack -d /root/test/openstack -r xdmodtest")
+        os.popen("xdmod-ingestor ")
 
 
 main()
