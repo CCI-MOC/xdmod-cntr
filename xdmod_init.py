@@ -172,7 +172,7 @@ def exec_fetchone(cursor, sql_stmt, params, error_msg):
     except Exception as e:
         print(f"{str(e)} \n {error_msg}")
         exit(1)
-    return result
+    return result[0]
 
 
 def initialize_database(database, db_list):
@@ -215,6 +215,11 @@ def initialize_database(database, db_list):
     print("sql mode set")
     database_names = exec_fetchall(cursor, "select schema_name from information_schema.schemata", None, "Failed fetching databases")
 
+    tmp_database_names = []
+    for item in database_names:
+        tmp_database_names.append(item[0])
+    database_names = tmp_database_names
+
     print(f"database list: ")
     pprint.pprint(database_names)
     for dbname in db_list:
@@ -228,7 +233,11 @@ def initialize_database(database, db_list):
     # check to see if there are any table defined in any of the schemas
     table_count = 0
     for dbname in db_list:
-        table_count += exec_fetchone(cursor, "select count(*) from information_schema.tables where table_schema=%s", (dbname,), "Unable to get table count")
+        count = exec_fetchone(
+            cursor, "select count(*) from information_schema.tables where table_schema=%s", (dbname,), f"Unable to get table count from {dbname}"
+        )
+        pprint.pprint(count)
+        table_count += count
 
     cnx.close()
     print(f"table_count = {table_count}")
@@ -255,9 +264,9 @@ def main():
             os.popen("cp -r /usr/share/xdmod/* /mnt/xdmod_src")
             nap_time = 30
 
-        if os.path.isfile("/root/xdmod_init.json"):
+        if not os.path.isfile("/root/xdmod_init.json"):
             print(" copy over xdmod_init.json")
-            os.popen("cp /root/xdmod_init.json /mnt/xdmod_conf")
+            os.popen("cp /root/xdmod_init/xdmod_init.json /mnt/xdmod_conf")
             nap_time = 30
 
         if nap_time > 0:
@@ -286,19 +295,19 @@ def main():
 
             resource_dict = {}
             if os.path.isfile("/etc/xdmod/resources.json"):
-                with open("/etc/xdmod/resrouces.json") as resource_file:
+                with open("/etc/xdmod/resources.json") as resource_file:
                     resources = json.load(resource_file)
                     for r in resources:
-                        resource_dict[r[resource]].r
+                        resource_dict[r["resource"]] = r
             cloud_conf_dict = {}
             if os.path.isfile("/root/xdmod_data/.config/openstack/cloud.yaml"):
                 with open("/root/xdmod_data/.config/openstack/cloud.yaml") as cloud_conf_file:
                     cloud_conf_dict = yaml.load(cloud_conf_file)
 
             for resource in xdmod_init_json["resource"]:
-                if resource not in resource_dict:
+                if (not resource_dict) or (resource["name"] not in resource_dict):
                     xdmod_setup_resource(resource)  # this has the side effect of updating the resources.json config filef
-                if resource not in cloud_conf_dict and resource["auth_url"]:
+                if ((not cloud_conf_dict) or (resource["name"] not in cloud_conf_dict)) and ("auth_url" in resource):
                     # find the app creds or username/password
                     if os.path.isfile(f"/root/resource/{resource}/client_id") and os.path.isfile(f"/root/resource/{resource}/client_secret"):
                         with open(f"/root/resource/{resource}/client_id") as f:
@@ -321,8 +330,8 @@ def main():
                         )
                         with open("/root/xdmod_data/.config/openstack/cloud.yaml") as f:
                             yaml.dump(cloud_conf_dict, "/root/xdmod_data/.config/openstack/cloud.yaml")
-                if not os.path.isdir(f"/root/xdmod_data/{resource}"):
-                    os.popen(f"mkdir /root/xdmod_data/{resource}")
+                if not os.path.isdir(f"/root/xdmod_data/{resource['name']}"):
+                    os.popen(f"mkdir /root/xdmod_data/{resource['name']}")
 
             print(" Organization: ")
             if not os.path.isfile("/etc/xdmod/organization.json"):
