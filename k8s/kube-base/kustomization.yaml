@@ -10,4 +10,4 @@ resources:
   - svc-mariadb.yaml
   - svc-xdmod.yaml
   - deployment-mariadb.yaml
-  #- deployment-xdmod.yaml
+  - deployment-xdmod.yaml

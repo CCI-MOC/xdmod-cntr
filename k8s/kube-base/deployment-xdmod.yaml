@@ -14,7 +14,7 @@ spec:
         app: xdmod
     spec:
       containers:
-        - image: moc-xdmod
+        - image: docker.io/robertbartlettbaron/moc-xdmod
           name: xdmod
           imagePullPolicy: Never
           ports:
@@ -22,14 +22,17 @@ spec:
           volumeMounts:
             - name: vol-xdmod-conf
               mountPath: /etc/xdmod
+            - name: vol-xdmod-data
+              mountPath: /root/xdmod_data
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
-            - name: vol-cloud-config
-              mountPath: /root/.configure/openstack/clouds.yaml
+            - name: vol-nerc-shift-0-cred
+              readOnly: true
+              mountPath: "/root/resources/nerc_shift_0/"
       initContainers:
-        - image: moc-xdmod
-          name: xdmod-init
-          imagePullPolicy: Always
+        - image: docker.io/robertbartlettbaron/moc-xdmod
+          name: xdmod-init-1
+          imagePullPolicy: IfNotPresent
           command:
             - "/usr/bin/xdmod-init"
           ports:
@@ -39,35 +42,39 @@ spec:
               mountPath: /mnt/xdmod_conf
             - name: vol-xdmod-src
               mountPath: /mnt/xdmod_src
+            - name: vol-xdmod-data
+              mountPath: /root/xdmod_data
             - name: vol-xdmod-init
-              mountPath: /root/xdmod_init.json
-        - image: moc-xdmod
-          name: xdmod-setup
+              mountPath: /root/xdmod_init
+        - image: docker.io/robertbartlettbaron/moc-xdmod
+          name: xdmod-init-2
           imagePullPolicy: Never
           command:
             - "/usr/bin/xdmod-init"
           ports:
             - containerPort: 8080
           volumeMounts:
-            - name: xdmod-conf-vol
+            - name: vol-xdmod-conf
               mountPath: /etc/xdmod
-            - name: xdmod-src-vol
+            - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
-            - name: xdmod-os-app-cred
+            - name: vol-xdmod-data
+              mountPath: /root/xdmod_data
+            - name: vol-nerc-shift-0-cred
               readOnly: true
-              mountPath: "/root/nerc_shift_0/"
+              mountPath: "/root/resources/nerc_shift_0/"
       volumes:
         - name: vol-xdmod-conf
           persistentVolumeClaim:
-            claimName: pvc-xdmod-conf-pvc
+            claimName: pvc-xdmod-conf
         - name: vol-xdmod-src
           persistentVolumeClaim:
             claimName: pvc-xdmod-src
-        - name: vod-xdmod-data
+        - name: vol-xdmod-data
           persistentVolumeClaim:
             claimName: pvc-xdmod-data
-        - name: vod-xdmod-init
-          configmap:
+        - name: vol-xdmod-init
+          configMap:
             items:
               - key: xdmod_init.json
                 path: xdmod_init.json

@@ -299,39 +299,38 @@ def main():
                     for r in resources:
                         resource_dict[r["resource"]] = r
             cloud_conf_dict = {}
-            if os.path.isfile("/root/xdmod_data/.config/openstack/cloud.yaml"):
+            if os.path.isfile("/root/xdmod_data/clouds.yaml"):
                 with open("/root/xdmod_data/.config/openstack/cloud.yaml") as cloud_conf_file:
                     cloud_conf_dict = yaml.load(cloud_conf_file)
 
             for resource in xdmod_init_json["resource"]:
                 if (not resource_dict) or (resource["name"] not in resource_dict):
                     xdmod_setup_resource(resource)  # this has the side effect of updating the resources.json config filef
-                if ((not cloud_conf_dict) or (resource["name"] not in cloud_conf_dict)) and ("auth_url" in resource):
+                if ((not cloud_conf_dict) or (resource["name"] not in cloud_conf_dict["clouds"])) and ("auth_url" in resource):
                     # find the app creds or username/password
-                    if os.path.isfile(f"/root/resource/{resource}/client_id") and os.path.isfile(f"/root/resource/{resource}/client_secret"):
-                        with open(f"/root/resource/{resource}/client_id") as f:
+                    if os.path.isfile(f"/root/resources/{resource['name']}/client_id") and os.path.isfile(f"/root/resources/{resource['name']}/client_secret"):
+                        with open(f"/root/resources/{resource['name']}/client_id") as f:
                             client_id = f.readline()
-                        with open(f"/root/resource/{resource}/client_secret") as f:
+                        with open(f"/root/resources/{resource['name']}/client_secret") as f:
                             client_secret = f.readline()
-                        cloud_conf_dict.append(
-                            {
-                                resource: {
-                                    "auth": {
-                                        "auth_url": resource_dict["auth_url"],
-                                        "application_credential_id": client_id,
-                                        "application_credential_secret": client_secret,
-                                    },
-                                    "interface": "public",
-                                    "identity_api_version": 3,
-                                    "auth_type": "v3applicationcredential",
-                                }
+                        cloud_conf_dict["clouds"] = {
+                            resource["name"]: {
+                                "auth": {
+                                    "auth_url": resource["auth_url"],
+                                    "application_credential_id": client_id,
+                                    "application_credential_secret": client_secret,
+                                },
+                                "interface": "public",
+                                "identity_api_version": 3,
+                                "auth_type": "v3applicationcredential",
                             }
-                        )
-                        with open("/root/xdmod_data/.config/openstack/cloud.yaml") as f:
-                            yaml.dump(cloud_conf_dict, "/root/xdmod_data/.config/openstack/cloud.yaml")
+                        }
+
                 if not os.path.isdir(f"/root/xdmod_data/{resource['name']}"):
                     os.popen(f"mkdir /root/xdmod_data/{resource['name']}")
-
+            if len(cloud_conf_dict) > 0:
+                with open("/root/xdmod_data/clouds.yaml", "w") as f:
+                    yaml.dump(cloud_conf_dict, f)
             # always setup the organization - xdmod requires the organization file to be present in order to run
             print(" Organization ")
             xdmod_setup_organization(xdmod_init_json["organization"])
@@ -342,8 +341,8 @@ def main():
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resources")
 
         print("  Ingesting Sample data")
-        os.popen("xdmod-shredder --debug -f openstack -d /root/test/openstack -r xdmodtest")
-        os.popen("xdmod-ingestor ")
+        os.popen("/usr/bin/xdmod-shredder --debug -f openstack -d /root/test/openstack -r xdmodtest")
+        os.popen("/usr/bin/xdmod-ingestor")
 
 
 main()
