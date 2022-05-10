@@ -16,8 +16,6 @@ RUN yum makecache && \
     postfix \
     rh-nodejs6 \
     rpm-build \
-    rsync \
-    sudo \
     vim \
     wget \
     rh-python38.x86_64 \
