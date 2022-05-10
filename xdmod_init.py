@@ -333,12 +333,9 @@ def main():
                 if not os.path.isdir(f"/root/xdmod_data/{resource['name']}"):
                     os.popen(f"mkdir /root/xdmod_data/{resource['name']}")
 
-            print(" Organization: ")
-            if not os.path.isfile("/etc/xdmod/organization.json"):
-                # Using the presence of the organization.json file instead of searching for the organization in the database(s)
-                print("    No organization found, initilizing organization")
-                xdmod_setup_organization(xdmod_init_json["organization"])
-                os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
+            # always setup the organization - xdmod requires the organization file to be present in order to run
+            print(" Organization ")
+            xdmod_setup_organization(xdmod_init_json["organization"])
 
         print("   Ingesting resources")
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
