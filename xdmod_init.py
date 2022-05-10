@@ -236,7 +236,6 @@ def initialize_database(database, db_list):
         count = exec_fetchone(
             cursor, "select count(*) from information_schema.tables where table_schema=%s", (dbname,), f"Unable to get table count from {dbname}"
         )
-        pprint.pprint(count)
         table_count += count
 
     cnx.close()
