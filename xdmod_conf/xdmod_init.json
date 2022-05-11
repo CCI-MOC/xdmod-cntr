@@ -28,8 +28,8 @@
             "type": "cloud"
         },
         {
-            "name": "nerc_shift_0",
-            "formal_name": "NERC OpenShift Cluster 0",
+            "name": "nerc_openstack",
+            "formal_name": "NERC OpenStack",
             "auth_url": "https://stack.nerc.mghpcc.org:13000",
             "type": "cloud"
         },
