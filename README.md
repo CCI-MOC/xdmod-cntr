@@ -33,10 +33,14 @@ A project to deploy XDMoD on kubernetes/OpenShift.
 
    - not needed for the NERC
 
-    kubectl apply -f ./k8s/kube-base/xdmod-namespace.yaml
+    kubectl apply -f ./k8s/kube-base/ns-xdmod.yaml
 
 6) Load the project into the namespace
 
     kubectl -n xdmod apply -k ./k8s/kube-base
     oc -n xdmod apply -k ./k8s/kube-base
+
+7) Add the route
+
+    oc -n xdmod apply -f ./k8s/kube-base/xdmod-route.yaml
 
