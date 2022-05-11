@@ -300,8 +300,8 @@ def main():
                         resource_dict[r["resource"]] = r
             cloud_conf_dict = {}
             if os.path.isfile("/root/xdmod_data/clouds.yaml"):
-                with open("/root/xdmod_data/cloud.yaml") as cloud_conf_file:
-                    cloud_conf_dict = yaml.load(cloud_conf_file)
+                with open("/root/xdmod_data/clouds.yaml") as cloud_conf_file:
+                    cloud_conf_dict = yaml.load(cloud_conf_file, Loader=yaml.FullLoader)
 
             for resource in xdmod_init_json["resource"]:
                 if (not resource_dict) or (resource["name"] not in resource_dict):
@@ -327,9 +327,16 @@ def main():
                                 }
                             }
                         else:
-                            cloud_conf_dict["clouds"][resource["name"]]["auth"]["auth_url"] = resource["auth_url"]
-                            cloud_conf_dict["clouds"][resource["name"]]["auth"]["application_credential_id"] = client_id
-                            cloud_conf_dict["clouds"][resource["name"]]["auth"]["application_credential_secret"] = client_secret
+                            cloud_conf_dict["clouds"][resource["name"]] = {
+                                "auth": {
+                                    "auth_url": resource["auth_url"],
+                                    "application_credential_id": client_id,
+                                    "application_credential_secret": client_secret,
+                                },
+                                "interface": "public",
+                                "identity_api_version": 3,
+                                "auth_type": "v3applicationcredential",
+                            }
 
                 if not os.path.isdir(f"/root/xdmod_data/{resource['name']}"):
                     os.popen(f"mkdir /root/xdmod_data/{resource['name']}")
