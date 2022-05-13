@@ -8,10 +8,77 @@ import logging
 import datetime
 import openstack
 import copy
+import os
 from novaclient import client as nova_client
 from cinderclient import client as cinder_client
 from keystoneclient import client as keystone_client
 import pprint
+
+# Not sure if this is necessary as they don't seem to be filling this out!
+event_types = [
+    ["openstack_event_type_id", "event_type_id", "openstack_event_type"],
+    [-1, -1, "unknown"],
+    [1, 1, "compute.instance.create.start"],
+    [2, 2, "compute.instance.create.end"],
+    [3, 3, "compute.instance.shutdown.start"],
+    [4, 4, "compute.instance.shutdown.end"],
+    [5, 5, "compute.instance.delete.start"],
+    [6, 6, "compute.instance.delete.end"],
+    [7, 10, "compute.instance.volume.attach"],
+    [8, 11, "volume.attach.end"],
+    [9, 12, "compute.instance.volume.detach"],
+    [10, 16, "compute.instance.exists"],
+    [11, 19, "compute.instance.shelve_offload.end"],
+    [12, 21, "volume.detach.start"],
+    [13, 22, "volume.detach.end"],
+    [14, 23, "volume.create.start"],
+    [15, 24, "volume.create.end"],
+    [16, 25, "volume.update.start"],
+    [17, 26, "volume.update.end"],
+    [18, 27, "volume.attach.start"],
+    [19, 28, "volume.delete.start"],
+    [20, 29, "volume.delete.end"],
+    [21, 30, "volume_type.create"],
+    [23, 31, "image.activate"],
+    [24, 32, "image.create"],
+    [25, 33, "image.delete"],
+    [26, 34, "image.prepare"],
+    [27, 35, "image.update"],
+    [28, 36, "image.upload"],
+    [29, 37, "snapshot.create.start"],
+    [30, 38, "snapshot.create.end"],
+    [31, 39, "snapshot.delete.start"],
+    [32, 40, "snapshot.delete.end"],
+    [33, 41, "compute.instance.create.error"],
+    [34, 42, "compute.instance.finish_resize.start"],
+    [35, 43, "compute.instance.finish_resize.end"],
+    [36, 44, "compute.instance.power_off.start"],
+    [37, 45, "compute.instance.power_off.end"],
+    [38, 46, "compute.instance.rebuild.start"],
+    [39, 47, "compute.instance.rebuild.end"],
+    [40, 48, "compute.instance.resize.confirm.start"],
+    [41, 49, "compute.instance.resize.confirm.end"],
+    [42, 50, "compute.instance.resize.start"],
+    [43, 51, "compute.instance.resize.end"],
+    [44, 52, "compute.instance.resize.prep.start"],
+    [45, 53, "compute.instance.resize.prep.end"],
+    [46, 64, "compute.instance.shelve_offload.start"],
+    [47, 7, "compute.instance.resume.start"],
+    [48, 8, "compute.instance.resume.end"],
+    [49, 58, "compute.instance.power_on.start"],
+    [50, 59, "compute.instance.power_on.end"],
+    [51, 20, "compute.instance.unshelve.end"],
+    [52, 57, "compute.instance.unpause.end"],
+    [53, 61, "compute.instance.unsuspend.end"],
+    [54, 17, "compute.instance.suspend.end"],
+    [55, 55, "compute.instance.pause.end"],
+    [56, 62, "compute.instance.suspend.start"],
+    [57, 60, "compute.instance.unsuspend.start"],
+    [58, 56, "compute.instance.unpause.start"],
+    [59, 63, "compute.instance.unshelve.start"],
+    [60, 54, "compute.instance.pause.start"],
+]
+
 
 # kaizen-admin server list --all-projects
 # | ID                                   | Name       | Status | Networks                                                                          | Image                                            | Flavor                  |
@@ -144,9 +211,9 @@ def build_event_item(event, vm, volume):
         "event_time": event.start_time,  # Time that event happened,
         "instance_type": {
             "name": vm.id,  # Name of VM,   --  the instance id
-            "cpu": vm.vcpus,  # Number of CPU's the instance has,
-            "memory": vm.ram,  # Amount of memory the instance has,
-            "disk": vm.disk,  # Amount of storage space in GB this instance has,
+            "cpu": str(vm.vcpus),  # Number of CPU's the instance has,
+            "memory": str(vm.ram),  # Amount of memory the instance has,
+            "disk": str(vm.disk),  # Amount of storage space in GB this instance has,
             "networkInterfaces": network_interfaces,  # Number of network interfaces
         },
         "image_type": vm.image,  # Name of the type of image this instance uses,
@@ -175,7 +242,7 @@ def build_event_item(event, vm, volume):
             "create_time": vol.created_at,  # "Time the storage device was created",
             "user": vol.user_id,  # "User that the storage device was created by",
             "id": vol.id,  # "ID of the storage volume",
-            "size": vol.size,  # "Size in GB of the storage volume"
+            "size": str(vol.size),  # "Size in GB of the storage volume"
         }
         event_item["block_devices"].append(volume_data)
 
@@ -253,24 +320,61 @@ def build_event_item(event, vm, volume):
 #     "vcpus": "1",
 # }
 
-# 'compute.instance.create.start': 1,
-# 'compute.instance.create.error': 1,
-# compute.instance.create.end': 1,
-# 'compute.instance.shutdown.start'
-# 'compute.instance.shutdown.end': 1,
-# compute.instance.delete.start': 1,
-# compute.instance.live_migration._post.end': 1,
-# compute.instance.live_migration._post.start': 1,
-# compute.instance.live_migration.post.dest.end': 1,
-# compute.instance.live_migration.post.dest.start': 1,
-# compute.instance.live_migration.pre.end': 1,
-# compute.instance.live_migration.pre.start': 1,
-# compute.instance.power_off.end': 1,
-# compute.instance.power_off.start': 1,
-# compute.instance.power_on.start': 1,
-# compute.instance.power_on.end': 1,
-# compute.instance.shutdown.end': 1,
-# compute.instance.shutdown.start
+
+def convt_to_ceilometer_event_types(event):
+    map_current_to_old = {
+        "compute.instance.stop": "compute.instance.power_off",
+        "compute.instance.start": "compute.instance.power_on",
+    }
+    ceilometer_event_types = {
+        # these messages are reported from compute events
+        # "compute.instance.live-migration": [""],
+        # "compute.instance.detach_volume": [""],
+        # "compute.instance.stop": [""],
+        # "compute.instance.start": [""],
+        # "compute.instance.attach_volume": [""],
+        # "compute.instance.reboot": [""],
+        # "compute.instance.createImage": [""],
+        # "compute.instance.confirmResize": [""],
+        # "compute.instance.migrate": [""],
+        # "compute.instance.resume": [""],
+        # "compute.instance.suspend": [""],
+        # "compute.instance.unshelve": [""],
+        # "compute.instance.shelve": [""],
+        # "compute.instance.unpause": [""],
+        # "compute.instance.pause": [""],
+        # "compute.instance.evacuate": [""],
+        # "compute.instance.attach_interface": [""],
+        # "compute.instance.unlock": [""],
+        # "compute.instance.lock": [""],
+        # "compute.instance.detach_interface": [""],
+        # "compute.instance.rebuild": [""],
+        # "compute.instance.resize": [""],
+        # These events are from the reference file
+        "compute.instance.create": ["start", "end"],
+        "compute.instance.delete": ["start", "end"],  # does this one have a "end"?
+        # "compute.instance.live_migration._post": ["start", "end"],
+        # "compute.instance.live_migration.post.dest": ["start", "end"],
+        # "compute.instance.live_migration.pre": ["start", "end"],
+        "compute.instance.power_off": ["start", "end"],
+        "compute.instance.power_on": ["start", "end"],
+        "compute.instance.shutdown": ["start", "end"],
+    }
+    if event["event_type"] == "compute.instance.create" and event["state"] == "ERROR":
+        event["event_type"] = "compute.instance.create.error"
+        return [event]
+    if event["event_type"] in map_current_to_old:
+        event["event_type"] = map_current_to_old[event["event_type"]]
+    if event["event_type"] in ceilometer_event_types:
+        ret_list = []
+        for e in ceilometer_event_types:
+            new_event = copy.deepcopy(event)
+            new_event["event_type"] = f"{new_event['event_type']}.{e}"
+            ret_list.append(new_event)
+        return ret_list
+    return []
+    # print(f"unknowned event_type {event['event_type']}")
+    # return [event]
 
 
 def compile_server_state(server, project_dict, flavor_dict, user_dict):
@@ -293,33 +397,38 @@ def compile_server_state(server, project_dict, flavor_dict, user_dict):
     server_state = {
         # "audit_period_beginning": start_ts,   --- only add for compute.instance.exists (either active or deleted)
         # "audit_period_ending": "end_ts",
-        "disk_gb": flavor_dict[server.flavor["id"]]["disk"],
+        "disk_gb": str(flavor_dict[server.flavor["id"]]["disk"]),
         "domain": project_dict[server.tenant_id]["domain_id"],
-        "ephemeral_gb": flavor_dict[server.flavor["id"]]["ephemeral"],
+        "ephemeral_gb": str(flavor_dict[server.flavor["id"]]["ephemeral"]),
+        # These 2 are filled out below
         # "event_type": event_type,
         # "generated": end_ts,
         "host": host,
         "instance_id": server.id,
         "instance_type": flavor_dict[server.flavor["id"]]["name"],
-        "instance_type_id": server.flavor["id"],
+        # what this should be
+        #   "instance_type_id": server.flavor["id"],
+        # what xdmod is expecting:
+        "instance_type_id": "9",
         "launched_at": launched_ts,
         # "deleted_at": terminated_ts,
-        "memory_mb": flavor_dict[server.flavor["id"]]["ram"],
+        "memory_mb": str(flavor_dict[server.flavor["id"]]["ram"]),
         # Probably unknowable - I suspect this is what ceilometer adds.
         # "message_id": "17d6645e-90f9-481e-9751-f8ec3b9397a2",
         "project_id": server.tenant_id,
         "project_name": project_dict[server.tenant_id]["name"],
         "raw": {},
-        # Not sure about these 2 either.
+        # request_id can be NULL
         # "request_id": "req-00b3079e-8cb1-4e63-aa6f-f96fcbd4771c",
-        # "resource_id": "703608ed-0b5c-4968-ba93-30f081bf7aec",
-        "root_gb": flavor_dict[server.flavor["id"]]["disk"],
+        # For compute evens, resource_id is the instance id
+        "resource_id": server.id,
+        "root_gb": str(flavor_dict[server.flavor["id"]]["disk"]),
         "service": "compute",
         "state": server.status,
         "tenant_id": server.tenant_id,
         "user_id": server.user_id,
         "user_name": user_name,
-        "vcpus": flavor_dict[server.flavor["id"]]["vcpus"],
+        "vcpus": str(flavor_dict[server.flavor["id"]]["vcpus"]),
     }
     if terminated_ts is not None:
         server_state["deleted_at"] = terminated_ts
@@ -329,11 +438,29 @@ def compile_server_state(server, project_dict, flavor_dict, user_dict):
 def build_event(server_state, event):
     server_event = copy.deepcopy(server_state)
     if event["event_type"] == "compute.instance.exists":
-        server_event["audit_period_beginning"] = copy.copy(event["start_ts"])
-        server_event["audit_period_ending"] = copy.copy(event["event_time"])
+        server_event["audit_period_beginning"] = copy.copy(event["audit_period_start"])
+        server_event["audit_period_ending"] = copy.copy(event["audit_period_end"])
     server_event["event_type"] = copy.copy(event["event_type"])
     server_event["generated"] = copy.copy(event["event_time"])
     return server_event
+
+
+def get_session_for_resource(resource):
+    auth_url = resource.get_attribute(attributes.RESOURCE_AUTH_URL)
+    # Note: Authentication for a specific OpenStack cloud is stored in env
+    # variables of the form OPENSTACK_{RESOURCE_NAME}_APPLICATION_CREDENTIAL_ID
+    # and OPENSTACK_{RESOURCE_NAME}_APPLICATION_CREDENTIAL_SECRET
+    # where resource name is has spaces replaced with underscored and is
+    # uppercase.
+    # This allows for the possibility of managing multiple OpenStack clouds
+    # via multiple resources.
+    var_name = resource.name.replace(" ", "_").replace("-", "_").upper()
+    auth = v3.ApplicationCredential(
+        auth_url=auth_url,
+        application_credential_id=os.environ.get(f"OPENSTACK_{var_name}_APPLICATION_CREDENTIAL_ID"),
+        application_credential_secret=os.environ.get(f"OPENSTACK_{var_name}_APPLICATION_CREDENTIAL_SECRET"),
+    )
+    return session.Session(auth, verify=os.environ.get("FUNCTIONAL_TESTS", "") != "True")
 
 
 def main():
@@ -343,7 +470,7 @@ def main():
     do_parse_args(config)
     do_read_config(config)
 
-    openstack_conn = openstack.connect(cloud="admin-kaizen")
+    openstack_conn = openstack.connect(cloud=config["cloud"])
     openstack_nova = nova_client.Client(2, session=openstack_conn.session)
     openstack_cinder = cinder_client.Client(3, session=openstack_conn.session)
     openstack_keystone = keystone_client.Client(3, session=openstack_conn.session)
@@ -385,32 +512,38 @@ def main():
 
     events = []
     server_dict = {}
+    ap_t = datetime.datetime.strptime(script_timestamp, date_format_str)
     for server in openstack_nova.servers.list(search_opts={"all_tenants": True}, detailed=True):
         server_dict[server.id] = compile_server_state(server, project_dict, flavor_dict, user)
         event_data = {"event_type": "compute.instance.exists", "event_time": script_timestamp}
+        if server_t < ap_t:
+            ap_t = server_t
+        if server.id in vm_timestamps:
+            event_data["start_ts"] = vm_timestamps[server.id]
+
         if server.status == "ACTIVE" or server.status == "DELETED":
+            event_data["audit_period_start"] = server.created
+            event_data["audit_period_end"] = script_timestamp
             event_data["start_ts"] = server.created
-            if server.id in vm_timestamps:
-                event_data["start_ts"] = vm_timestamps[server.id]
+            server_t = datetime.datetime.strptime(server.created, "%Y-%m-%dT%H:%M:%SZ")
             events.append(build_event(server_dict[server.id], event_data))
             if server.status == "deleted":
                 del vm_timestamps[server.id]
 
     for server_id, server in server_dict.items():
-
         # Only get the data since we last ran the script
         # event_list = openstack_nova.instance_action.list(server_id, changes_since=last_timestamp, changes_before=script_timestamp)
         # event_list = openstack_nova.instance_action.list(server_id, changes_since=None, changes_before=None)
         event_list = openstack_nova.instance_action.list(server_id)
         for event in event_list:
-            if len(event_list) > 1:
-                print("got here")
             event_data = {
+                "audit_period_start": ap_t.strftime(date_format_str),
+                "audit_period_end": script_timestamp,
                 "event_type": f"compute.instance.{event.action}",
                 "event_time": event.start_time,
                 "request_id": event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
             }
-            events.append(build_event(server, event_data))
+            events += convt_to_ceilometer_event_types(build_event(server, event_data))
             if server_id not in vm_timestamps:
                 vm_timestamps[server_id] = {}
             vm_timestamps[server_id]["timestamp"] = event_data["event_time"]
@@ -426,6 +559,9 @@ def main():
             del vm_timestamps[key]
         else:
             del vm_timestamps[key]["updated"]
+
+    with open("user.csv", "w+", encoding="utf-8") as file:
+        print(f"{user.name}, , ")
 
     api_reporting_state = {"last_run_timestamp": last_run_timestamp, "vm_timestamps": vm_timestamps}
     with open("last_report_time.json", "w+", encoding="utf-8") as file:
