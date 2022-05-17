@@ -16,7 +16,6 @@ RUN yum makecache && \
     postfix \
     rh-nodejs6 \
     rpm-build \
-    vim \
     wget \
     rh-python38.x86_64 \
     python3-pip.noarch \
@@ -58,7 +57,7 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" &&
 
 WORKDIR /root
 
-# This installs a barebones 10.0 instance of XDmod
+# the python clients required to connect to openstack
 RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && mkdir /tmp/supremm \
     && pip3 install --upgrade pip \
@@ -67,7 +66,7 @@ RUN mkdir -p /root/rpmbuild/RPMS/noarch \
 # RPM install of xdmod
 RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm 
 
-COPY ./xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
+#COPY ./xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
 RUN rm -f /etc/httpd/conf.d/ssl.conf \
     && rm -f /run/httpd/httpd.pid
 
