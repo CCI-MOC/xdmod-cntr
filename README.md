@@ -20,14 +20,21 @@ A project to deploy XDMoD on kubernetes/OpenShift.
 
     for minikube:
         minikube image build --logtostderr -f Dockerfile.moc-xdmod -t moc-xdmod .
+        minikube image build --logtostderr -f Dcokerfile.moc-xdmod.dev -t moc-xdmod-dev .
 
     for openshift
-        docker build -f Dockerfile.moc-xdmod -t moc-xdmod .
+        oc -n xdmod apply -k k8s/xdmod-build
+        oc start-build bc-moc-xdmod
+        oc start-build bc-moc-xdmod-dev
 
 4) create the necessary configmaps/secrets
      
     kubectl create cm --from-file xdmod_conf/xdmod_init.json cm-xdmod-init-json 
     oc create cm --from-file xdmod_conf/xdmod_init.json cm-xdmod-init-json 
+
+    kubectl create cm --from-file xdmod_conf/httpd.conf cm-httpd-conf
+    oc create cm --from-file xdmod_conf/httpd.conf cm-httpd-conf
+
 
 5) Create the namespace (project) - use kubectl for minikube, or oc for openshift 
 

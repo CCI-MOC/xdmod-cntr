@@ -1,0 +1,20 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: bc-xdmod-dev
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/CCI-MOC/xdmod-cntr.git
+      ref: XdmodK8sDeployment
+    contextDir: /
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.moc-xdmod.dev
+  output:
+    to:
+      kind: ImageStreamTag
+      name: moc-xdmod-dev:latest
