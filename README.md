@@ -30,7 +30,7 @@ A project to deploy XDMoD on kubernetes/OpenShift.
 4)  Set the values in the file xdmod-conf/xdmod_init.json
 
         {
-            "server_name": "xdmod.apps.nerc-shift-0.rc.fas.harvard.edu:8080",
+            "server_name": "kubernetes address",
             "admin_account": {
                 "admin_username": "Admin",
                 "admin_password": "pass",
@@ -62,12 +62,13 @@ A project to deploy XDMoD on kubernetes/OpenShift.
                 {
                     "name": "nerc-openstack",
                     "formal_name": "NERC OpenShift Cluster 0",
-                    "Auth_URL": "https://stack.nerc.mghpcc.org:13000",
+                    
                     "type": "cloud"
                 },
                 {
                     "name": "kaizen",
                     "formal_name": "MOC Kaizen",
+                    "Auth_URL": "Open stack's Auth URL",
                     "type": "cloud"
                 }
             ]
