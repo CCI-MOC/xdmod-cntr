@@ -250,11 +250,13 @@ def main():
         #     the simplest check is to see that the directory contains less than 5 items
         print("Found /mnt/xdmod* ")
         nap_time = 0
-        if len(os.listdir("/mnt/xdmod_conf")) < 5:
-            print(" empty directory xdmod_conf found - initializing")
-            os.popen("cp -r /etc/xdmod/* /mnt/xdmod_conf")
+        if len(os.listdir("/mnt/xdmod_etc")) < 5:
+            print(" empty directory xdmod_etc found - initializing")
+            os.popen("cp -r /etc/* /mnt/xdmod_etc")
             if os.path.isfile("/root/xdmod_init.json"):
-                os.popen("cp /root/xdmod_init.json /mnt/xdmod_conf/xdmod_init.json")
+                os.popen("cp /root/xdmod_init.json /mnt/xdmod_etc/xdmod/xdmod_init.json")
+            if os.path.isfile("/root/httpd.conf"):
+                os.popen("cp /root/httpd.conf /etc/httpd/conf/httpd.conf")
             nap_time = 30
 
         # this only exists in development
@@ -299,8 +301,8 @@ def main():
                     for r in resources:
                         resource_dict[r["resource"]] = r
             cloud_conf_dict = {}
-            if os.path.isfile("/root/xdmod_data/clouds.yaml"):
-                with open("/root/xdmod_data/clouds.yaml") as cloud_conf_file:
+            if os.path.isfile("/etc/openstack/clouds.yaml"):
+                with open("/etc/openstack/clouds.yaml") as cloud_conf_file:
                     cloud_conf_dict = yaml.load(cloud_conf_file, Loader=yaml.FullLoader)
 
             for resource in xdmod_init_json["resource"]:
@@ -341,7 +343,7 @@ def main():
                 if not os.path.isdir(f"/root/xdmod_data/{resource['name']}"):
                     os.popen(f"mkdir /root/xdmod_data/{resource['name']}")
             if len(cloud_conf_dict) > 0:
-                with open("/root/xdmod_data/clouds.yaml", "w") as f:
+                with open("/etc/openstack/clouds.yaml", "w") as f:
                     yaml.dump(cloud_conf_dict, f)
             # always setup the organization - xdmod requires the organization file to be present in order to run
             print(" Organization ")
