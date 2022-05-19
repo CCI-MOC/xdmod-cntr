@@ -6,6 +6,7 @@ import json
 import argparse
 import logging
 import datetime
+import re
 import openstack
 import copy
 import os
@@ -14,7 +15,11 @@ from cinderclient import client as cinder_client
 from keystoneclient import client as keystone_client
 import pprint
 
-# Not sure if this is necessary as they don't seem to be filling this out!
+# constants
+DATE_FORMAT_STR = "%Y-%m-%dT%H:%M:%S"
+
+# This is the mapping from xdmod of the openstack events that they
+# handle to the native xdmod event types
 event_types = [
     ["openstack_event_type_id", "event_type_id", "openstack_event_type"],
     [-1, -1, "unknown"],
@@ -162,7 +167,7 @@ def do_parse_args(config):
     if args.start:
         config["start"] = args.start
 
-    config["end"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+    config["end"] = datetime.datetime.utcnow().isoformat()
     if args.end:
         config["end"] = args.end
 
@@ -225,16 +230,19 @@ def build_event_item(event, vm, volume):
     }
 
     vm_volumes = []
-    if "os-extended-volumes:volumes_attached" in vm.to_dict():
-        vm_volumes = vm.__getattribute__("os-extended-volumes:volumes_attached")
+    # if "os-extended-volumes:volumes_attached" in vm.to_dict():
+    #     vm_volumes = vm.__getattribute__("os-extended-volumes:volumes_attached")
+    vm_volumes = getattr(vm, "os-extended-volumes:volumes_attached", [])
     for volume_id in vm_volumes:
         vol = volume[volume_id["id"]]
         vol_project_id = ""
-        if "os-vol-tenant-attr:tenant_id" in vol.to_dict():
-            vol_project_id = vol.__getattribute__("os-vol-tenant-attr:tenant_id")
+        # if "os-vol-tenant-attr:tenant_id" in vol.to_dict():
+        #     vol_project_id = vol.__getattribute__("os-vol-tenant-attr:tenant_id")
+        vol_project_id = vol.getattribute("os-vol-tenant-attr:tenant_id", [])
         backing = ""
-        if "os-vol-host-attr:host" in vol.to_dict():
-            backing = vol.__getattribute__("os-vol-host-attr:host")
+        # if "os-vol-host-attr:host" in vol.to_dict():
+        #    backing = vol.__getattribute__("os-vol-host-attr:host")
+        backing = vol.getattribute("os-vol-host-attr:host", [])
         volume_data = {
             "account": vol_project_id,  # "Account that the storage device belongs to",
             "attach_time": "",  # "Time that the storage device was attached to this instance",
@@ -321,11 +329,12 @@ def build_event_item(event, vm, volume):
 # }
 
 
-def convt_to_ceilometer_event_types(event):
+def convert_to_ceilometer_event_types(event):
     map_current_to_old = {
         "compute.instance.stop": "compute.instance.power_off",
         "compute.instance.start": "compute.instance.power_on",
     }
+
     ceilometer_event_types = {
         # these messages are reported from compute events
         # "compute.instance.live-migration": [""],
@@ -367,10 +376,14 @@ def convt_to_ceilometer_event_types(event):
         event["event_type"] = map_current_to_old[event["event_type"]]
     if event["event_type"] in ceilometer_event_types:
         ret_list = []
+        delta_time = 0
+        time_0 = datetime.datetime.fromisoformat(event["generated"])
         for e in ceilometer_event_types:
             new_event = copy.deepcopy(event)
             new_event["event_type"] = f"{new_event['event_type']}.{e}"
+            new_event["generated"] = (time_0 + datetime.timedelta(seconds=delta_time)).isoformat()
             ret_list.append(new_event)
+            delta_time += 10
         return ret_list
     return []
     # print(f"unknowned event_type {event['event_type']}")
@@ -380,14 +393,17 @@ def convt_to_ceilometer_event_types(event):
 def compile_server_state(server, project_dict, flavor_dict, user_dict):
     """This one is implied.  We can tell this from the state of the VM"""
     launched_ts = None
-    if "OS-SRV-USG:launched_at" in server.to_dict():
-        launched_ts = server.__getattribute__("OS-SRV-USG:launched_at")
+    # if "OS-SRV-USG:launched_at" in server.to_dict():
+    #    launched_ts = server.__getattribute__("OS-SRV-USG:launched_at")
+    launched_ts = getattr(server, "OS-SRV-USG:launched_at", "")
     host = None
-    if "OS-EXT-SRV-ATTR:host" in server.to_dict():
-        host = server.__getattribute__("OS-EXT-SRV-ATTR:host")
+    # if "OS-EXT-SRV-ATTR:host" in server.to_dict():
+    #     host = server.__getattribute__("OS-EXT-SRV-ATTR:host")
+    host = getattr(server, "OS-EXT-SRV-ATTR:host", None)
     terminated_ts = None
-    if "OS-SRV-USG:terminated_at" in server.to_dict():
-        terminated_ts = server.__getattribute__("OS-SRV-USG:terminated_at")
+    # if "OS-SRV-USG:terminated_at" in server.to_dict():
+    #     terminated_ts = server.__getattribute__("OS-SRV-USG:terminated_at")
+    terminated_ts = getattr(server, "OS-SRV-USG:terminated_at", "")
     user_name = "unknown user"
     if server.user_id in user_dict:
         user_name = user_dict[server.user_id]["name"]
@@ -445,39 +461,22 @@ def build_event(server_state, event):
     return server_event
 
 
-def get_session_for_resource(resource):
-    auth_url = resource.get_attribute(attributes.RESOURCE_AUTH_URL)
-    # Note: Authentication for a specific OpenStack cloud is stored in env
-    # variables of the form OPENSTACK_{RESOURCE_NAME}_APPLICATION_CREDENTIAL_ID
-    # and OPENSTACK_{RESOURCE_NAME}_APPLICATION_CREDENTIAL_SECRET
-    # where resource name is has spaces replaced with underscored and is
-    # uppercase.
-    # This allows for the possibility of managing multiple OpenStack clouds
-    # via multiple resources.
-    var_name = resource.name.replace(" ", "_").replace("-", "_").upper()
-    auth = v3.ApplicationCredential(
-        auth_url=auth_url,
-        application_credential_id=os.environ.get(f"OPENSTACK_{var_name}_APPLICATION_CREDENTIAL_ID"),
-        application_credential_secret=os.environ.get(f"OPENSTACK_{var_name}_APPLICATION_CREDENTIAL_SECRET"),
-    )
-    return session.Session(auth, verify=os.environ.get("FUNCTIONAL_TESTS", "") != "True")
-
-
 def main():
     """The main function"""
     config = {}
 
     do_parse_args(config)
     do_read_config(config)
-
-    openstack_conn = openstack.connect(cloud=config["cloud"])
+    if "cloud" in config:
+        openstack_conn = openstack.connect(cloud=config["cloud"])
+    else:
+        print("Please specify an OpenStack cloud using --cloud <cloud name> ")
+        exit()
     openstack_nova = nova_client.Client(2, session=openstack_conn.session)
     openstack_cinder = cinder_client.Client(3, session=openstack_conn.session)
-    openstack_keystone = keystone_client.Client(3, session=openstack_conn.session)
 
     script_timestamp = config["end"]
-    date_format_str = "%Y-%m-%dT%H:%M:%S"
-    last_run_timestamp = (datetime.datetime.strptime(script_timestamp, date_format_str) - datetime.timedelta(hours=1)).strftime(date_format_str)
+    last_run_timestamp = None
     vm_timestamps = {}
     try:
         with open("vm_last_report_time.json", "r", encoding="utf-8") as file:
@@ -512,12 +511,14 @@ def main():
 
     events = []
     server_dict = {}
-    ap_t = datetime.datetime.strptime(script_timestamp, date_format_str)
+    min_event_time = datetime.datetime.fromisoformat(script_timestamp)
     for server in openstack_nova.servers.list(search_opts={"all_tenants": True}, detailed=True):
         server_dict[server.id] = compile_server_state(server, project_dict, flavor_dict, user)
         event_data = {"event_type": "compute.instance.exists", "event_time": script_timestamp}
-        if server_t < ap_t:
-            ap_t = server_t
+        server_t = datetime.datetime.strptime(server.created, "%Y-%m-%dT%H:%M:%SZ")
+
+        if server_t < min_event_time:
+            min_event_time = server_t
         if server.id in vm_timestamps:
             event_data["start_ts"] = vm_timestamps[server.id]
 
@@ -525,37 +526,50 @@ def main():
             event_data["audit_period_start"] = server.created
             event_data["audit_period_end"] = script_timestamp
             event_data["start_ts"] = server.created
-            server_t = datetime.datetime.strptime(server.created, "%Y-%m-%dT%H:%M:%SZ")
             events.append(build_event(server_dict[server.id], event_data))
             if server.status == "deleted":
                 del vm_timestamps[server.id]
 
+    if not last_run_timestamp:
+        last_run_timestamp = min_event_time.isoformat()
+    last_run_datetime = datetime.datetime.fromisoformat(last_run_timestamp)
+
+    events_by_date = {}
     for server_id, server in server_dict.items():
-        # Only get the data since we last ran the script
-        # event_list = openstack_nova.instance_action.list(server_id, changes_since=last_timestamp, changes_before=script_timestamp)
-        # event_list = openstack_nova.instance_action.list(server_id, changes_since=None, changes_before=None)
-        event_list = openstack_nova.instance_action.list(server_id)
-        for event in event_list:
-            event_data = {
-                "audit_period_start": ap_t.strftime(date_format_str),
-                "audit_period_end": script_timestamp,
-                "event_type": f"compute.instance.{event.action}",
-                "event_time": event.start_time,
-                "request_id": event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
-            }
-            events += convt_to_ceilometer_event_types(build_event(server, event_data))
-            if server_id not in vm_timestamps:
-                vm_timestamps[server_id] = {}
-            vm_timestamps[server_id]["timestamp"] = event_data["event_time"]
-            vm_timestamps[server_id]["updated"] = 1
+        # I'm getting a error with this statement
+        # openstack_event_list = openstack_nova.instance_action.list(server_id, changes_since=last_run_timestamp, changes_before=script_timestamp)
+        openstack_event_list = openstack_nova.instance_action.list(server_id)
+        for event in openstack_event_list:
+            event_time = datetime.datetime.fromisoformat(event.start_time)
+            if last_run_datetime <= event_time and event_time < script_timestamp:
+                event_data = {
+                    "audit_period_start": last_run_timestamp,
+                    "audit_period_end": script_timestamp,
+                    "event_type": f"compute.instance.{event.action}",
+                    "event_time": event.start_time,
+                    "request_id": event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
+                }
+                event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
 
-    json_out = f"{config['outdir']}/{last_run_timestamp}_{script_timestamp}.json"
-    with open(json_out, "w+", encoding="utf-8") as outfile:
-        json.dump(events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
-    print(f"output file: {json_out}")
+                for e in event_list:
+                    event_timestamp = datetime.datetime.fromisoformat(e["generated"]).replace(hour=0, minute=0, second=0).isoformat()
+                    events_by_date[event_timestamp] = e
 
-    for key, val in vm_timestamps.items():
-        if val["updated"] == 0:
+                if server_id not in vm_timestamps:
+                    vm_timestamps[server_id] = {}
+                vm_timestamps[server_id]["timestamp"] = event_data["event_time"]
+                vm_timestamps[server_id]["updated"] = 1
+
+    for d1, daily_events in events_by_date.items():
+        d2 = (datetime.datetime.fromisoformat(d1) + datetime.timedelta(days=1)).isoformat()
+        json_out = f"{config['outdir']}/{d1}_{d2}.json"
+        with open(json_out, "w+", encoding="utf-8") as outfile:
+            json.dump(events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
+        print(f"output file: {json_out}")
+
+    vm_keys = vm_timestamps.keys()
+    for key in vm_keys:
+        if vm_timestamps[key]["updated"] == 0:
             del vm_timestamps[key]
         else:
             del vm_timestamps[key]["updated"]
