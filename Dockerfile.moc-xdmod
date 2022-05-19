@@ -70,8 +70,6 @@ RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdm
 RUN rm -f /etc/httpd/conf.d/ssl.conf \
     && rm -f /run/httpd/httpd.pid
 
-COPY ./test_data/openstack.2018-04-17T00:00:00_2018-04-30T23:59:59.json /root/test/openstack/2018-04-17T00:00:00_2018-04-30T23:59:59.json
-
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
