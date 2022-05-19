@@ -476,6 +476,7 @@ def main():
     openstack_cinder = cinder_client.Client(3, session=openstack_conn.session)
 
     script_timestamp = config["end"]
+    script_datetime = datetime.datetime.fromisoformat(script_timestamp)
     last_run_timestamp = None
     vm_timestamps = {}
     try:
@@ -511,7 +512,7 @@ def main():
 
     events = []
     server_dict = {}
-    min_event_time = datetime.datetime.fromisoformat(script_timestamp)
+    min_event_time = script_datetime
     for server in openstack_nova.servers.list(search_opts={"all_tenants": True}, detailed=True):
         server_dict[server.id] = compile_server_state(server, project_dict, flavor_dict, user)
         event_data = {"event_type": "compute.instance.exists", "event_time": script_timestamp}
@@ -541,7 +542,7 @@ def main():
         openstack_event_list = openstack_nova.instance_action.list(server_id)
         for event in openstack_event_list:
             event_time = datetime.datetime.fromisoformat(event.start_time)
-            if last_run_datetime <= event_time and event_time < script_timestamp:
+            if last_run_datetime <= event_time and event_time < script_datetime:
                 event_data = {
                     "audit_period_start": last_run_timestamp,
                     "audit_period_end": script_timestamp,
@@ -553,18 +554,24 @@ def main():
 
                 for e in event_list:
                     event_timestamp = datetime.datetime.fromisoformat(e["generated"]).replace(hour=0, minute=0, second=0).isoformat()
-                    events_by_date[event_timestamp] = e
+                    if event_timestamp not in events_by_date:
+                        events_by_date[event_timestamp] = []
+                    events_by_date[event_timestamp].append(e)
 
                 if server_id not in vm_timestamps:
                     vm_timestamps[server_id] = {}
                 vm_timestamps[server_id]["timestamp"] = event_data["event_time"]
                 vm_timestamps[server_id]["updated"] = 1
 
+    script_file_datetime = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
     for d1, daily_events in events_by_date.items():
-        d2 = (datetime.datetime.fromisoformat(d1) + datetime.timedelta(days=1)).isoformat()
-        json_out = f"{config['outdir']}/{d1}_{d2}.json"
+        if d1 < script_file_datetime:
+            d2 = (datetime.datetime.fromisoformat(d1) + datetime.timedelta(days=1)).isoformat()
+            json_out = f"{config['outdir']}/{d1}_{d2}.json"
+        else:
+            json_out = "CurrentEventsFile.json"
         with open(json_out, "w+", encoding="utf-8") as outfile:
-            json.dump(events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
+            json.dump(daily_events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
         print(f"output file: {json_out}")
 
     vm_keys = vm_timestamps.keys()
@@ -574,8 +581,9 @@ def main():
         else:
             del vm_timestamps[key]["updated"]
 
-    with open("user.csv", "w+", encoding="utf-8") as file:
-        print(f"{user.name}, , ")
+    with open("hiearchy.csv", "w+", encoding="utf-8") as file:
+        for user in user_dict:
+            print(f"{user.name}, , ")
 
     api_reporting_state = {"last_run_timestamp": last_run_timestamp, "vm_timestamps": vm_timestamps}
     with open("last_report_time.json", "w+", encoding="utf-8") as file:
