@@ -15,8 +15,6 @@ from cinderclient import client as cinder_client
 from keystoneclient import client as keystone_client
 import pprint
 
-# constants
-DATE_FORMAT_STR = "%Y-%m-%dT%H:%M:%S"
 
 # This is the mapping from xdmod of the openstack events that they
 # handle to the native xdmod event types
@@ -230,19 +228,13 @@ def build_event_item(event, vm, volume):
     }
 
     vm_volumes = []
-    # if "os-extended-volumes:volumes_attached" in vm.to_dict():
-    #     vm_volumes = vm.__getattribute__("os-extended-volumes:volumes_attached")
     vm_volumes = getattr(vm, "os-extended-volumes:volumes_attached", [])
     for volume_id in vm_volumes:
         vol = volume[volume_id["id"]]
         vol_project_id = ""
-        # if "os-vol-tenant-attr:tenant_id" in vol.to_dict():
-        #     vol_project_id = vol.__getattribute__("os-vol-tenant-attr:tenant_id")
-        vol_project_id = vol.getattribute("os-vol-tenant-attr:tenant_id", [])
+        vol_project_id = getattr(vol, "os-vol-tenant-attr:tenant_id", [])
         backing = ""
-        # if "os-vol-host-attr:host" in vol.to_dict():
-        #    backing = vol.__getattribute__("os-vol-host-attr:host")
-        backing = vol.getattribute("os-vol-host-attr:host", [])
+        backing = getattr(vol, "os-vol-host-attr:host", [])
         volume_data = {
             "account": vol_project_id,  # "Account that the storage device belongs to",
             "attach_time": "",  # "Time that the storage device was attached to this instance",
@@ -386,23 +378,15 @@ def convert_to_ceilometer_event_types(event):
             delta_time += 10
         return ret_list
     return []
-    # print(f"unknowned event_type {event['event_type']}")
-    # return [event]
 
 
 def compile_server_state(server, project_dict, flavor_dict, user_dict):
     """This one is implied.  We can tell this from the state of the VM"""
     launched_ts = None
-    # if "OS-SRV-USG:launched_at" in server.to_dict():
-    #    launched_ts = server.__getattribute__("OS-SRV-USG:launched_at")
     launched_ts = getattr(server, "OS-SRV-USG:launched_at", "")
     host = None
-    # if "OS-EXT-SRV-ATTR:host" in server.to_dict():
-    #     host = server.__getattribute__("OS-EXT-SRV-ATTR:host")
     host = getattr(server, "OS-EXT-SRV-ATTR:host", None)
     terminated_ts = None
-    # if "OS-SRV-USG:terminated_at" in server.to_dict():
-    #     terminated_ts = server.__getattribute__("OS-SRV-USG:terminated_at")
     terminated_ts = getattr(server, "OS-SRV-USG:terminated_at", "")
     user_name = "unknown user"
     if server.user_id in user_dict:
@@ -583,7 +567,7 @@ def main():
 
     with open("hiearchy.csv", "w+", encoding="utf-8") as file:
         for user in user_dict:
-            print(f"{user.name}, , ")
+            json.dump(user_dict, file)
 
     api_reporting_state = {"last_run_timestamp": last_run_timestamp, "vm_timestamps": vm_timestamps}
     with open("last_report_time.json", "w+", encoding="utf-8") as file:
