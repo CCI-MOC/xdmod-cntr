@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """ This is intended to poll openstack for changes to be reported in xdmod """
-# pylint: disable=line-too-long too-many-locals
+# pylint: disable=line-too-long
 
 import json
 import argparse
@@ -357,9 +357,9 @@ def convert_to_ceilometer_event_types(event):
         # "compute.instance.live_migration._post": ["start", "end"],
         # "compute.instance.live_migration.post.dest": ["start", "end"],
         # "compute.instance.live_migration.pre": ["start", "end"],
-        "compute.instance.power_off": ["start", "end"],
-        "compute.instance.power_on": ["start", "end"],
-        "compute.instance.shutdown": ["start", "end"],
+        # "compute.instance.power_off": ["start", "end"],
+        # "compute.instance.power_on": ["start", "end"],
+        # "compute.instance.shutdown": ["start", "end"],
     }
     if event["event_type"] == "compute.instance.create" and event["state"] == "ERROR":
         event["event_type"] = "compute.instance.create.error"
@@ -370,7 +370,7 @@ def convert_to_ceilometer_event_types(event):
         ret_list = []
         delta_time = 0
         time_0 = datetime.datetime.fromisoformat(event["generated"])
-        for e in ceilometer_event_types:
+        for e in ceilometer_event_types[event["event_type"]]:
             new_event = copy.deepcopy(event)
             new_event["event_type"] = f"{new_event['event_type']}.{e}"
             new_event["generated"] = (time_0 + datetime.timedelta(seconds=delta_time)).isoformat()
@@ -499,7 +499,6 @@ def main():
     min_event_time = script_datetime
     for server in openstack_nova.servers.list(search_opts={"all_tenants": True}, detailed=True):
         server_dict[server.id] = compile_server_state(server, project_dict, flavor_dict, user)
-        event_data = {"event_type": "compute.instance.exists", "event_time": script_timestamp}
         server_t = datetime.datetime.strptime(server.created, "%Y-%m-%dT%H:%M:%SZ")
 
         if server_t < min_event_time:
@@ -507,20 +506,26 @@ def main():
         if server.id in vm_timestamps:
             event_data["start_ts"] = vm_timestamps[server.id]
 
-        if server.status == "ACTIVE" or server.status == "DELETED":
-            event_data["audit_period_start"] = server.created
-            event_data["audit_period_end"] = script_timestamp
-            event_data["start_ts"] = server.created
-            events.append(build_event(server_dict[server.id], event_data))
-            if server.status == "deleted":
-                del vm_timestamps[server.id]
-
     if not last_run_timestamp:
         last_run_timestamp = min_event_time.isoformat()
     last_run_datetime = datetime.datetime.fromisoformat(last_run_timestamp)
 
     events_by_date = {}
     for server_id, server in server_dict.items():
+        # need to generate an exitance event for each server in server_dict
+        if server["state"] == "ACTIVE" or server["state"] == "DELETED":
+            event_data = {
+                "audit_period_start": server["launched_at"],
+                "audit_period_end": script_timestamp,
+                "start_ts": server["launched_at"],
+                "event_type": "compute.instance.exists",
+                "event_time": script_timestamp,
+            }
+            event_timestamp = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
+            if event_timestamp not in events_by_date:
+                events_by_date[event_timestamp] = []
+            events_by_date[event_timestamp].append(build_event(server, event_data))
+
         # I'm getting a error with this statement
         # openstack_event_list = openstack_nova.instance_action.list(server_id, changes_since=last_run_timestamp, changes_before=script_timestamp)
         openstack_event_list = openstack_nova.instance_action.list(server_id)
@@ -542,10 +547,13 @@ def main():
                         events_by_date[event_timestamp] = []
                     events_by_date[event_timestamp].append(e)
 
-                if server_id not in vm_timestamps:
-                    vm_timestamps[server_id] = {}
-                vm_timestamps[server_id]["timestamp"] = event_data["event_time"]
-                vm_timestamps[server_id]["updated"] = 1
+        if server_id not in vm_timestamps:
+            vm_timestamps[server_id] = {}
+        vm_timestamps[server_id]["timestamp"] = event_data["event_time"]
+        vm_timestamps[server_id]["updated"] = 1
+
+        if server["state"] == "DELETED":
+            del vm_timestamps[server.id]
 
     script_file_datetime = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
     for d1, daily_events in events_by_date.items():
