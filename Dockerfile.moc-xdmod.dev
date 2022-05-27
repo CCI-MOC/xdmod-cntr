@@ -1,7 +1,6 @@
 FROM docker.io/robertbartlettbaron/moc-xdmod
 
 RUN yum -y install vim rsync vim 
-COPY ./test_data/openstack.2018-04-17T00:00:00_2018-04-30T23:59:59.json /root/test/openstack/2018-04-17T00:00:00_2018-04-30T23:59:59.json
 
 EXPOSE 8080
 
