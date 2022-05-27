@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# pylint: disable=line-too-long
 """ Python script to intialize xdmod """
 import os
 import shutil
@@ -244,7 +245,7 @@ def initialize_database(database, db_list):
 
 
 def main():
-    if os.path.isdir("/mnt/xdmod_conf"):
+    if os.path.isdir("/mnt/xdmod_etc"):
         # This can only be on the first init container
         # On the NERC there is a 'lost+found', '.', '..' directories that can be ignored
         #     the simplest check is to see that the directory contains less than 5 items
@@ -348,6 +349,14 @@ def main():
             # always setup the organization - xdmod requires the organization file to be present in order to run
             print(" Organization ")
             xdmod_setup_organization(xdmod_init_json["organization"])
+
+        print("   Alowing admin and accounts to log into xdmod without ssl")
+        # os.popen(
+        #    # setcookie('xdmod_token', getToken(), 0, '/', '', true, true); -> setcookie('xdmod_token', getToken\(\), 0, '/', '', false, false)'
+        #    "sed -i s/setcookie('xdmod_token', getToken(), 0, '/', '', true, true);/setcookie('xdmod_token', getToken(), 0, '/', '', false, false);/g' /etc/xdmod/libraries/rest.php"
+        # )
+
+        print("set server_root in /etc/httpd/http.conf")
 
         print("   Ingesting resources")
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
