@@ -245,19 +245,23 @@ def initialize_database(database, db_list):
 
 
 def main():
-    if os.path.isdir("/mnt/xdmod_etc"):
+    if os.path.isdir("/mnt/xdmod_conf"):
         # This can only be on the first init container
         # On the NERC there is a 'lost+found', '.', '..' directories that can be ignored
         #     the simplest check is to see that the directory contains less than 5 items
         print("Found /mnt/xdmod* ")
         nap_time = 0
-        if len(os.listdir("/mnt/xdmod_etc")) < 5:
-            print(" empty directory xdmod_etc found - initializing")
-            os.popen("cp -r /etc/* /mnt/xdmod_etc")
+        if len(os.listdir("/mnt/xdmod_conf")) < 5:
+            print(" empty directory xdmod_conf found - initializing")
+            os.popen("cp -r /etc/xdmod/* /mnt/xdmod_conf")
             if os.path.isfile("/root/xdmod_init.json"):
-                os.popen("cp /root/xdmod_init.json /mnt/xdmod_etc/xdmod/xdmod_init.json")
-            if os.path.isfile("/root/httpd.conf"):
-                os.popen("cp /root/httpd.conf /etc/httpd/conf/httpd.conf")
+                os.popen("cp /root/xdmod_init.json /mnt/xdmod_conf/xdmod_init.json")
+            nap_time = 30
+
+        if os.path.isdir("/mnt/httpd_conf") and os.path.isfile("/root/httpd/httpd.conf"):
+            print("  copy over the httpd configuration ")
+            os.popen("cp -r /etc/httpd/* /mnt/httpd_conf")
+            os.popen("cp /root/httpd/httpd.conf /mnt/httpd_conf/conf/httpd.conf")
             nap_time = 30
 
         # this only exists in development

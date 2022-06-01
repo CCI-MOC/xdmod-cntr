@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-xdmod-etc
+  name: pvc-xdmod-conf
 spec:
   accessModes:
     - ReadWriteOnce
