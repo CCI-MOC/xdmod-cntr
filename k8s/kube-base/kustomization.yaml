@@ -7,6 +7,8 @@ resources:
   - pvc-xdmod-conf.yaml
   - pvc-xdmod-src.yaml
   - pvc-xdmod-data.yaml
+  - pvc-clouds-yaml
+  - pvc httpd-conf.yaml
   - svc-mariadb.yaml
   - svc-xdmod.yaml
   - deployment-mariadb.yaml
