@@ -54,7 +54,6 @@ spec:
               mountPath: /root/httpd
             - name: vol-xdmod-init
               mountPath: /root/xdmod_init
-
         - image: moc-xdmod
           name: xdmod-init-2
           imagePullPolicy: Never
@@ -75,9 +74,9 @@ spec:
               mountPath: /etc/openstack
             - name: vol-httpd-conf
               mountPath: /root/httpd
-            - name: vol-nerc-shift-0-cred
-              readOnly: true
-              mountPath: "/root/resources/nerc_shift_0/"
+      #     - name: vol-nerc-shift-0-cred
+      #       readOnly: true
+      #       mountPath: "/root/resources/nerc_shift_0/"
       volumes:
         - name: vol-xdmod-conf
           persistentVolumeClaim:
@@ -106,6 +105,6 @@ spec:
               - key: httpd.conf
                 path: httpd.conf
             name: cm-httpd-conf
-        - name: vol-nerc-shift-0-cred
-          secret:
-            secretName: xdmod-os-app-cred
+      # - name: vol-nerc-shift-0-cred
+      #   secret:
+      #     secretName: xdmod-os-app-cred
