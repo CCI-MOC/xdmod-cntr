@@ -82,7 +82,25 @@ A project to deploy XDMoD on kubernetes/OpenShift.
     kubectl create cm --from-file xdmod_conf/httpd.conf cm-httpd-conf
     oc create cm --from-file xdmod_conf/httpd.conf cm-httpd-conf
 
+    add the secret(s) to the deployment in both the init-2 
 
+      spec:
+        template:
+          spec:
+            initContainers:
+              - name: xdmod-init-2
+                volume_mounts:
+                    ...
+                    - name vol-[secret name]                        
+                      readOnly: true
+                      mountPath "/root/resources/[resource_name]/"
+            volumes:
+              ...
+              - name: vol-[secret name]
+                secret:
+                  secretName: [secret_name]
+                
+    
 6) Create the namespace (project) - use kubectl for minikube, or oc for openshift 
 
    - not needed for the NERC
