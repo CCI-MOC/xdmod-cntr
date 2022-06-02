@@ -40,16 +40,21 @@ spec:
           ports:
             - containerPort: 8080
           volumeMounts:
-            - name: vol-xdmod-etc
-              mountPath: /mnt/xdmod_etc
+            - name: vol-xdmod-conf
+              mountPath: /mnt/xdmod_conf
+            - name: vol-clouds-yaml
+              mountPath: /mnt/clouds
+            - name: vol-httpd-conf
+              mountPath: /mnt/httpd_conf
             - name: vol-xdmod-src
               mountPath: /mnt/xdmod_src
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
-            - name: vol-httpd-conf
+            - name: vol-httpd-cm
               mountPath: /root/httpd
             - name: vol-xdmod-init
               mountPath: /root/xdmod_init
+
         - image: moc-xdmod
           name: xdmod-init-2
           imagePullPolicy: Never
@@ -58,21 +63,31 @@ spec:
           ports:
             - containerPort: 8080
           volumeMounts:
-            - name: vol-xdmod-etc
-              mountPath: /etc
+            - name: vol-xdmod-conf
+              mountPath: /etc/xdmod
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
+            - name: vol-httpd-conf
+              mountPath: /etc/httpd
+            - name: vol-clouds-yaml
+              mountPath: /etc/openstack
             - name: vol-httpd-conf
               mountPath: /root/httpd
             - name: vol-nerc-shift-0-cred
               readOnly: true
               mountPath: "/root/resources/nerc_shift_0/"
       volumes:
-        - name: vol-xdmod-etc
+        - name: vol-xdmod-conf
           persistentVolumeClaim:
-            claimName: pvc-xdmod-etc
+            claimName: pvc-xdmod-conf
+        - name: vol-clouds-yaml
+          persistentVolumeClaim:
+            claimName: pvc-clouds-yaml
+        - name: vol-httpd-conf
+          persistentVolumeClaim:
+            claimName: pvc-httpd-conf
         - name: vol-xdmod-src
           persistentVolumeClaim:
             claimName: pvc-xdmod-src
@@ -85,7 +100,7 @@ spec:
               - key: xdmod_init.json
                 path: xdmod_init.json
             name: cm-xdmod-init-json
-        - name: vol-httpd-conf
+        - name: vol-httpd-cm
           configMap:
             items:
               - key: httpd.conf
