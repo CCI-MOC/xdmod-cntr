@@ -4,7 +4,6 @@ metadata:
   name: xdmod-route
   namespace: xdmod
 spec:
-  host: xdmod.apps.nerc-shift-0.rc.fas.harvard.edu
   to:
     kind: Service
     name: xdmod
