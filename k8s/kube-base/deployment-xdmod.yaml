@@ -20,17 +20,22 @@ spec:
           ports:
             - containerPort: 8080
           volumeMounts:
-            - name: vol-xdmod-etc
-              mountPath: /etc
-            - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+            - name: vol-xdmod-conf
+              mountPath: /etc/xdmod
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
+            - name: vol-xdmod-data
+              mountPath: /root/xdmod_data
+            - name: vol-httpd-conf
+              mountPath: /etc/httpd
+            - name: vol-clouds-yaml
+              mountPath: /etc/openstack
             - name: vol-httpd-conf
               mountPath: /root/httpd
-            - name: vol-nerc-shift-0-cred
-              readOnly: true
-              mountPath: "/root/resources/nerc_shift_0/"
+      # This is purely for convenience - not needed
+      #     - name: vol-nerc-shift-0-cred
+      #       readOnly: true
+      #       mountPath: "/root/resources/nerc_shift_0/"
       initContainers:
         - image: moc-xdmod
           name: xdmod-init-1
