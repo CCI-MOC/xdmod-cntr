@@ -1,7 +1,7 @@
 kind: Route
 apiVersion: route.openshift.io/v1
 metadata:
-  name: xdmod-route
+  name: xdmod
   namespace: xdmod
 spec:
   to:
