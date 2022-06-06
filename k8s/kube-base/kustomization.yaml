@@ -13,3 +13,12 @@ resources:
   - svc-xdmod.yaml
   - deployment-mariadb.yaml
   - deployment-xdmod.yaml
+  - route-xdmod.yaml
+
+configMapGenerator:
+  - name: cm-xdmod-init-json
+    files:
+      - xdmod_init.json
+  - name: cm-httpd-conf
+    files:
+      - httpd.conf
