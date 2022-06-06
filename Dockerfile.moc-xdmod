@@ -89,9 +89,7 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod -R 777 /var/log \
     && chmod -R 777 /var/lib \
     && chmod -R 777 /root \
-    && chmod -R 777 /run/httpd \
-    && chmod -R 777 /etc/xdmod \
-    && chmod -R 777 /etc/httpd 
+    && chmod -R 777 /run/httpd 
 
 EXPOSE 8080
 
