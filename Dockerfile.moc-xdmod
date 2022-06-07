@@ -85,15 +85,23 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \ 
     && chmod 777 /usr/bin/xdmod-init \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
-    && chmod -R 777 /usr/bin \
-    && chmod -R 777 /var/log \
-    && chmod -R 777 /var/lib \
-    && chmod -R 777 /root \
-    && chmod 777 /run/httpd \
-    && chmod -R 777 /etc/xdmod \
-    && chmod -R 777 /etc/httpd 
+    && chmod -R g+rwX /usr/bin \
+    && chgrp -R 0 /usr/bin \
+    && chmod -R g+rwX /var/log \
+    && chgrp -R 0 /var/log \
+    && chmod -R g+rwX /var/lib \
+    && chgrp -R 0 /var/lib \
+    && chmod -R g+rwX /root \
+    && chgrp -R 0 /root \
+    && chmod -R g+rwX /run/httpd \
+    && chgrp -R 0 /run/httpd \
+    && chmod -R g+rwX /etc/xdmod \
+    && chgrp -R 0 /etc/xdmod \
+    && chmod -R g+rwX /etc/httpd \
+    && chgrp -R 0 /etc/httpd \
 
-EXPOSE 8080
+
+    EXPOSE 8080
 
 CMD ["/usr/sbin/httpd","-D", "FOREGROUND"]
 
