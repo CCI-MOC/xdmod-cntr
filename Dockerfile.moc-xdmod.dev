@@ -1,0 +1,9 @@
+FROM moc-xdmod
+
+RUN yum -y install vim rsync vim 
+
+EXPOSE 8080
+
+CMD ["/usr/sbin/httpd","-D", "FOREGROUND"]
+
+WORKDIR /

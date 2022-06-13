@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: xdmod-route
+spec:
+  host: xdmod.apps-crc.testing
+  port:
+    targetPort: 8080
+  to:
+    kind: Service
+    name: xdmod
