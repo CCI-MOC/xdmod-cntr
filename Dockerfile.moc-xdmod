@@ -20,18 +20,13 @@ RUN yum makecache && \
     rh-python38.x86_64 \
     python3-pip.noarch \
     git \
-    openssh-clients.x86_64 && \
-    yum -y install https://repo.ius.io/ius-release-el7.rpm && \
-    yum -y install git && \
-    yum -y remove ius-release && \
-    yum -y install httpd php php-cli php-mysql php-gd php-pdo php-xml \
+    openssh-clients.x86_64 \
+    httpd php php-cli php-mysql php-gd php-pdo php-xml \
     libreoffice \
     mariadb-server mariadb cronie logrotate \
     perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
     chromium-headless librsvg2-tools
-# curl -s https://raw.githubusercontent.com/ubccr/xdmod/$BRANCH/open_xdmod/modules/xdmod/xdmod.spec.in | grep '^Requires' | awk '{$1=""; print $0}' |  tr '\n' ' ' | sed -E 's/[ \t]+/\n/g' | sort -u | grep '^[[:alpha:]]' | tr '\n' ' ' | xargs -r yum -y install && \
-# curl -s https://raw.githubusercontent.com/ubccr/xdmod-supremm/$BRANCH/xdmod-supremm.spec.in | grep '^Requires' | awk '{$1=""; print $0}' |  tr '\n' ' ' | sed -E 's/[ \t]+/\n/g' | sort -u | grep '^[[:alpha:]]' | grep -v xdmod | tr '\n' ' ' | xargs -r yum -y install && \
-# curl -s https://raw.githubusercontent.com/ubccr/xdmod-federated/$BRANCH/xdmod-federated.spec.in | grep '^Requires' | awk '{$1=""; print $0}' |  tr '\n' ' ' | sed -E 's/[ \t]+/\n/g' | sort -u | grep '^[[:alpha:]]' | grep -v xdmod | tr '\n' ' ' | xargs -r yum -y install && \
+
 RUN yum clean all && \
     rm -rf /var/cache/yum
 
@@ -98,10 +93,10 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod -R g+rwX /etc/xdmod \
     && chgrp -R 0 /etc/xdmod \
     && chmod -R g+rwX /etc/httpd \
-    && chgrp -R 0 /etc/httpd \
+    && chgrp -R 0 /etc/httpd 
 
 
-    EXPOSE 8080
+EXPOSE 8080
 
 CMD ["/usr/sbin/httpd","-D", "FOREGROUND"]
 
