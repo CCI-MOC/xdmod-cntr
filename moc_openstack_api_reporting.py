@@ -156,7 +156,7 @@ def do_parse_args(config):
 
     config["config_dir"] = "."
     if args.config_dir:
-        config["config_dir"] = args.config_file
+        config["config_dir"] = args.config_dir
 
     config["start"] = None
     if args.start:
