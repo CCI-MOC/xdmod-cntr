@@ -351,9 +351,9 @@ def convert_to_ceilometer_event_types(event):
         # "compute.instance.live_migration._post": ["start", "end"],
         # "compute.instance.live_migration.post.dest": ["start", "end"],
         # "compute.instance.live_migration.pre": ["start", "end"],
-        # "compute.instance.power_off": ["start", "end"],
-        # "compute.instance.power_on": ["start", "end"],
-        # "compute.instance.shutdown": ["start", "end"],
+        "compute.instance.power_off": ["start", "end"],
+        "compute.instance.power_on": ["start", "end"],
+        "compute.instance.shutdown": ["start", "end"],
     }
     if event["event_type"] == "compute.instance.create" and event["state"] == "ERROR":
         event["event_type"] = "compute.instance.create.error"
@@ -498,12 +498,10 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, serv
                 "event_type": "compute.instance.exists",
                 "event_time": script_datetime.isoformat(),
             }
-            event_timestamp = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
+            event_timestamp = script_datetime.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
             if event_timestamp not in events_by_date:
                 events_by_date[event_timestamp] = []
             events_by_date[event_timestamp].append(build_event(server, event_data))
-            if server["instance_id"] in server_state["vm_timestamps"]:
-                event_data["start_ts"] = server_state["vm_timestamps"][server.id]
 
         # I'm getting a error with this statement
         # openstack_event_list = openstack_nova.instance_action.list(server_id, changes_since=last_run_timestamp, changes_before=script_timestamp)
@@ -537,6 +535,30 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, serv
     return events_by_date
 
 
+def read_json_file(filename, default):
+    """reads a json file and returns the data"""
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except IOError:
+        pass
+    except ValueError:
+        # Ignore badly formatted file or empty file
+        pass
+    return default
+
+
+def merge_cache_with_current_data(event_cache, events_by_date):
+    """add in the event_cache"""
+    for event in event_cache:
+        event_datetime = datetime.datetime.fromisoformat(event["generated"])
+        event_hash = event_datetime.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        if event_hash not in events_by_date:
+            events_by_date[event_hash] = []
+        events_by_date[event_hash].append(copy.deepcopy(event))
+    return events_by_date
+
+
 def main():
     """The main function"""
     config = {}
@@ -553,30 +575,26 @@ def main():
 
     openstack_data = collect_data_from_openstack(openstack_conn, script_datetime)
 
-    server_state = {"last_run_timestamp": None, "vm_timestamps": {}}
-    try:
-        with open("vm_last_report_time.json", "r", encoding="utf-8") as file:
-            server_state = json.load(file)
-    except IOError:
-        pass
-    except ValueError:
-        # Ignore badly formatted file or empty file
-        pass
+    server_state = read_json_file("last_report_time.json", {"last_run_timestamp": None, "vm_timestamps": {}})
+    event_cache = read_json_file("CachedEvents.json", [])
 
     events_by_date = process_compute_events(openstack_conn, script_datetime, openstack_data, server_state)
 
     script_file_datetime = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
+
+    events_by_date = merge_cache_with_current_data(event_cache, events_by_date)
+
     for start_timestamp, daily_events in events_by_date.items():
         if start_timestamp < script_file_datetime:
             end_timestamp = (datetime.datetime.fromisoformat(start_timestamp) + datetime.timedelta(days=1)).isoformat()
             json_out = f"{config['outdir']}/{start_timestamp}_{end_timestamp}.json"
         else:
-            json_out = "CurrentEventsFile.json"
+            json_out = "CachedEvents.json"
         with open(json_out, "w+", encoding="utf-8") as outfile:
             json.dump(daily_events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
         print(f"output file: {json_out}")
 
-    vm_keys = (server_state["vm_timestamps"]).keys()
+    vm_keys = list(server_state["vm_timestamps"].keys())
     for key in vm_keys:
         if server_state["vm_timestamps"][key]["updated"] == 0:
             del server_state["vm_timestamps"][key]
@@ -586,7 +604,8 @@ def main():
     with open("hierarchy.csv", "w+", encoding="utf-8") as file:
         json.dump(openstack_data["user_dict"], file)
 
-    with open("last_report_time.json", "w+", encoding="utf-8") as file:
+    server_state["last_run_timestamp"] = script_datetime.isoformat()
+    with open("last_report_time.json", "w", encoding="utf-8") as file:
         json.dump(server_state, file)
 
 
