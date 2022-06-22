@@ -2,6 +2,7 @@
 """ This is intended to poll openstack for changes to be reported in xdmod """
 # pylint: disable=line-too-long chained-comparison
 
+
 import json
 import argparse
 import logging
@@ -78,7 +79,6 @@ event_types = [
     [59, 63, "compute.instance.unshelve.start"],
     [60, 54, "compute.instance.pause.start"],
 ]
-
 
 # kaizen-admin server list --all-projects
 # | ID                                   | Name       | Status | Networks                                                                          | Image                                            | Flavor                  |
@@ -388,10 +388,9 @@ def compile_server_state(server, project_dict, flavor_dict, user_dict):
     server_state = {
         # "audit_period_beginning": start_ts,   --- only add for compute.instance.exists (either active or deleted)
         # "audit_period_ending": "end_ts",
-        "disk_gb": str(flavor_dict[server.flavor["id"]]["disk"]),
+        "disk_gb": flavor_dict[server.flavor["id"]]["disk"],
         "domain": project_dict[server.tenant_id]["domain_id"],
-        "ephemeral_gb": str(flavor_dict[server.flavor["id"]]["ephemeral"]),
-        # These 2 are filled out below
+        "ephemeral_gb": flavor_dict[server.flavor["id"]]["ephemeral"],
         # "event_type": event_type,
         # "generated": end_ts,
         "host": host,
