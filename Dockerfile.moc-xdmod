@@ -95,6 +95,9 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod -R g+rwX /etc/httpd \
     && chgrp -R 0 /etc/httpd 
 
+COPY ./assets/allow_insecure_tokens.py /root
+RUN python3 /root/allow_insecure_tokens.py \
+    && rm /root/allow_insecure_tokens.py
 
 EXPOSE 8080
 

@@ -22,3 +22,10 @@ configMapGenerator:
   - name: cm-httpd-conf
     files:
       - httpd.conf
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    type: generated
+  annotations:
+    note: generated
+

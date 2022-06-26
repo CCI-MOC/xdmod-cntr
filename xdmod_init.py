@@ -3,6 +3,7 @@
 """ Python script to intialize xdmod """
 import os
 import sys
+import re
 import time
 import json
 import pprint
@@ -369,20 +370,6 @@ def main():
             # always setup the organization - xdmod requires the organization file to be present in order to run
             print(" Organization ")
             xdmod_setup_organization(xdmod_init_json["organization"])
-
-        print("   Alowing admin and accounts to log into xdmod without ssl")
-        # replace:
-        #    setcookie('xdmod_token', getToken(), 0, '/', '', true, true);
-        # with:
-        #    setcookie('xdmod_token', getToken\(\), 0, '/', '', false, false)'
-        if os.path.isfile("/usr/share/xdmod/libraries/rest.php"):
-            with open("/usr/share/xdmod/libraries/rest.php", encoding="utf-8") as file:
-                rest_php = file.read().replace(
-                    "setcookie('xdmod_token', getToken(), 0, '/', '', true, true)",
-                    "setcookie('xdmod_token', getToken(), 0, '/', '', false, false)",
-                )
-            with open("/usr/share/xdmod/libraries/rest.php", "w", encoding="utf-8") as file:
-                file.write(rest_php)
 
         print("set server_root in /etc/httpd/conf/httpd.conf")
         # replace:
