@@ -79,6 +79,12 @@ spec:
               mountPath: /etc/openstack
             - name: vol-httpd-conf
               mountPath: /root/httpd
+            - name: vol-var-log-xdmod
+              mountPath: /var/log/xdmod
+            - name: vol-var-log-httpd
+              mountPath: /var/log/httpd
+            - name: vol-run-httpd
+              mountPath: /run/httpd
       #     - name: vol-nerc-shift-0-cred
       #       readOnly: true
       #       mountPath: "/root/resources/nerc_shift_0/"
@@ -98,6 +104,12 @@ spec:
         - name: vol-xdmod-data
           persistentVolumeClaim:
             claimName: pvc-xdmod-data
+        - name: vol-var-log-xdmod
+          emptyDir: {}
+        - name: vol-val-log-httpd
+          emptyDir: {}
+        - name: vol_run_httpd
+          emptyDir: {}
         - name: vol-xdmod-init
           configMap:
             items:
