@@ -82,14 +82,10 @@ RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
     && chmod -R g+rwX /usr/bin \
     && chgrp -R 0 /usr/bin \
-    && chmod -R g+rwX /var/log \
-    && chgrp -R 0 /var/log \
     && chmod -R g+rwX /var/lib \
     && chgrp -R 0 /var/lib \
     && chmod -R g+rwX /root \
     && chgrp -R 0 /root \
-    && chmod -R g+rwX /run/httpd \
-    && chgrp -R 0 /run/httpd \
     && chmod -R g+rwX /etc/xdmod \
     && chgrp -R 0 /etc/xdmod \
     && chmod -R g+rwX /etc/httpd \
