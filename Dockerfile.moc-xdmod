@@ -74,16 +74,14 @@ RUN rm -f /etc/httpd/conf.d/ssl.conf \
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
-RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
+RUN chmod g+rwX /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
-    && chmod 777 /usr/bin/xdmod-openstack-reporting \
+    && chmod g+rwX /usr/bin/xdmod-openstack-reporting \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \ 
-    && chmod 777 /usr/bin/xdmod-init \
+    && chmod g+rwX /usr/bin/xdmod-init \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
     && chmod -R g+rwX /usr/bin \
     && chgrp -R 0 /usr/bin \
-    && chmod -R g+rwX /var/lib \
-    && chgrp -R 0 /var/lib \
     && chmod -R g+rwX /root \
     && chgrp -R 0 /root \
     && chmod -R g+rwX /etc/xdmod \

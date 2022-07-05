@@ -16,7 +16,7 @@ spec:
       containers:
         - image: moc-xdmod
           name: xdmod
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -67,7 +67,7 @@ spec:
               mountPath: /root/xdmod_init
         - image: moc-xdmod
           name: xdmod-init-2
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           command:
             - "/usr/bin/xdmod-init"
           ports:
