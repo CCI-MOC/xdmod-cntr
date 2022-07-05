@@ -3,7 +3,6 @@
 """ Python script to intialize xdmod """
 import os
 import sys
-import re
 import time
 import json
 import pprint
@@ -260,6 +259,77 @@ def initialize_database(database, db_list):
     return table_count
 
 
+def create_file_share_db(database):
+    """As a work-a-round for RWM, share config files though the database"""
+    host = database["host"]
+    admin_acct = "root"
+    admin_pass = database["admin_password"]
+    # This part should be done in xdmod-setup
+    try:
+        cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
+    except mysql.connector.Error as err:
+        print(str(err))
+        sys.exit()
+    print("Connected to database ")
+    cursor = cnx.cursor()
+
+    count = exec_fetchone(
+        cursor, "select count(*) from information_schema.tables where table_schema='file_share_db'", None, f"Unable to get table count from file_share_db"
+    )
+    if count < 1:
+        exec_sql(cursor, "drop database if exists file_share_db", None, "Unable to drop database")
+        exec_sql(cursor, "create database file_share_db default character set 'utf8'", None, "Unable to create database")
+        exec_sql(
+            cursor,
+            "create table file_share_db.file ( script varchar(500), file_name varchar(2000), file_data blob, primary key (script))",
+            None,
+            "Unable to create table",
+        )
+
+    cnx.close()
+
+
+def write_file_to_db(database, filename, script):
+    """As a work-a-round for RWM, share config files though the database"""
+    host = database["host"]
+    admin_acct = "root"
+    admin_pass = database["admin_password"]
+    # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
+    if os.path.isfile(filename):
+        with open(filename, encoding="utf-8") as fp:
+            text_data = fp.read()
+            try:
+                cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
+            except mysql.connector.Error as err:
+                print(str(err))
+                sys.exit()
+            print(f"write {filename} file_share_db")
+            cursor = cnx.cursor()
+
+            count = exec_fetchone(
+                cursor,
+                "select count(*) from file_share_db.file where script=%s",
+                (script,),
+                f"Unable to get table count from file_share_db.file.script={script}",
+            )
+            if count == 0:
+                exec_sql(
+                    cursor,
+                    "insert into file_share_db.file (script, file_name, file_data) values (%s,%s,%s)",
+                    (script, filename, text_data),
+                    "Unable to insert file to db",
+                )
+            else:
+                exec_sql(
+                    cursor,
+                    "update file_share_db.file set file_name=%s, file_data=%s values (%s,%s,%s)",
+                    (filename, text_data),
+                    "Unable to update file to db",
+                )
+            cnx.commit()
+            cnx.close()
+
+
 def main():
     """This handles both of the init containers"""
     if os.path.isdir("/mnt/xdmod_conf"):
@@ -298,6 +368,8 @@ def main():
         return
 
     if os.path.isfile("/etc/xdmod/xdmod_init.json"):
+        print("Create the file share database")
+
         print("xdmod_init.json found, attempting to initialize xdmod ")
         with open("/etc/xdmod/xdmod_init.json", encoding="utf-8") as json_file:
             xdmod_init_json = json.load(json_file)
@@ -370,6 +442,12 @@ def main():
             # always setup the organization - xdmod requires the organization file to be present in order to run
             print(" Organization ")
             xdmod_setup_organization(xdmod_init_json["organization"])
+
+            print("Create the file share database")
+            create_file_share_db(xdmod_init_json["database"])
+
+            write_file_to_db(xdmod_init_json["database"], "/etc/openstack/clouds.yaml", "openstack-cloud-config")
+            write_file_to_db(xdmod_init_json["database"], "/etc/xdmod/portal_settings.ini", "xdmod-config")
 
         print("set server_root in /etc/httpd/conf/httpd.conf")
         # replace:
