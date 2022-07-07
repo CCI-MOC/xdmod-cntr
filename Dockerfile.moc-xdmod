@@ -73,6 +73,7 @@ RUN rm -f /etc/httpd/conf.d/ssl.conf \
 
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
+COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
 RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
