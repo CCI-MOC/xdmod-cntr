@@ -84,10 +84,12 @@ RUN chmod g+rwX /usr/bin/xdmod-openstack-hypervisor \
     && chgrp -R 0 /usr/bin \
     && chmod -R g+rwX /root \
     && chgrp -R 0 /root \
-    && chmod -R g+rwX /etc/xdmod \
     && chgrp -R 0 /etc/xdmod \
-    && chmod -R g+rwX /etc/httpd \
-    && chgrp -R 0 /etc/httpd 
+    && find /etc/xdmod -type d -exec chmod 764 {} + \
+    && find /etc/xdmod -type f -exec chmod 664 {} + \
+    && chgrp -R 0 /etc/httpd \
+    && find /etc/httpd -type d -exec chmod 764 {} + \
+    && find /etc/httpd -type f -exec chmod 664 {} +
 
 COPY ./assets/allow_insecure_tokens.py /root
 RUN python3 /root/allow_insecure_tokens.py \
