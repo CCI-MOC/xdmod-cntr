@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 import sys
+import time
 import argparse
 import json
 import pprint
@@ -105,7 +106,10 @@ def main():
     # config = do_parse_args(config)
 
     write_file_from_db(config, "openstack-cloud-config")
+    time.sleep(20)
     write_file_from_db(config, "xdmod-config")
+    time.sleep(20)
+    write_file_from_db(config, "xdmod-linker")
 
 
 main()
