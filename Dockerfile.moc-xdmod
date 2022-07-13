@@ -98,9 +98,10 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && chmod -R 664 /etc/httpd \
     && chgrp -R 0 /etc/httpd \
     && find /etc/httpd -type d -exec chmod 764 {} + \
-    && find /etc/httpd -type f -exec chmod 664 {} + \
+    && find /etc/httpd -type f -exec chmod 664 {} + 
 
-    COPY ./assets/allow_insecure_tokens.py /root
+COPY ./assets/allow_insecure_tokens.py /root
+
 RUN python3 /root/allow_insecure_tokens.py \
     && rm /root/allow_insecure_tokens.py
 
