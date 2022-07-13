@@ -210,6 +210,11 @@ def initialize_database(database, db_list):
     print("Connected to database ")
     cursor = cnx.cursor()
 
+    exec_sql(cursor, "set global sql_mode=''", None, "Failed to set global sql_mode=''")
+    exec_sql(cursor, "set local sql_mode=''", None, "Failed to set local sql_mode=''")
+    exec_sql(cursor, "set global autocommit=1", None, "Failed to set global autocommit=1")
+    exec_sql(cursor, "set local autocommit=1", None, "Failed to set local autocommit=1")
+
     user_count = exec_fetchone(
         cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", (host, acct), "failed to fetch user count(1)"
     )
@@ -224,9 +229,6 @@ def initialize_database(database, db_list):
     print(f"    user_count(2) = {user_count}")
     if user_count == 0:
         exec_sql(cursor, "create user %s@%s identified by %s", (acct, "%", password), f"Failed creating user 1: {acct}@'%'/{password}")
-
-    exec_sql(cursor, "set global sql_mode=''", None, "Failed to set global sql_mode")
-    exec_sql(cursor, "set local sql_mode=''", None, "Failed to set local sql_mode")
 
     print("sql mode set")
     database_names = exec_fetchall(cursor, "select schema_name from information_schema.schemata", None, "Failed fetching databases")
@@ -259,20 +261,9 @@ def initialize_database(database, db_list):
     return table_count
 
 
-def create_file_share_db(database):
+def create_file_share_db(cnx):
     """As a work-a-round for RWM, share config files though the database"""
-    host = database["host"]
-    admin_acct = "root"
-    admin_pass = database["admin_password"]
-    # This part should be done in xdmod-setup
-    try:
-        cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-    except mysql.connector.Error as err:
-        print(str(err))
-        sys.exit()
-    print("Connected to database ")
     cursor = cnx.cursor()
-
     count = exec_fetchone(
         cursor, "select count(*) from information_schema.tables where table_schema='file_share_db'", None, f"Unable to get table count from file_share_db"
     )
@@ -281,31 +272,33 @@ def create_file_share_db(database):
         exec_sql(cursor, "create database file_share_db default character set 'utf8'", None, "Unable to create database")
         exec_sql(
             cursor,
-            "create table file_share_db.file ( script varchar(500), file_name varchar(2000), file_data blob, primary key (script))",
+            "create table file_share_db.file ( script varchar(500), file_name varchar(2000), file_data longblob, primary key (script))",
             None,
             "Unable to create table",
         )
 
-    cnx.close()
 
-
-def write_file_to_db(database, filename, script):
-    """As a work-a-round for RWM, share config files though the database"""
+def connect_to_db(database):
+    pprint.pprint(database)
     host = database["host"]
     admin_acct = "root"
     admin_pass = database["admin_password"]
     # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
-    if os.path.isfile(filename):
-        with open(filename, encoding="utf-8") as fp:
-            text_data = fp.read()
-            try:
-                cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-            except mysql.connector.Error as err:
-                print(str(err))
-                sys.exit()
-            print(f"write {filename} file_share_db")
-            cursor = cnx.cursor()
+    try:
+        cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
+    except mysql.connector.Error as err:
+        print(str(err))
+        sys.exit()
+    return cnx
 
+
+def write_file_to_db(cursor, filename, script):
+    """As a work-a-round for RWM, share config files though the database"""
+    # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
+    if os.path.isfile(filename):
+        print(f" Writing {filename} to db")
+        with open(filename, "rb") as fp:
+            file_contents = fp.read()
             count = exec_fetchone(
                 cursor,
                 "select count(*) from file_share_db.file where script=%s",
@@ -313,21 +306,21 @@ def write_file_to_db(database, filename, script):
                 f"Unable to get table count from file_share_db.file.script={script}",
             )
             if count == 0:
+                print("  inserting")
                 exec_sql(
                     cursor,
                     "insert into file_share_db.file (script, file_name, file_data) values (%s,%s,%s)",
-                    (script, filename, text_data),
+                    (script, filename, file_contents),
                     "Unable to insert file to db",
                 )
             else:
+                print("    updating")
                 exec_sql(
                     cursor,
-                    "update file_share_db.file set file_name=%s, file_data=%s values (%s,%s,%s)",
-                    (filename, text_data),
+                    "update file_share_db.file set file_name=%s, file_data=%s where script=%s",
+                    (filename, file_contents, script),
                     "Unable to update file to db",
                 )
-            cnx.commit()
-            cnx.close()
 
 
 def main():
@@ -444,10 +437,15 @@ def main():
             xdmod_setup_organization(xdmod_init_json["organization"])
 
             print("Create the file share database")
-            create_file_share_db(xdmod_init_json["database"])
 
-            write_file_to_db(xdmod_init_json["database"], "/etc/openstack/clouds.yaml", "openstack-cloud-config")
-            write_file_to_db(xdmod_init_json["database"], "/etc/xdmod/portal_settings.ini", "xdmod-config")
+            cnx = connect_to_db(xdmod_init_json["database"])
+            create_file_share_db(cnx)
+            cnx.commit()
+            # write_file_to_db(cnx.cursor(), "/etc/openstack/clouds.yaml", "openstack-cloud-config")
+            # cnx.commit()
+            # write_file_to_db(cnx.cursor(), "/etc/xdmod/portal_settings.ini", "xdmod-config")
+            # cnx.commit()
+            cnx.close()
 
         print("set server_root in /etc/httpd/conf/httpd.conf")
         # replace:
@@ -473,6 +471,17 @@ def main():
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-organizations")
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resource-types")
         os.popen("/usr/share/xdmod/tools/etl/etl_overseer.php -p ingest-resources")
+
+        cnx = connect_to_db(xdmod_init_json["database"])
+
+        os.system("tar -czvf /etc/xdmod/etc_xdmod.tgz /etc/xdmod/*")
+        os.system("base64 /etc/xdmod/etc_xdmod.tgz > /etc/xdmod/etc_xdmod.b64")
+        write_file_to_db(cnx.cursor(), "/etc/xdmod/etc_xdmod.b64", "etc-xdmod")
+        # os.system("rm /etc/xdmod/etc_xdmod.tgz")
+        # os.system("rm /etc/xdmod/etc_xdmod.b64")
+
+        cnx.commit()
+        cnx.close()
 
 
 main()
