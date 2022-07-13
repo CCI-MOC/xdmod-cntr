@@ -76,13 +76,15 @@ COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
 COPY ./xdmod-run-ingestor.sh /usr/bin/xdmod-run-ingestor.sh
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
-RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
+RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
-    && chmod 777 /usr/bin/xdmod-openstack-reporting \
+    && chmod 774 /usr/bin/xdmod-openstack-reporting \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \ 
-    && chmod 777 /usr/bin/xdmod-init \
+    && chmod 774 /usr/bin/xdmod-init \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
-    && chmod 777 /usr/bin/xdmod-run-ingestor.sh \
+    && chmod 774 /usr/bin/xdmod-get-config-files \
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-get-config-files \ 
+    && chmod 774 /usr/bin/xdmod-run-ingestor.sh \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-run-ingestor.sh \ 
     && chmod -R g+rwX /usr/bin \
     && chgrp -R 0 /usr/bin \

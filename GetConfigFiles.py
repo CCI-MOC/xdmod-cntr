@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 import sys
+import subprocess
 import time
 import argparse
 import json
@@ -42,8 +43,8 @@ def exec_fetchone(cursor, sql_stmt, params, error_msg):
         return None
 
 
-def write_file_from_db(database, script):
-    """As a work-a-round for RWM, share config files though the database"""
+def connect_to_db(database):
+    pprint.pprint(database)
     host = database["host"]
     admin_acct = "root"
     admin_pass = database["admin_password"]
@@ -53,9 +54,12 @@ def write_file_from_db(database, script):
     except mysql.connector.Error as err:
         print(str(err))
         sys.exit()
-    print(f"write {script} file_share_db")
-    cursor = cnx.cursor()
+    return cnx
 
+
+def write_file_from_db(cursor, script):
+    """As a work-a-round for RWM, share config files though the database"""
+    print(f"write {script} file_share_db")
     print(f"select file_name, file_data from file_share_db.file where script='{script}'")
     data = exec_fetchall(
         cursor,
@@ -66,11 +70,13 @@ def write_file_from_db(database, script):
     pprint.pprint(data)
     if data and isinstance(data, list):
         rec = data[0]
-        with open(rec[0], "wb+") as fp:
+        file = rec[0]
+        directory = os.path.dirname(file)
+        if not os.path.isdir(directory):
+            print(f"Creating Direcotry {directory}")
+            os.makedirs(directory)
+        with open(file, "wb+") as fp:
             fp.write(rec[1])
-
-    cnx.commit()
-    cnx.close()
 
 
 def do_parse_args(config):
@@ -95,9 +101,9 @@ def do_parse_args(config):
 def main():
     """the main function"""
     config = {}
-    if os.path.isfile("./xdmod_init.json"):
+    if os.path.isfile("/etc/xdmod/xdmod_init.json"):
         try:
-            with open("./xdmod_init.json", "r", encoding="utf-8") as file:
+            with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
                 config = json.load(file)["database"]
         except IOError:
             work_dir = os.getcwd()
@@ -105,11 +111,56 @@ def main():
     # only do this if it is necessary
     # config = do_parse_args(config)
 
-    write_file_from_db(config, "openstack-cloud-config")
-    time.sleep(20)
-    write_file_from_db(config, "xdmod-config")
-    time.sleep(20)
-    write_file_from_db(config, "xdmod-linker")
+    cnx = connect_to_db(config)
+    file_keys = [
+        "openstack-cloud-config",
+        "xdmod-config",
+        "xdmod-linker",
+        "xdmod-colors1",
+        "xdmod-organization",
+        "xdmod-hierarchy",
+        "xdmod-resources",
+        "xdmod-resource-types",
+        "xdmod-etl",
+        "xdmod-etl-acls",
+        "xdmod-etl-cloud-state",
+        "xdmod-etl-ingest-resources",
+        "xdmod-etl-cloud-openstack",
+        "xdmod-etl-shredder",
+        "xdmod-etl-verify",
+        "xdmod-etl-acls-management",
+        "xdmod-etl-gateways",
+        "xdmod-etl-jobs",
+        "xdmod-etl-jobs-common",
+        "xdmod-etl-staging",
+        "xdmod-etl-xdb",
+        "xdmod-etl-action-state",
+        "xdmod-etl-hpcdb-xdw",
+        "xdmod-etl-jobs-cloud-common",
+        "xdmod-etl-organizations",
+        "xdmod-etl-storage",
+        "xdmod-etl-migration",
+        "xdmod-etl-cloud-ingest-resource-specs",
+        "xdmod-etl-hpcdb",
+        "xdmod-etl-cloud-generic",
+        "xdmod-etl-resource-types",
+        "xdmod-etl-test-suite",
+    ]
+    cursor = cnx.cursor()
+
+    # for fkey in file_keys:
+    #    write_file_from_db(cursor, fkey)
+    write_file_from_db(cursor, "etc-xdmod")
+    base64 = subprocess.Popen(["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    b64_out, b64_err = base64.communicate()
+    print(f"errors: {b64_err}")
+    with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:
+        fptr.write(b64_out)
+    os.system("/usr/bin/tar -xzvf /etc/xdmod/etc_xdmod.tgz")
+    # subprocess.check_call(["/usr/bin/tar", "-xzvf", "/etc/xdmod/etc_xdmod.tgz"])
+
+    cnx.commit()
+    cnx.close()
 
 
 main()
