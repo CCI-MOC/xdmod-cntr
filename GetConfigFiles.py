@@ -163,4 +163,5 @@ def main():
     cnx.close()
 
 
-main()
+if __name__ == '__main__':
+    main()
