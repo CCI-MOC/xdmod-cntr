@@ -1,0 +1,10 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: bc-xdmod
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      ref: DataJob
