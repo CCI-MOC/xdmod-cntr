@@ -1,0 +1,4 @@
+bases:
+  - ../../kube-base
+patchesStrategicMerge:
+  - patches/deployment-xdmod.yaml
