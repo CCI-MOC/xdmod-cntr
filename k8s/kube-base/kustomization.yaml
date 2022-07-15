@@ -7,6 +7,7 @@ resources:
   - pvc-xdmod-conf.yaml
   - pvc-xdmod-src.yaml
   - pvc-xdmod-data.yaml
+  - pvc-xdmod-openshift-data.yaml
   - pvc-clouds-yaml.yaml
   - pvc-httpd-conf.yaml
   - svc-mariadb.yaml

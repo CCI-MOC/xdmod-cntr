@@ -65,12 +65,13 @@ RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk mysql-connector-python pexpect
 
 # RPM install of xdmod
-RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm 
+RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm
 
 #COPY ./xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
 RUN rm -f /etc/httpd/conf.d/ssl.conf \
     && rm -f /run/httpd/httpd.pid
 
+# openstack reporting
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
@@ -86,9 +87,9 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-get-config-files \ 
     && chmod 774 /usr/bin/xdmod-run-ingestor.sh \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-run-ingestor.sh \ 
-    && chmod -R g+rwX /usr/bin \
+    && chmod -R g+rwx /usr/bin \
     && chgrp -R 0 /usr/bin \
-    && chmod -R g+rwX /root \
+    && chmod -R g+rwx /root \
     && chgrp -R 0 /root \
     && chgrp -R 0 /etc/xdmod \
     && find /etc/xdmod -type d -exec chmod 764 {} + \
@@ -96,6 +97,23 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && chgrp -R 0 /etc/httpd \
     && find /etc/httpd -type d -exec chmod 764 {} + \
     && find /etc/httpd -type f -exec chmod 664 {} +
+
+# openshift client
+RUN curl -O https://mirror.openshift.com/pub/openshift-v4/$(uname -m)/clients/ocp/stable/openshift-client-linux.tar.gz \
+    && tar xvf openshift-client-linux.tar.gz \
+    && cp oc /usr/bin/oc \
+    && chmod g+rwx /usr/bin/oc
+
+# openshift reporting
+COPY ./xdmod-openshift-reporting.sh /usr/bin/xdmod-openshift-reporting.sh
+RUN git clone https://github.com/OCP-on-NERC/xdmod-openshift-scripts \
+    && cd xdmod-openshift-scripts \
+    && pip install -r requirements.txt \
+    && chmod g+rwx /usr/bin/xdmod-openshift-reporting.sh
+
+# force downgrade of mysql-connector-python
+# https://stackoverflow.com/questions/73244027/character-set-utf8-unsupported-in-python-mysql-connector
+RUN pip3 install -I mysql-connector-python==8.0.29
 
 COPY ./assets/allow_insecure_tokens.py /root
 RUN python3 /root/allow_insecure_tokens.py \
