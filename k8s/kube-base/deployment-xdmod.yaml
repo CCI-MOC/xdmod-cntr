@@ -26,6 +26,8 @@ spec:
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
+            - name: vol-xdmod-openshift-data
+              mountPath: /root/xdmod_openshift_data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -61,6 +63,8 @@ spec:
               mountPath: /mnt/xdmod_src
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
+            - name: vol-xdmod-openshift-data
+              mountPath: /root/xdmod_openshift_data
             - name: vol-httpd-cm
               mountPath: /root/httpd
             - name: vol-xdmod-init
@@ -79,6 +83,8 @@ spec:
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
+            - name: vol-xdmod-openshift-data
+              mountPath: /root/xdmod_openshift_data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -104,6 +110,9 @@ spec:
         - name: vol-xdmod-data
           persistentVolumeClaim:
             claimName: pvc-xdmod-data
+        - name: vol-xdmod-openshift-data
+          persistentVolumeClaim:
+            claimName: pvc-xdmod-openshift-data
         - name: vol-var-log-xdmod
           emptyDir: {}
         - name: vol-var-log-httpd

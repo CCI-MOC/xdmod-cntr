@@ -71,6 +71,7 @@ RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdm
 RUN rm -f /etc/httpd/conf.d/ssl.conf \
     && rm -f /run/httpd/httpd.pid
 
+# openstack reporting
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
@@ -88,6 +89,12 @@ RUN chmod g+rwX /usr/bin/xdmod-openstack-hypervisor \
     && chgrp -R 0 /etc/xdmod \
     && chmod -R g+rwX /etc/httpd \
     && chgrp -R 0 /etc/httpd 
+
+# openshift reporting
+COPY ./xdmod-openshift-reporting.sh /usr/bin/xdmod-openshift-reporting.sh
+RUN git clone https://github.com/OCP-on-NERC/xdmod-openshift-scripts \
+    && cd xdmod-openshift-scripts \
+    && pip install -r requirements.txt
 
 COPY ./assets/allow_insecure_tokens.py /root
 RUN python3 /root/allow_insecure_tokens.py \

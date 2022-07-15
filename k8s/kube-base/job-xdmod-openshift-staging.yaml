@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: xdmod-openshift-staging
+spec:
+  schedule: "* * */1 * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: moc-xdmod
+              image: moc-xdmod
+              imagePullPolicy: IfNotPresent
+              envFrom:
+              - secretRef:
+                  name: xdmod-openshift-staging-secret
+              env:
+              - name: OPENSHIFT_PROMETHEUS_URL
+                value: https://prometheus-k8s-openshift-monitoring.apps.ocp-staging.massopen.cloud
+              - name: OPENSHIFT_SERVER_URL
+                value: https://api.ocp-staging.massopen.cloud:6443
+              - name: OUTPUT_DIR
+                value: /root/xdmod_openshift_data/nerc_openshift_staging
+              - name: XDMOD_RESOURCE
+                value: nerc_openshift_staging
+              command:
+                - "/usr/bin/xdmod-openshift-reporting.sh"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+                - name: vol-xdmod-openshift-data
+                  mountPath: /root/xdmod_openshift_data
+          restartPolicy: Never
+          backoffLimit: 1
+          volumes:
+            - name: vol-xdmod-init
+              configMap:
+                items:
+                  - key: xdmod_init.json
+                    path: xdmod_init.json
+                name: cm-xdmod-init-json
+            - name: vol-xdmod-conf
+              emptyDir: {}
+            - name: vol-var-log-xdmod
+              emptyDir: {}
+            - name: vol-xdmod-openshift-data
+              emptyDir: {}
