@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-# pylint: disable=line-too-long broad-except too-many-locals too-many-branches
+# pylint: disable=line-too-long broad-except too-many-locals too-many-branches too-many-statements
 """ Python script to intialize xdmod """
 import os
-import sys
 import time
 import json
-import pprint
 import pexpect
 import yaml
 import mysql.connector
@@ -146,12 +144,7 @@ def run_pexpect_json(pexpect_json):
         time_out = 30
         if "timeout" in prompt_resp:
             time_out = prompt_resp["timeout"]
-        try:
-            setup.expect(prompt_resp["prompt"], timeout=time_out)
-        except Exception as err:
-            print(f"{setup.before} -->  {prompt_resp['resp']}")
-            print(str(err))
-            sys.exit()
+        setup.expect(prompt_resp["prompt"], timeout=time_out)
         nap_time = 0.2
         if "sleep" in prompt_resp:
             nap_time = prompt_resp["sleep"]
@@ -159,34 +152,16 @@ def run_pexpect_json(pexpect_json):
         setup.sendline(prompt_resp["resp"])
 
 
-def exec_sql(cursor, sql_stmt, params, error_msg):
-    """executes a simple sql statement"""
-    try:
-        cursor.execute(sql_stmt, params)
-    except Exception as err:
-        print(f"{str(err)} \n {error_msg}")
-        sys.exit()
-
-
-def exec_fetchall(cursor, sql_stmt, params, error_msg):
+def exec_fetchall(cursor, sql_stmt, params=None):
     """executes the sql statmement and fetches all in a list"""
-    exec_sql(cursor, sql_stmt, params, error_msg)
-    try:
-        result = cursor.fetchall()
-    except Exception as err:
-        print(f"{str(err)} \n {error_msg}")
-        sys.exit()
-    return result
+    cursor.execute(sql_stmt, params)
+    return cursor.fetchall()
 
 
-def exec_fetchone(cursor, sql_stmt, params, error_msg):
+def exec_fetchone(cursor, sql_stmt, params=None):
     """executes the sql stmt and fetches the first one in the result list"""
-    exec_sql(cursor, sql_stmt, params, error_msg)
-    try:
-        result = cursor.fetchone()
-    except Exception as err:
-        print(f"{str(err)} \n {error_msg}")
-        sys.exit()
+    cursor.execute(sql_stmt, params)
+    result = cursor.fetchone()
     return result[0]
 
 
@@ -202,58 +177,47 @@ def initialize_database(database, db_list):
     acct = "xdmod"
     password = database["xdmod_password"]
     # This part should be done in xdmod-setup
-    try:
-        cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-    except mysql.connector.Error as err:
-        print(str(err))
-        sys.exit()
+    cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
     print("Connected to database ")
     cursor = cnx.cursor()
 
-    exec_sql(cursor, "set global sql_mode=''", None, "Failed to set global sql_mode=''")
-    exec_sql(cursor, "set local sql_mode=''", None, "Failed to set local sql_mode=''")
-    exec_sql(cursor, "set global autocommit=1", None, "Failed to set global autocommit=1")
-    exec_sql(cursor, "set local autocommit=1", None, "Failed to set local autocommit=1")
+    cursor.execute("set global sql_mode=''")
+    cursor.execute("set local sql_mode=''")
+    cursor.execute("set global autocommit=1")
+    cursor.execute("set local autocommit=1")
 
-    user_count = exec_fetchone(
-        cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", (host, acct), "failed to fetch user count(1)"
-    )
+    user_count = exec_fetchone(cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", (host, acct))
 
     print(f"    user_count(1) = {user_count}")
     if user_count == 0:
-        exec_sql(cursor, "create user %s@%s identified by %s", (acct, host, password), f"Failed creating user 1: {acct}@{host}/{password}")
+        cursor.execute("create user %s@%s identified by %s", (acct, host, password))
 
-    user_count = exec_fetchone(
-        cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", ("%", acct), "failed to fetch user count(2)"
-    )
+    user_count = exec_fetchone(cursor, "select count(*) from mysql.user where mysql.user.host=%s and mysql.user.user=%s", ("%", acct))
     print(f"    user_count(2) = {user_count}")
     if user_count == 0:
-        exec_sql(cursor, "create user %s@%s identified by %s", (acct, "%", password), f"Failed creating user 1: {acct}@'%'/{password}")
+        cursor.execute("create user %s@%s identified by %s", (acct, "%", password))
 
     print("sql mode set")
-    database_names = exec_fetchall(cursor, "select schema_name from information_schema.schemata", None, "Failed fetching databases")
+    database_names = exec_fetchall(cursor, "select schema_name from information_schema.schemata")
 
     tmp_database_names = []
     for item in database_names:
         tmp_database_names.append(item[0])
     database_names = tmp_database_names
 
-    print("database list: ")
-    pprint.pprint(database_names)
+    print("Creating databases")
     for dbname in db_list:
         if dbname not in database_names:
-            exec_sql(cursor, f"create database {dbname} default character set 'utf8'", None, f"Failed creating database: {dbname}")
-        exec_sql(cursor, f"grant all on {dbname}.* to %s@%s identified by %s", (acct, host, password), f"Failed granting {acct}@{host} on database {dbname}")
-        exec_sql(cursor, f"grant all on {dbname}.* to %s@%s identified by %s", (acct, "%", password), f"Failed granting {acct}@'%' on database {dbname}")
+            cursor.execute(f"create database {dbname} default character set 'utf8'")
+        cursor.execute(f"grant all on {dbname}.* to %s@%s identified by %s", (acct, host, password))
+        cursor.execute(f"grant all on {dbname}.* to %s@%s identified by %s", (acct, "%", password))
 
-    exec_sql(cursor, "flush privileges", None, "Failed to flush privileges")
+    cursor.execute("flush privileges")
 
     # check to see if there are any table defined in any of the schemas
     table_count = 0
     for dbname in db_list:
-        count = exec_fetchone(
-            cursor, "select count(*) from information_schema.tables where table_schema=%s", (dbname,), f"Unable to get table count from {dbname}"
-        )
+        count = exec_fetchone(cursor, "select count(*) from information_schema.tables where table_schema=%s", (dbname,))
         table_count += count
 
     cnx.close()
@@ -264,31 +228,19 @@ def initialize_database(database, db_list):
 def create_file_share_db(cnx):
     """As a work-a-round for RWM, share config files though the database"""
     cursor = cnx.cursor()
-    count = exec_fetchone(
-        cursor, "select count(*) from information_schema.tables where table_schema='file_share_db'", None, f"Unable to get table count from file_share_db"
-    )
+    count = exec_fetchone(cursor, "select count(*) from information_schema.tables where table_schema='file_share_db'")
     if count < 1:
-        exec_sql(cursor, "drop database if exists file_share_db", None, "Unable to drop database")
-        exec_sql(cursor, "create database file_share_db default character set 'utf8'", None, "Unable to create database")
-        exec_sql(
-            cursor,
-            "create table file_share_db.file ( script varchar(500), file_name varchar(2000), file_data longblob, primary key (script))",
-            None,
-            "Unable to create table",
-        )
+        cursor.execute("drop database if exists file_share_db")
+        cursor.execute("create database file_share_db default character set 'utf8'")
+        cursor.execute("create table file_share_db.file ( script varchar(500), file_name varchar(2000), file_data longblob, primary key (script))")
 
 
 def connect_to_db(database):
-    pprint.pprint(database)
+    """This just connects to the database"""
     host = database["host"]
     admin_acct = "root"
     admin_pass = database["admin_password"]
-    # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
-    try:
-        cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-    except mysql.connector.Error as err:
-        print(str(err))
-        sys.exit()
+    cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
     return cnx
 
 
@@ -297,30 +249,13 @@ def write_file_to_db(cursor, filename, script):
     # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
     if os.path.isfile(filename):
         print(f" Writing {filename} to db")
-        with open(filename, "rb") as fp:
-            file_contents = fp.read()
-            count = exec_fetchone(
-                cursor,
-                "select count(*) from file_share_db.file where script=%s",
-                (script,),
-                f"Unable to get table count from file_share_db.file.script={script}",
-            )
+        with open(filename, "rb") as file:
+            file_contents = file.read()
+            count = exec_fetchone(cursor, "select count(*) from file_share_db.file where script=%s", (script,))
             if count == 0:
-                print("  inserting")
-                exec_sql(
-                    cursor,
-                    "insert into file_share_db.file (script, file_name, file_data) values (%s,%s,%s)",
-                    (script, filename, file_contents),
-                    "Unable to insert file to db",
-                )
+                cursor.execute("insert into file_share_db.file (script, file_name, file_data) values (%s,%s,%s)", (script, filename, file_contents))
             else:
-                print("    updating")
-                exec_sql(
-                    cursor,
-                    "update file_share_db.file set file_name=%s, file_data=%s where script=%s",
-                    (filename, file_contents, script),
-                    "Unable to update file to db",
-                )
+                cursor.execute("update file_share_db.file set file_name=%s, file_data=%s where script=%s", (filename, file_contents, script))
 
 
 def main():
@@ -441,10 +376,6 @@ def main():
             cnx = connect_to_db(xdmod_init_json["database"])
             create_file_share_db(cnx)
             cnx.commit()
-            # write_file_to_db(cnx.cursor(), "/etc/openstack/clouds.yaml", "openstack-cloud-config")
-            # cnx.commit()
-            # write_file_to_db(cnx.cursor(), "/etc/xdmod/portal_settings.ini", "xdmod-config")
-            # cnx.commit()
             cnx.close()
 
         print("set server_root in /etc/httpd/conf/httpd.conf")
@@ -474,11 +405,11 @@ def main():
 
         cnx = connect_to_db(xdmod_init_json["database"])
 
-        os.system("tar -czvf /etc/xdmod/etc_xdmod.tgz /etc/xdmod/*")
+        os.system("tar -czf /etc/xdmod/etc_xdmod.tgz /etc/xdmod/*")
         os.system("base64 /etc/xdmod/etc_xdmod.tgz > /etc/xdmod/etc_xdmod.b64")
         write_file_to_db(cnx.cursor(), "/etc/xdmod/etc_xdmod.b64", "etc-xdmod")
-        # os.system("rm /etc/xdmod/etc_xdmod.tgz")
-        # os.system("rm /etc/xdmod/etc_xdmod.b64")
+        os.system("rm /etc/xdmod/etc_xdmod.tgz")
+        os.system("rm /etc/xdmod/etc_xdmod.b64")
 
         cnx.commit()
         cnx.close()

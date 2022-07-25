@@ -1,17 +1,13 @@
 #!/usr/bin/python3
+""" This pulls the config files from the database and copies them in to /etc/xdmod
+
+    Will be unnecessary if RWX volumes become available
+"""
+# pylint: disable=line-too-long invalid-name
 import os
-import sys
 import subprocess
-import time
-import argparse
 import json
-import pprint
 import mysql.connector
-
-
-def exec_sql(cursor, sql_stmt, params, error_msg):
-
-    cursor.execute(sql_stmt, params)
 
 
 def exec_fetchall(cursor, sql_stmt, params):
@@ -21,18 +17,8 @@ def exec_fetchall(cursor, sql_stmt, params):
     return result
 
 
-def exec_fetchone(cursor, sql_stmt, params):
-    """executes the sql stmt and fetches the first one in the result list"""
-    cursor.execute(sql_stmt, params)
-    result = cursor.fetchone()
-    if result:
-        return result[0]
-    else:
-        return None
-
-
 def connect_to_db(database):
-    pprint.pprint(database)
+    """This just connects to the database and returns the connection"""
     host = database["host"]
     admin_acct = "root"
     admin_pass = database["admin_password"]
@@ -53,27 +39,8 @@ def write_file_from_db(cursor, script):
         if not os.path.isdir(directory):
             print(f"Creating Direcotry {directory}")
             os.makedirs(directory)
-        with open(file, "wb+") as fp:
-            fp.write(rec[1])
-
-
-def do_parse_args(config):
-    """Parse args and return a config dict"""
-    parser = argparse.ArgumentParser(description="pulls a config file from the database")
-    parser.add_argument("-u", "--user", help="use_name", required=False)
-    parser.add_argument("-p", "--passwd", help="password", required=False)
-    parser.add_argument("-h", "--host", help="db host", required=False)
-
-    args = parser.parse_args()
-
-    if args.user:
-        config["user"] = args.user
-    if args.passwd:
-        config["pass"] = args.passwd
-    if args.host:
-        config["host"] = args.host
-
-    return config
+        with open(file, "wb+") as file:
+            file.write(rec[1])
 
 
 def main():
@@ -84,19 +51,18 @@ def main():
         with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
             config = json.load(file)["database"]
     except IOError:
-        work_dir = os.getcwd()
-        print(f"Ensure the xdmod-init.json file is in the working directory /etc/xdmod/xdmod_init.json")
+        print("Ensure the xdmod-init.json file is in /etc/xdmod/xdmod_init.json")
 
     cnx = connect_to_db(config)
     cursor = cnx.cursor()
 
     write_file_from_db(cursor, "etc-xdmod")
-    base64 = subprocess.Popen(["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    b64_out, b64_err = base64.communicate()
-    print(f"errors: {b64_err}")
-    with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:
-        fptr.write(b64_out)
-    os.system("/usr/bin/tar -xzvf /etc/xdmod/etc_xdmod.tgz")
+    with subprocess.Popen(["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as base64:
+        b64_out, b64_err = base64.communicate()
+        print(f"errors: {b64_err}")
+        with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:
+            fptr.write(b64_out)
+        os.system("/usr/bin/tar -xzf /etc/xdmod/etc_xdmod.tgz")
 
     cnx.commit()
     cnx.close()
