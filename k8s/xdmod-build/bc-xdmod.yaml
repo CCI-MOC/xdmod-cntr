@@ -8,7 +8,6 @@ spec:
     type: Git
     git:
       uri: https://github.com/CCI-MOC/xdmod-cntr.git
-      ref: XdmodK8sDeployment
     contextDir: /
   strategy:
     type: Docker
