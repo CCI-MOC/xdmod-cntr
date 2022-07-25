@@ -14,7 +14,17 @@ spec:
     type: Docker
     dockerStrategy:
       dockerfilePath: Dockerfile.moc-xdmod.dev
+      from:
+        kind: ImageStreamTag
+        name: moc-xdmod:latest
   output:
     to:
       kind: ImageStreamTag
       name: moc-xdmod-dev:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange:
+        from:
+          kind: ImageStreamTag
+          name: moc-xdmod:latest
