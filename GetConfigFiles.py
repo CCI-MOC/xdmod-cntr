@@ -1,4 +1,9 @@
 #!/usr/bin/python3
+""" This pulls the config files from the database and copies them in to /etc/xdmod
+
+    Will be unnecessary if RWX volumes become available
+"""
+# pylint: disable=line-too-long invalid-name
 import os
 import subprocess
 import json
@@ -13,7 +18,7 @@ def exec_fetchall(cursor, sql_stmt, params):
 
 
 def connect_to_db(database):
-    pprint.pprint(database)
+    """This just connects to the database and returns the connection"""
     host = database["host"]
     admin_acct = "root"
     admin_pass = database["admin_password"]
