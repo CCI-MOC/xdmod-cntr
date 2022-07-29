@@ -405,11 +405,11 @@ def main():
 
         cnx = connect_to_db(xdmod_init_json["database"])
 
-        os.system("tar -czvf /etc/xdmod/etc_xdmod.tgz /etc/xdmod/*")
+        os.system("tar -czf /etc/xdmod/etc_xdmod.tgz /etc/xdmod/*")
         os.system("base64 /etc/xdmod/etc_xdmod.tgz > /etc/xdmod/etc_xdmod.b64")
         write_file_to_db(cnx.cursor(), "/etc/xdmod/etc_xdmod.b64", "etc-xdmod")
-        # os.system("rm /etc/xdmod/etc_xdmod.tgz")
-        # os.system("rm /etc/xdmod/etc_xdmod.b64")
+        os.system("rm /etc/xdmod/etc_xdmod.tgz")
+        os.system("rm /etc/xdmod/etc_xdmod.b64")
 
         cnx.commit()
         cnx.close()
