@@ -57,12 +57,12 @@ def main():
     cursor = cnx.cursor()
 
     write_file_from_db(cursor, "etc-xdmod")
-    base64 = subprocess.Popen(["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    b64_out, b64_err = base64.communicate()
-    print(f"errors: {b64_err}")
-    with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:
-        fptr.write(b64_out)
-    os.system("/usr/bin/tar -xzvf /etc/xdmod/etc_xdmod.tgz")
+    with subprocess.Popen(["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as base64:
+        b64_out, b64_err = base64.communicate()
+        print(f"errors: {b64_err}")
+        with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:
+            fptr.write(b64_out)
+        os.system("/usr/bin/tar -xzf /etc/xdmod/etc_xdmod.tgz")
 
     cnx.commit()
     cnx.close()
