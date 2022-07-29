@@ -79,15 +79,13 @@ def do_parse_args(config):
 def main():
     """the main function"""
     config = {}
-    if os.path.isfile("/etc/xdmod/xdmod_init.json"):
-        try:
-            with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
-                config = json.load(file)["database"]
-        except IOError:
-            work_dir = os.getcwd()
-            print(f"Ensure the xdmod-init.json file is in the working directory {work_dir}")
-    # only do this if it is necessary
-    # config = do_parse_args(config)
+
+    try:
+        with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
+            config = json.load(file)["database"]
+    except IOError:
+        work_dir = os.getcwd()
+        print(f"Ensure the xdmod-init.json file is in the working directory /etc/xdmod/xdmod_init.json")
 
     cnx = connect_to_db(config)
     file_keys = [
