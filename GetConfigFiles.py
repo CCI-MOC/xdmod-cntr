@@ -51,8 +51,7 @@ def main():
         with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
             config = json.load(file)["database"]
     except IOError:
-        work_dir = os.getcwd()
-        print(f"Ensure the xdmod-init.json file is in the working directory /etc/xdmod/xdmod_init.json")
+        print("Ensure the xdmod-init.json file is in /etc/xdmod/xdmod_init.json")
 
     cnx = connect_to_db(config)
     cursor = cnx.cursor()
