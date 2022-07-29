@@ -10,33 +10,21 @@ import mysql.connector
 
 
 def exec_sql(cursor, sql_stmt, params, error_msg):
-    """executes a simple sql statement"""
-    try:
-        cursor.execute(sql_stmt, params)
-    except Exception as err:
-        print(f"{str(err)} \n {error_msg}")
-        sys.exit()
+
+    cursor.execute(sql_stmt, params)
 
 
-def exec_fetchall(cursor, sql_stmt, params, error_msg):
+def exec_fetchall(cursor, sql_stmt, params):
     """executes the sql statmement and fetches all in a list"""
-    exec_sql(cursor, sql_stmt, params, error_msg)
-    try:
-        result = cursor.fetchall()
-    except Exception as err:
-        print(f"{str(err)} \n {error_msg}")
-        sys.exit()
+    cursor.execute(sql_stmt, params)
+    result = cursor.fetchall()
     return result
 
 
-def exec_fetchone(cursor, sql_stmt, params, error_msg):
+def exec_fetchone(cursor, sql_stmt, params):
     """executes the sql stmt and fetches the first one in the result list"""
-    exec_sql(cursor, sql_stmt, params, error_msg)
-    try:
-        result = cursor.fetchone()
-    except Exception as err:
-        print(f"{str(err)} \n {error_msg}")
-        sys.exit()
+    cursor.execute(sql_stmt, params)
+    result = cursor.fetchone()
     if result:
         return result[0]
     else:
@@ -49,25 +37,15 @@ def connect_to_db(database):
     admin_acct = "root"
     admin_pass = database["admin_password"]
     # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
-    try:
-        cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-    except mysql.connector.Error as err:
-        print(str(err))
-        sys.exit()
+    cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
     return cnx
 
 
 def write_file_from_db(cursor, script):
     """As a work-a-round for RWM, share config files though the database"""
     print(f"write {script} file_share_db")
-    print(f"select file_name, file_data from file_share_db.file where script='{script}'")
-    data = exec_fetchall(
-        cursor,
-        "select file_name, file_data from file_share_db.file where script=%s",
-        (script,),
-        "Unable to select file from db",
-    )
-    pprint.pprint(data)
+    data = exec_fetchall(cursor, "select file_name, file_data from file_share_db.file where script=%s", (script,))
+
     if data and isinstance(data, list):
         rec = data[0]
         file = rec[0]
