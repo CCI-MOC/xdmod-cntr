@@ -83,6 +83,7 @@ RUN chmod g+rwX /usr/bin/xdmod-openstack-hypervisor \
     && chmod g+rwX /usr/bin/xdmod-init \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
     && chmod 777 /usr/bin/xdmod-run-ingestor.sh \
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-get-config-files \ 
     && sed -i -e 's/\r$//' /usr/bin/xdmod-run-ingestor.sh \ 
     && chmod -R g+rwX /usr/bin \
     && chgrp -R 0 /usr/bin \
