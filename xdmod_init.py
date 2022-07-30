@@ -2,10 +2,8 @@
 # pylint: disable=line-too-long broad-except too-many-locals too-many-branches
 """ Python script to intialize xdmod """
 import os
-import sys
 import time
 import json
-import pprint
 import pexpect
 import yaml
 import mysql.connector
@@ -378,10 +376,6 @@ def main():
             cnx = connect_to_db(xdmod_init_json["database"])
             create_file_share_db(cnx)
             cnx.commit()
-            # write_file_to_db(cnx.cursor(), "/etc/openstack/clouds.yaml", "openstack-cloud-config")
-            # cnx.commit()
-            # write_file_to_db(cnx.cursor(), "/etc/xdmod/portal_settings.ini", "xdmod-config")
-            # cnx.commit()
             cnx.close()
 
         print("set server_root in /etc/httpd/conf/httpd.conf")
