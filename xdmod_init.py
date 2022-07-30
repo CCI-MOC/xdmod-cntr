@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# pylint: disable=line-too-long broad-except too-many-locals too-many-branches
+# pylint: disable=line-too-long broad-except too-many-locals too-many-branches too-many-statements
 """ Python script to intialize xdmod """
 import os
 import time
