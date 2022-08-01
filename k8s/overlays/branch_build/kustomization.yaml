@@ -1,4 +1,0 @@
-bases:
-  - ../../xdmod-build
-patchesStrategicMerge:
-  - patches/bc-xdmod.yaml
