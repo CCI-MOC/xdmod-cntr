@@ -314,28 +314,44 @@ def build_event_item(event, server):
 # }
 
 
-def convert_to_ceilometer_event_types(event):
-    """maps from a currently defined event to event(s) that were previously defined"""
+def convert_new_to_old_eventtype(event_type):
+    """This is because xdmod only understand old openstack events"""
     map_current_to_old = {
+        # these even types were reported but need to be translated to the old event type
         "compute.instance.stop": "compute.instance.power_off",
         "compute.instance.start": "compute.instance.power_on",
+        "compute.instance.live-migration": "compute.instance.live_migration",
+        "compute.instance.attach_volume": "compute.instance.volume.attach",
+        "compute.instance.detach_volume": "compute.instance.volume.dettach",
     }
+    if event_type in map_current_to_old:
+        old_event_type = map_current_to_old[event_type]
+    else:
+        old_event_type = event_type
+    return old_event_type
 
+
+def get_list_of_ceilometer_event_types(event_type):
+    # Some of the new events are multiple old events
+    event_list = []
     ceilometer_event_types = {
+        # "volume_type.create": [],
+        "volume.attach": ["start", "end"],
+        "volume.detach": ["start", "end"],
+        "volume.create": ["start", "end"],
+        # "volume.update": ["start","end"],
+        "volume.delete": ["start", "end"],
         # these messages are reported from compute events
-        # "compute.instance.live-migration": [""],
-        # "compute.instance.detach_volume": [""],
-        # "compute.instance.stop": [""],
-        # "compute.instance.start": [""],
-        # "compute.instance.attach_volume": [""],
+        "compute.instance.volume.attach": [""],
+        "compute.instance.volume.dettach": [""],
         # "compute.instance.reboot": [""],
         # "compute.instance.createImage": [""],
         # "compute.instance.confirmResize": [""],
         # "compute.instance.migrate": [""],
-        # "compute.instance.resume": [""],
-        # "compute.instance.suspend": [""],
-        # "compute.instance.unshelve": [""],
-        # "compute.instance.shelve": [""],
+        "compute.instance.resume": ["start", "end"],
+        "compute.instance.suspend": ["start", "end"],
+        "compute.instance.unshelve": ["start", "end"],
+        # "compute.instance.shelve": ["start", "end"],
         # "compute.instance.unpause": [""],
         # "compute.instance.pause": [""],
         # "compute.instance.evacuate": [""],
@@ -344,34 +360,50 @@ def convert_to_ceilometer_event_types(event):
         # "compute.instance.lock": [""],
         # "compute.instance.detach_interface": [""],
         # "compute.instance.rebuild": [""],
-        # "compute.instance.resize": [""],
+        "compute.instance.resize": ["start", "end"],
         # These events are from the reference file
         "compute.instance.create": ["start", "end"],
-        "compute.instance.delete": ["start", "end"],  # does this one have a "end"?
-        # "compute.instance.live_migration._post": ["start", "end"],
-        # "compute.instance.live_migration.post.dest": ["start", "end"],
-        # "compute.instance.live_migration.pre": ["start", "end"],
+        "compute.instance.delete": ["start", "end"],
+        # live_migration is probably not handled by xdmod
+        "compute.instance.live_migration": [
+            "pre.start",
+            "pre.end",
+            "_post.start",
+            "_post.end",
+            "post.dest.start",
+            "post.dest.edn",
+        ],
         "compute.instance.power_off": ["start", "end"],
         "compute.instance.power_on": ["start", "end"],
         "compute.instance.shutdown": ["start", "end"],
     }
+    if event_type not in ceilometer_event_types:
+        return [event_type]
+    event_list = []
+    for event_postfix in ceilometer_event_types[event_type]:
+        event_list.append(event_type + "." + event_postfix)
+    return event_list
+
+
+def convert_to_ceilometer_event_types(event):
+    """maps from a currently defined event to event(s) that were previously defined"""
     if event["event_type"] == "compute.instance.create" and event["state"] == "ERROR":
         event["event_type"] = "compute.instance.create.error"
         return [event]
-    if event["event_type"] in map_current_to_old:
-        event["event_type"] = map_current_to_old[event["event_type"]]
-    if event["event_type"] in ceilometer_event_types:
-        ret_list = []
-        delta_time = 0
-        time_0 = datetime.datetime.fromisoformat(event["generated"])
-        for ceilometer_event in ceilometer_event_types[event["event_type"]]:
-            new_event = copy.deepcopy(event)
-            new_event["event_type"] = f"{new_event['event_type']}.{ceilometer_event}"
-            new_event["generated"] = (time_0 + datetime.timedelta(seconds=delta_time)).isoformat()
-            ret_list.append(new_event)
-            delta_time += 10
-        return ret_list
-    return []
+
+    old_event_name = convert_new_to_old_eventtype(event["event_type"])
+    event_list = get_list_of_ceilometer_event_types(old_event_name)
+
+    ret_list = []
+    delta_time = 0
+    time_0 = datetime.datetime.fromisoformat(event["generated"])
+    for ceilometer_event in event_list:
+        new_event = copy.deepcopy(event)
+        new_event["event_type"] = ceilometer_event
+        new_event["generated"] = (time_0 + datetime.timedelta(seconds=delta_time)).isoformat()
+        ret_list.append(new_event)
+        delta_time += 10
+    return ret_list
 
 
 def compile_server_state(server, project_dict, flavor_dict, user_dict):
@@ -474,18 +506,28 @@ def collect_data_from_openstack(openstack_conn, script_datetime):
     return openstack_data
 
 
-def process_compute_events(openstack_conn, script_datetime, openstack_data, server_state):
+def events_to_event_by_date(event_list):
+    events_by_date = {}
+    for event in event_list:
+        event_timestamp = datetime.datetime.fromisoformat(event["generated"]).replace(hour=0, minute=0, second=0).isoformat()
+        if event_timestamp not in events_by_date:
+            events_by_date[event_timestamp] = []
+        events_by_date[event_timestamp].append(event)
+    return events_by_date
+
+
+def process_compute_events(openstack_conn, script_datetime, openstack_data, cluster_state):
     """collects and processes event data"""
     events_by_date = {}
     openstack_nova = nova_client.Client(2, session=openstack_conn.session)
 
     # so that we can tell if the VM not present
-    for server in server_state["vm_timestamps"].values():
+    for server in cluster_state["vm_timestamps"].values():
         server["updated"] = 0
 
-    if not server_state["last_run_timestamp"]:
-        server_state["last_run_timestamp"] = openstack_data["min_event_time"].isoformat()
-    last_run_datetime = datetime.datetime.fromisoformat(server_state["last_run_timestamp"])
+    if not cluster_state["last_run_timestamp"]:
+        cluster_state["last_run_timestamp"] = openstack_data["min_event_time"].isoformat()
+    last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
 
     for server in openstack_data["server_dict"].values():
         # need to generate an existence event for each server in server_dict
@@ -504,32 +546,164 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, serv
 
         # I'm getting a error with this statement
         # openstack_event_list = openstack_nova.instance_action.list(server_id, changes_since=last_run_timestamp, changes_before=script_timestamp)
-        openstack_event_list = openstack_nova.instance_action.list(server["instance_id"])
-        for openstack_event in openstack_event_list:
-            event_time = datetime.datetime.fromisoformat(openstack_event.start_time)
+        compute_event_list = openstack_nova.instance_action.list(server["instance_id"])
+        for compute_event in compute_event_list:
+            event_time = datetime.datetime.fromisoformat(compute_event.start_time)
             if last_run_datetime <= event_time and event_time < script_datetime:
                 event_data = {
-                    "audit_period_start": server_state["last_run_timestamp"],
+                    "audit_period_start": cluster_state["last_run_timestamp"],
                     "audit_period_end": script_datetime.isoformat(),
-                    "event_type": f"compute.instance.{openstack_event.action}",
-                    "event_time": openstack_event.start_time,
-                    "request_id": openstack_event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
+                    "event_type": f"compute.instance.{compute_event.action}",
+                    "event_time": compute_event.start_time,
+                    "request_id": compute_event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
                 }
                 event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
+                events_by_date = events_to_event_by_date(event_list)
 
-                for event in event_list:
-                    event_timestamp = datetime.datetime.fromisoformat(event["generated"]).replace(hour=0, minute=0, second=0).isoformat()
-                    if event_timestamp not in events_by_date:
-                        events_by_date[event_timestamp] = []
-                    events_by_date[event_timestamp].append(event)
+                # for event in event_list:
+                #    event_timestamp = datetime.datetime.fromisoformat(event["generated"]).replace(hour=0, minute=0, second=0).isoformat()
+                #    if event_timestamp not in events_by_date:
+                #        events_by_date[event_timestamp] = []
+                #    events_by_date[event_timestamp].append(event)
 
-        if server["instance_id"] not in server_state["vm_timestamps"]:
-            server_state["vm_timestamps"][server["instance_id"]] = {}
-        server_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
-        server_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
+        if server["instance_id"] not in cluster_state["vm_timestamps"]:
+            cluster_state["vm_timestamps"][server["instance_id"]] = {}
+        cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
+        cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
 
         if server["state"] == "DELETED":
-            del server_state["vm_timestamps"][server["instance_id"]]
+            del cluster_state["vm_timestamps"][server["instance_id"]]
+
+    return events_by_date
+
+
+def create_volume_event(openstack_data, cluster_state, vol_id, event_type):
+    """
+        {
+        "availability_zone": "cbls",
+        "created_at": "2018-04-19T17:14:42+00:00",
+        "display_name": "vol-c8162412",
+        "event_type": "volume.create.start",        - and volume.create.end
+        "generated": "2018-04-19T17:14:42.999236",
+        "host": "rbd:volumes@rbd#rbd",
+        "message_id": "f64ecffa-f202-4da0-9e3a-5726396c0259",
+        "project_id": "4aeb007a4f9020333a1a1be224bef276",
+        "project_name": "zealous",
+        "raw": {},
+        "request_id": "req-60bf8d5d-e80b-4748-9b5f-737674cf9428",
+        "resource_id": "64a8ece5-6853-40d6-8e56-ef919eea37f4",
+        "service": "volume.rbd:volumes@rbd#rbd",
+        "size": "9",
+        "status": "creating",
+        "tenant_id": "4aeb007a4f9020333a1a1be224bef276",
+        "type": "d947c745-3a60-4ddb-abc6-97fddfe82846",
+        "user_id": "3abcb51ff942a45b52ac90915ef4c7fb",
+        "user_name": "yerwa",
+        "domain": "Default"
+    },
+    {
+        "availability_zone": "cbls",
+        "created_at": "2018-04-19T17:14:42+00:00",
+        "display_name": "vol-c8162412",
+        "event_type": "volume.create.end",
+        "generated": "2018-04-19T17:14:43.787253",
+        "host": "rbd:volumes@rbd#rbd",
+        "message_id": "63578c74-4fc5-498e-982f-e6326491a47f",
+        "project_id": "4aeb007a4f9020333a1a1be224bef276",
+        "project_name": "zealous",
+        "raw": {},
+        "request_id": "req-60bf8d5d-e80b-4748-9b5f-737674cf9428",
+        "resource_id": "64a8ece5-6853-40d6-8e56-ef919eea37f4",
+        "service": "volume.rbd:volumes@rbd#rbd",
+        "size": "9",
+        "status": "available",
+        "tenant_id": "4aeb007a4f9020333a1a1be224bef276",
+        "type": "d947c745-3a60-4ddb-abc6-97fddfe82846",
+        "user_id": "3abcb51ff942a45b52ac90915ef4c7fb",
+        "user_name": "yerwa",
+        "domain": "Default"
+    }
+    """
+
+    volume_data = openstack_data["volume_dict"][vol_id]
+    host_name = getattr(volume_data, "os-val-host-attr:host", "")
+    tenant_id = getattr(volume_data, "os-vol-tenant-attr:tenant_id", "")
+    project_rec = openstack_data["project_dict"][tenant_id]
+    volume_event_template = {
+        "availability_zone": volume_data.availability_zone,
+        "created_at": volume_data.created_at,
+        "display_name": volume_data.name,
+        "event_type": event_type,
+        "generated": volume_data.updated_at,  # will be filled out below
+        "host": host_name,
+        "message_id": "",
+        "project_id": tenant_id,
+        "project_name": project_rec["name"],
+        "raw": {},
+        "request_id": "",
+        "resource_id": volume_data.id,
+        "service": None,  # need to
+        "size": volume_data.size,
+        "status": volume_data.status,
+        "tenant_id": tenant_id,
+        "type": "",
+        "user_id": volume_data.user_id,
+        "user_name": openstack_data["user_dict"][volume_data.user_id]["name"],
+        "domain": project_rec["domain_id"],
+    }
+
+    event_to_status = {
+        "volume.create.start": "creating",
+        "volume.create.end": "available",
+        "volume.attach.start": "",
+        "volume.attach.end": "",
+        "volume.delete.start": "",
+        "volume.delete.end": "",
+    }
+
+    if volume_event_template["event_type"].startswith("volume.create"):
+        volume_event_template["generated"] = volume_data.created_at
+
+    event_list = convert_to_ceilometer_event_types(volume_event_template)
+    for ceilometer_event in event_list:
+        ceilometer_event["status"] = event_to_status[ceilometer_event["event_type"]]
+
+    return event_list
+
+
+def process_volume_events(openstack_conn, script_datetime, openstack_data, cluster_state):
+    """collects and processes event data"""
+    events_by_date = {}
+    # so that we can tell if the vol not present
+    for vol_id in cluster_state["vol_timestamps"]:
+        cluster_state["vol_timestamps"][vol_id]["updated"] = 0
+
+        # volume_event_list = openstack_cinder.instance_action.list(server["instance_id"])
+    volume_dict = openstack_data["volume_dict"]
+    events_by_date = None
+    for vol_id, volume_data in volume_dict.items():
+        if vol_id == "cbee8ee2-9870-489a-919a-f0b3ac7e403b":
+            print("got here")
+        if vol_id not in cluster_state["vol_timestamps"]:
+            cluster_state["vol_timestamps"][vol_id] = {}
+            cluster_state["vol_timestamps"][vol_id]["updated"] = 0
+
+        event_datetime = datetime.datetime.fromisoformat(volume_data.updated_at)
+        last_run_datetime = None
+        if cluster_state["last_run_timestamp"]:
+            last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
+        vol_create_datetime = datetime.datetime.fromisoformat(volume_data.created_at)
+
+        if last_run_datetime < vol_create_datetime:
+            volume_event_list = create_volume_event(openstack_data, cluster_state, vol_id, "volume.create")
+            events_by_date = merge_cache_with_current_data(volume_event_list, events_by_date)
+            cluster_state["vol_timestamps"][vol_id]["updated"] = 1
+
+        if volume_data.status == "deleted":
+            del cluster_state["vol_timestamps"][vol_id]
+            volume_event_list = create_volume_event(openstack_data, cluster_state, vol_id, "volume.delete")
+            events_by_date = merge_cache_with_current_data(openstack_data, events_by_date)
+            cluster_state["vol_timestamps"][vol_id]["updated"] = 1
 
     return events_by_date
 
@@ -547,8 +721,21 @@ def read_json_file(filename, default):
     return default
 
 
+def merge_event_by_date(events_by_date_1, events_by_date_2):
+    """combines 2 hash tables of events by date"""
+    ret_events_by_date = copy.deepcopy(events_by_date_1)
+    for date in events_by_date_2:
+        if date in ret_events_by_date:
+            ret_events_by_date[date].append(copy.deepcopy(events_by_date_2[date]))
+        else:
+            ret_events_by_date[date] = copy.deepcopy(events_by_date_2[date])
+    return ret_events_by_date
+
+
 def merge_cache_with_current_data(event_cache, events_by_date):
-    """add in the event_cache"""
+    """merges an event list to hashtable of events by date"""
+    if not events_by_date:
+        events_by_date = {}
     for event in event_cache:
         event_datetime = datetime.datetime.fromisoformat(event["generated"])
         event_hash = event_datetime.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -574,13 +761,15 @@ def main():
 
     openstack_data = collect_data_from_openstack(openstack_conn, script_datetime)
 
-    server_state = read_json_file("last_report_time.json", {"last_run_timestamp": None, "vm_timestamps": {}})
+    cluster_state = read_json_file("last_report_time.json", {"last_run_timestamp": None, "vm_timestamps": {}, "vol_timestamps": {}})
     event_cache = read_json_file("CachedEvents.json", [])
 
-    events_by_date = process_compute_events(openstack_conn, script_datetime, openstack_data, server_state)
+    compute_events_by_date = process_compute_events(openstack_conn, script_datetime, openstack_data, cluster_state)
+    volume_events_by_date = process_volume_events(openstack_conn, script_datetime, openstack_data, cluster_state)
 
     script_file_datetime = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
 
+    events_by_date = merge_event_by_date(compute_events_by_date, volume_events_by_date)
     events_by_date = merge_cache_with_current_data(event_cache, events_by_date)
 
     for start_timestamp, daily_events in events_by_date.items():
@@ -593,19 +782,26 @@ def main():
             json.dump(daily_events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
         print(f"output file: {json_out}")
 
-    vm_keys = list(server_state["vm_timestamps"].keys())
+    vm_keys = list(cluster_state["vm_timestamps"].keys())
     for key in vm_keys:
-        if server_state["vm_timestamps"][key]["updated"] == 0:
-            del server_state["vm_timestamps"][key]
+        if cluster_state["vm_timestamps"][key]["updated"] == 0:
+            del cluster_state["vm_timestamps"][key]
         else:
-            del server_state["vm_timestamps"][key]["updated"]
+            del cluster_state["vm_timestamps"][key]["updated"]
+
+    vol_keys = list(cluster_state["vol_timestamps"].keys())
+    for key in vol_keys:
+        if cluster_state["vol_timestamps"][key]["updated"] == 0:
+            del cluster_state["vol_timestamps"][key]
+        else:
+            del cluster_state["vol_timestamps"][key]["updated"]
 
     with open("hierarchy.csv", "w+", encoding="utf-8") as file:
         json.dump(openstack_data["user_dict"], file)
 
-    server_state["last_run_timestamp"] = script_datetime.isoformat()
+    cluster_state["last_run_timestamp"] = script_datetime.isoformat()
     with open("last_report_time.json", "w", encoding="utf-8") as file:
-        json.dump(server_state, file)
+        json.dump(cluster_state, file)
 
 
 if __name__ == "__main__":
