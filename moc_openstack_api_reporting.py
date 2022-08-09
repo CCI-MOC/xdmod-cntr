@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """ This is intended to poll openstack for changes to be reported in xdmod """
-# pylint: disable=line-too-long chained-comparison
+# pylint: disable=line-too-long chained-comparison too-many-locals
 
 
 import json
@@ -324,15 +324,14 @@ def convert_new_to_old_eventtype(event_type):
         "compute.instance.attach_volume": "compute.instance.volume.attach",
         "compute.instance.detach_volume": "compute.instance.volume.dettach",
     }
-    if event_type in map_current_to_old:
-        old_event_type = map_current_to_old[event_type]
-    else:
-        old_event_type = event_type
-    return old_event_type
+    return map_current_to_old.get(event_type, event_type)
 
 
 def get_list_of_ceilometer_event_types(event_type):
-    # Some of the new events are multiple old events
+    """
+    returns list of ceilometers events
+    note: Some of the new events are multiple old events
+    """
     event_list = []
     ceilometer_event_types = {
         # "volume_type.create": [],
@@ -507,6 +506,7 @@ def collect_data_from_openstack(openstack_conn, script_datetime):
 
 
 def events_to_event_by_date(event_list):
+    """takes an event list and hashes it by date"""
     events_by_date = {}
     for event in event_list:
         event_timestamp = datetime.datetime.fromisoformat(event["generated"]).replace(hour=0, minute=0, second=0).isoformat()
@@ -577,30 +577,10 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
     return events_by_date
 
 
-def create_volume_event(openstack_data, cluster_state, vol_id, event_type):
+def create_volume_event(openstack_data, vol_id, event_type):
     """
-        {
-        "availability_zone": "cbls",
-        "created_at": "2018-04-19T17:14:42+00:00",
-        "display_name": "vol-c8162412",
-        "event_type": "volume.create.start",        - and volume.create.end
-        "generated": "2018-04-19T17:14:42.999236",
-        "host": "rbd:volumes@rbd#rbd",
-        "message_id": "f64ecffa-f202-4da0-9e3a-5726396c0259",
-        "project_id": "4aeb007a4f9020333a1a1be224bef276",
-        "project_name": "zealous",
-        "raw": {},
-        "request_id": "req-60bf8d5d-e80b-4748-9b5f-737674cf9428",
-        "resource_id": "64a8ece5-6853-40d6-8e56-ef919eea37f4",
-        "service": "volume.rbd:volumes@rbd#rbd",
-        "size": "9",
-        "status": "creating",
-        "tenant_id": "4aeb007a4f9020333a1a1be224bef276",
-        "type": "d947c745-3a60-4ddb-abc6-97fddfe82846",
-        "user_id": "3abcb51ff942a45b52ac90915ef4c7fb",
-        "user_name": "yerwa",
-        "domain": "Default"
-    },
+    Creates the specified volume event
+
     {
         "availability_zone": "cbls",
         "created_at": "2018-04-19T17:14:42+00:00",
@@ -671,37 +651,35 @@ def create_volume_event(openstack_data, cluster_state, vol_id, event_type):
     return event_list
 
 
-def process_volume_events(openstack_conn, script_datetime, openstack_data, cluster_state):
+def process_volume_events(openstack_data, cluster_state):
     """collects and processes event data"""
     events_by_date = {}
     # so that we can tell if the vol not present
     for vol_id in cluster_state["vol_timestamps"]:
         cluster_state["vol_timestamps"][vol_id]["updated"] = 0
 
-        # volume_event_list = openstack_cinder.instance_action.list(server["instance_id"])
     volume_dict = openstack_data["volume_dict"]
     events_by_date = None
     for vol_id, volume_data in volume_dict.items():
-        if vol_id == "cbee8ee2-9870-489a-919a-f0b3ac7e403b":
-            print("got here")
         if vol_id not in cluster_state["vol_timestamps"]:
             cluster_state["vol_timestamps"][vol_id] = {}
             cluster_state["vol_timestamps"][vol_id]["updated"] = 0
 
-        event_datetime = datetime.datetime.fromisoformat(volume_data.updated_at)
+        # consider using volume_data.updated_at for resize events
+        # event_datetime = datetime.datetime.fromisoformat(volume_data.updated_at)
         last_run_datetime = None
         if cluster_state["last_run_timestamp"]:
             last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
         vol_create_datetime = datetime.datetime.fromisoformat(volume_data.created_at)
 
         if last_run_datetime < vol_create_datetime:
-            volume_event_list = create_volume_event(openstack_data, cluster_state, vol_id, "volume.create")
+            volume_event_list = create_volume_event(openstack_data, vol_id, "volume.create")
             events_by_date = merge_cache_with_current_data(volume_event_list, events_by_date)
             cluster_state["vol_timestamps"][vol_id]["updated"] = 1
 
         if volume_data.status == "deleted":
             del cluster_state["vol_timestamps"][vol_id]
-            volume_event_list = create_volume_event(openstack_data, cluster_state, vol_id, "volume.delete")
+            volume_event_list = create_volume_event(openstack_data, vol_id, "volume.delete")
             events_by_date = merge_cache_with_current_data(openstack_data, events_by_date)
             cluster_state["vol_timestamps"][vol_id]["updated"] = 1
 
@@ -710,14 +688,8 @@ def process_volume_events(openstack_conn, script_datetime, openstack_data, clust
 
 def read_json_file(filename, default):
     """reads a json file and returns the data"""
-    try:
-        with open(filename, "r", encoding="utf-8") as file:
-            return json.load(file)
-    except IOError:
-        pass
-    except ValueError:
-        # Ignore badly formatted file or empty file
-        pass
+    with open(filename, "r", encoding="utf-8") as file:
+        return json.load(file)
     return default
 
 
@@ -765,7 +737,7 @@ def main():
     event_cache = read_json_file("CachedEvents.json", [])
 
     compute_events_by_date = process_compute_events(openstack_conn, script_datetime, openstack_data, cluster_state)
-    volume_events_by_date = process_volume_events(openstack_conn, script_datetime, openstack_data, cluster_state)
+    volume_events_by_date = process_volume_events(openstack_data, cluster_state)
 
     script_file_datetime = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
 
