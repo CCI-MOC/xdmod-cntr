@@ -1,0 +1,6 @@
+bases:
+  - ../../xdmod-build
+  - ../../kube-base
+patchesStrategicMerge:
+  - patches/bc-xdmod.yaml
+  - patches/bc-xdmod-dev.yaml
