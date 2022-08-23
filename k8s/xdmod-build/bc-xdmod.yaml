@@ -17,3 +17,5 @@ spec:
     to:
       kind: ImageStreamTag
       name: moc-xdmod:latest
+  triggers:
+    - type: ConfigChange

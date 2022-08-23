@@ -14,7 +14,7 @@ spec:
         app: xdmod
     spec:
       containers:
-        - image: moc-xdmod
+        - image: moc-xdmod-dev
           name: xdmod
           imagePullPolicy: IfNotPresent
           ports:
@@ -45,7 +45,7 @@ spec:
       #       readOnly: true
       #       mountPath: "/root/resources/nerc_shift_0/"
       initContainers:
-        - image: moc-xdmod
+        - image: moc-xdmod-dev
           name: xdmod-init-1
           imagePullPolicy: IfNotPresent
           command:
@@ -69,7 +69,7 @@ spec:
               mountPath: /root/httpd
             - name: vol-xdmod-init
               mountPath: /root/xdmod_init
-        - image: moc-xdmod
+        - image: moc-xdmod-dev
           name: xdmod-init-2
           imagePullPolicy: IfNotPresent
           command:
@@ -91,9 +91,6 @@ spec:
               mountPath: /etc/openstack
             - name: vol-httpd-conf
               mountPath: /root/httpd
-      #     - name: vol-nerc-shift-0-cred
-      #       readOnly: true
-      #       mountPath: "/root/resources/nerc_shift_0/"
       volumes:
         - name: vol-xdmod-conf
           persistentVolumeClaim:
@@ -128,6 +125,14 @@ spec:
               - key: httpd.conf
                 path: httpd.conf
             name: cm-httpd-conf
-      # - name: vol-nerc-shift-0-cred
-      #   secret:
-      #     secretName: xdmod-os-app-cred
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - xdmod
+        from:
+          kind: ImageStreamTag
+          namespace: xdmod
+          name: "moc-xdmod-dev:latest"
