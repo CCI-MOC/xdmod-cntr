@@ -1,4 +1,5 @@
-bases:
+kind: Kustomization
+resources:
   - ../../xdmod-build
   - ../../kube-base
 patchesStrategicMerge:
