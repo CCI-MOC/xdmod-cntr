@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
   - bc-xdmod.yaml
   - is-xdmod.yaml
+  - bc-xdmod-dev.yaml
+  - is-xdmod-dev.yaml
