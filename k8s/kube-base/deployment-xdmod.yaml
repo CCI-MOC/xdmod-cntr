@@ -26,8 +26,6 @@ spec:
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
-            - name: vol-xdmod-openshift-data
-              mountPath: /root/xdmod_openshift_data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -40,10 +38,6 @@ spec:
               mountPath: /var/log/httpd
             - name: vol-run-httpd
               mountPath: /run/httpd
-      # This is purely for convenience - not needed
-      #     - name: vol-nerc-shift-0-cred
-      #       readOnly: true
-      #       mountPath: "/root/resources/nerc_shift_0/"
       initContainers:
         - image: moc-xdmod-dev
           name: xdmod-init-1
@@ -63,8 +57,6 @@ spec:
               mountPath: /mnt/xdmod_src
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
-            - name: vol-xdmod-openshift-data
-              mountPath: /root/xdmod_openshift_data
             - name: vol-httpd-cm
               mountPath: /root/httpd
             - name: vol-xdmod-init
@@ -83,8 +75,6 @@ spec:
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
               mountPath: /root/xdmod_data
-            - name: vol-xdmod-openshift-data
-              mountPath: /root/xdmod_openshift_data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
