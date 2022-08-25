@@ -23,10 +23,18 @@ configMapGenerator:
   - name: cm-httpd-conf
     files:
       - httpd.conf
+  - name: cm-my-conf
+    files:
+      - mariadb-conf/etc-mysql-my.cnf
+  - name: cm-mariadb-conf
+    files:
+      - mariadb-conf/etc-mysql-mariadb.cnf
+  - name: cm-mysql-safe-conf
+    files:
+      - mariadb-conf/etc-mysql-conf.d-mysqld_safe_syslog.cnf
 generatorOptions:
   disableNameSuffixHash: true
   labels:
     type: generated
   annotations:
     note: generated
-
