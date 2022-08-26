@@ -1,4 +1,5 @@
-# MariaDB-specific config file - from configmap
+# from configmap
+# MariaDB-specific config file
 # Read by /etc/mysql/my.cnf
 
 [client]
