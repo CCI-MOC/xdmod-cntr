@@ -9,6 +9,7 @@ import logging
 import datetime
 import copy
 import sys
+import os
 import openstack
 from novaclient import client as nova_client
 from cinderclient import client as cinder_client
@@ -182,15 +183,10 @@ def do_parse_args(config):
 
 def do_read_config(config):
     """reads from the config file if present"""
-    try:
+    if os.path.isfile(f"{config['config_dir']}/openstack_reporting.json"):
         with open(f"{config['config_dir']}/openstack_reporting.json", "r", encoding="utf-8") as config_fp:
             newconfig = json.load(config_fp)
             config.update(newconfig)
-    except IOError:
-        return
-    except ValueError:
-        print("Error, Badly formatted config file")
-        sys.exit()
 
 
 def build_event_item(event, server):
@@ -544,7 +540,7 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                 events_by_date[event_timestamp] = []
             events_by_date[event_timestamp].append(build_event(server, event_data))
 
-        # I'm getting a error with this statement
+        # I'm getting a error with this statement - so I am not using it even though it would be better!
         # openstack_event_list = openstack_nova.instance_action.list(server_id, changes_since=last_run_timestamp, changes_before=script_timestamp)
         compute_event_list = openstack_nova.instance_action.list(server["instance_id"])
         for compute_event in compute_event_list:
@@ -559,12 +555,6 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                 }
                 event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
                 events_by_date = events_to_event_by_date(event_list)
-
-                # for event in event_list:
-                #    event_timestamp = datetime.datetime.fromisoformat(event["generated"]).replace(hour=0, minute=0, second=0).isoformat()
-                #    if event_timestamp not in events_by_date:
-                #        events_by_date[event_timestamp] = []
-                #    events_by_date[event_timestamp].append(event)
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
@@ -667,8 +657,8 @@ def process_volume_events(openstack_data, cluster_state):
 
         # consider using volume_data.updated_at for resize events
         # event_datetime = datetime.datetime.fromisoformat(volume_data.updated_at)
-        last_run_datetime = None
-        if cluster_state["last_run_timestamp"]:
+        last_run_datetime = datetime.datetime.utcfromtimestamp(0)
+        if "last_run_timestamp" in cluster_state and cluster_state["last_run_timestamp"]:
             last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
         vol_create_datetime = datetime.datetime.fromisoformat(volume_data.created_at)
 
@@ -688,8 +678,9 @@ def process_volume_events(openstack_data, cluster_state):
 
 def read_json_file(filename, default):
     """reads a json file and returns the data"""
-    with open(filename, "r", encoding="utf-8") as file:
-        return json.load(file)
+    if os.path.isfile(filename):
+        with open(filename, "r", encoding="utf-8") as file:
+            return json.load(file)
     return default
 
 
