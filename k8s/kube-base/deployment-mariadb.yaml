@@ -25,7 +25,19 @@ spec:
           volumeMounts:
             - name: vol-mariadb
               mountPath: /var/lib/mysql
+            - name: vol-mariadb-conf
+              mountPath: /etc/mysql/my.cnf
+              subPath: my.cnf
+            - name: vol-mariadb-conf
+              mountPath: /etc/mysql/mariadb.cnf
+              subPath: mariadb.cnf
+            - name: vol-mariadb-conf
+              mountPath: /etc/mysql/conf.d/mysqld_safe_syslog.cnf
+              subPath: mysqld_safe_syslog.cnf
       volumes:
         - name: vol-mariadb
           persistentVolumeClaim:
             claimName: pvc-mariadb
+        - name: vol-mariadb-conf
+          configMap:
+            name: cm-mariadb-conf
