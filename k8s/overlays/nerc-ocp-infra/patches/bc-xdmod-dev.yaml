@@ -1,0 +1,9 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: bc-xdmod-dev
+spec:
+  source:
+    type: Git
+    git:
+      ref: ArgoDeploy

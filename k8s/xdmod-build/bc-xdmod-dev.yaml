@@ -8,7 +8,6 @@ spec:
     type: Git
     git:
       uri: https://github.com/CCI-MOC/xdmod-cntr.git
-      ref: XdmodK8sDeployment
     contextDir: /
   strategy:
     type: Docker
@@ -16,7 +15,6 @@ spec:
       dockerfilePath: Dockerfile.moc-xdmod.dev
       from:
         kind: ImageStreamTag
-        name: moc-xdmod:latest
   output:
     to:
       kind: ImageStreamTag
