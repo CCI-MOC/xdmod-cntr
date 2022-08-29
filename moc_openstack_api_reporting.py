@@ -649,7 +649,6 @@ def process_volume_events(openstack_data, cluster_state):
         cluster_state["vol_timestamps"][vol_id]["updated"] = 0
 
     volume_dict = openstack_data["volume_dict"]
-    events_by_date = None
     for vol_id, volume_data in volume_dict.items():
         if vol_id not in cluster_state["vol_timestamps"]:
             cluster_state["vol_timestamps"][vol_id] = {}
