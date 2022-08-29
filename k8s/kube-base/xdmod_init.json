@@ -37,6 +37,11 @@
             "name": "kaizen",
             "formal_name": "MOC Kaizen",
             "type": "cloud"
+        },
+        {
+            "name": "nerc_openshift_staging",
+            "formal_name": "NERC OpenShift Staging",
+            "type": "hpc"
         }
     ]
 }
