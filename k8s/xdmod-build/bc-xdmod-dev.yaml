@@ -15,6 +15,7 @@ spec:
       dockerfilePath: Dockerfile.moc-xdmod.dev
       from:
         kind: ImageStreamTag
+        name: moc-xdmod:latest
   output:
     to:
       kind: ImageStreamTag
