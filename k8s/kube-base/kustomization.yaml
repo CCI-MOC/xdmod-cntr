@@ -3,6 +3,7 @@ commonLabels:
 namespace: xdmod
 
 resources:
+  - ns-xdmod.yaml
   - pvc-mariadb.yaml
   - pvc-xdmod-conf.yaml
   - pvc-xdmod-src.yaml
