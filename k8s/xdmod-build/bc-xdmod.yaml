@@ -12,6 +12,9 @@ spec:
   strategy:
     type: Docker
     dockerStrategy:
+      from:
+        kind: DockerImage
+        name: centos:7.9.2009
       dockerfilePath: Dockerfile.moc-xdmod
   output:
     to:

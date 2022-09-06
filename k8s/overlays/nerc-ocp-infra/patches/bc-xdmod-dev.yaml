@@ -6,4 +6,4 @@ spec:
   source:
     type: Git
     git:
-      ref: IncludeNamespace
+      ref: FixInvalidBc
