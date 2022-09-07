@@ -38,6 +38,8 @@ spec:
               mountPath: /var/log/httpd
             - name: vol-run-httpd
               mountPath: /run/httpd
+            - name: vol-php-session
+              mountPath: /var/lib/php/session
       initContainers:
         - image: moc-xdmod-dev
           name: xdmod-init-1
@@ -102,6 +104,8 @@ spec:
         - name: vol-var-log-httpd
           emptyDir: {}
         - name: vol-run-httpd
+          emptyDir: {}
+        - name: vol-php-session
           emptyDir: {}
         - name: vol-xdmod-init
           configMap:
