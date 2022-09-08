@@ -101,7 +101,15 @@ long_query_time = 10
 
 #log-queries-not-using-indexes
 #log_slow_admin_statements
-#
+
+# Performance schema enablement
+# see (https://mariadb.com/kb/en/performance-schema-overview/)
+performance_schema=ON
+performance-schema-instrument='stage/%=ON'
+performance-schema-consumer-events-stages-current=ON
+performance-schema-consumer-events-stages-history=ON
+performance-schema-consumer-events-stages-history-long=ON
+
 # The following can be used as easy to replay backup logs or for replication.
 # note: if you are setting up a replication slave, see README.Debian about
 #       other settings you may need to change.
