@@ -6,5 +6,4 @@ spec:
   source:
     type: Git
     git:
-      ref: FixInvalidBc
-
+      ref: MakeContainersUnique
