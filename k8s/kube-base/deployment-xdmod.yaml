@@ -1,20 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: moc-xdmod
+  name: xdmod-ui
+  labels:
+    component: xdmod-ui
 spec:
   selector:
     matchLabels:
-      app: xdmod
+      component: xdmod-ui
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: xdmod
+        component: xdmod-ui
     spec:
       containers:
-        - image: moc-xdmod-dev
+        - image: moc-xdmod:latest
           name: xdmod
           imagePullPolicy: IfNotPresent
           ports:
@@ -41,7 +43,7 @@ spec:
             - name: vol-php-session
               mountPath: /var/lib/php/session
       initContainers:
-        - image: moc-xdmod-dev
+        - image: moc-xdmod-dev:latest
           name: xdmod-init-1
           imagePullPolicy: IfNotPresent
           command:
@@ -63,7 +65,7 @@ spec:
               mountPath: /root/httpd
             - name: vol-xdmod-init
               mountPath: /root/xdmod_init
-        - image: moc-xdmod-dev
+        - image: moc-xdmod:latest
           name: xdmod-init-2
           imagePullPolicy: IfNotPresent
           command:
