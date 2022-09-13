@@ -612,7 +612,7 @@ def create_volume_event(openstack_data, vol_id, event_type):
         "raw": {},
         "request_id": "",
         "resource_id": volume_data.id,
-        "service": None,  # need to
+        "service": "Cinder",  # need to
         "size": volume_data.size,
         "status": volume_data.status,
         "tenant_id": tenant_id,
