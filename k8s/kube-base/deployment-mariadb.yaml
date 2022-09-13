@@ -2,16 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mariadb
+  labels:
+    component: mariadb
 spec:
   selector:
     matchLabels:
-      app: mariadb
+      component: mariadb
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: mariadb
+        component: mariadb
     spec:
       containers:
         - image: mariadb:10.3.34

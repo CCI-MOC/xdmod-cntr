@@ -4,7 +4,7 @@ metadata:
   name: xdmod
 spec:
   selector:
-    app: xdmod
+    component: xdmod-ui
   ports:
     - protocol: TCP
       port: 8080
