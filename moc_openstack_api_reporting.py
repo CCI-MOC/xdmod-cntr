@@ -189,55 +189,6 @@ def do_read_config(config):
             config.update(newconfig)
 
 
-def build_event_item(event, server):
-    """Builds the event record from the vm and volume data"""
-    # just grab the first network from the addresses
-    network_interfaces = len(server.addresses)
-    private_ip = ""
-    if network_interfaces > 0:
-        network = list(server.addresses.keys())[0]
-        if len(server.addresses[network]) > 0:
-            private_ip = server.addresses[network][0]["addr"]
-
-    event_item = {
-        "node_controller": server.hostId,  # IP address of node controller   -- is it better to use the host id?
-        "public_ip": "",  # Publicly available IP address,  -- empty for now
-        "account": server.tenant_id,  # Account that user is logged into,  -- using the instant's project id (could the event project id be different?)
-        "event_type": event.action,  # Type of event,
-        "event_time": event.start_time,  # Time that event happened,
-        "instance_type": {
-            "name": server.id,  # Name of VM,   --  the instance id
-            "cpu": str(server.vcpus),  # Number of CPU's the instance has,
-            "memory": str(server.ram),  # Amount of memory the instance has,
-            "disk": str(server.disk),  # Amount of storage space in GB this instance has,
-            "networkInterfaces": network_interfaces,  # Number of network interfaces
-        },
-        "image_type": server.image,  # Name of the type of image this instance uses,
-        "instance_id": server.id,  # ID for the VM instance,
-        "record_type": "",  # Type of record from list in modw_cloud.record_type table,
-        "block_devices": [],
-        "private_ip": private_ip,  # "Private IP address used by the instance,
-        "root_type": "",  # "Type of storage initial storage volume is, either ebs or instance-store
-    }
-
-    vm_volumes = getattr(server, "os-extended-volumes:volumes_attached", [])
-    for vol in vm_volumes.values():
-        vol_project_id = getattr(vol, "os-vol-tenant-attr:tenant_id", None)
-        backing = getattr(vol, "os-vol-host-attr:host", "")
-        volume_data = {
-            "account": vol_project_id,  # "Account that the storage device belongs to",
-            "attach_time": "",  # "Time that the storage device was attached to this instance",
-            "backing": backing,  # "type of storage used for this block device, either ebs or instance-store",
-            "create_time": vol.created_at,  # "Time the storage device was created",
-            "user": vol.user_id,  # "User that the storage device was created by",
-            "id": vol.id,  # "ID of the storage volume",
-            "size": str(vol.size),  # "Size in GB of the storage volume"
-        }
-        event_item["block_devices"].append(volume_data)
-
-    return event_item
-
-
 # 'compute.instance.create.error': 1,
 # 'compute.instance.create.start': 1,
 # 'compute.instance.shutdown.end': 1,
