@@ -688,7 +688,7 @@ def merge_event_by_date(events_by_date_1, events_by_date_2):
     ret_events_by_date = copy.deepcopy(events_by_date_1)
     for date in events_by_date_2:
         if date in ret_events_by_date:
-            ret_events_by_date[date].append(copy.deepcopy(events_by_date_2[date]))
+            ret_events_by_date[date] = ret_events_by_date[date] + copy.deepcopy(events_by_date_2[date])
         else:
             ret_events_by_date[date] = copy.deepcopy(events_by_date_2[date])
     return ret_events_by_date
