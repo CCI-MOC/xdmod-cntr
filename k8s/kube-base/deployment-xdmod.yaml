@@ -121,14 +121,3 @@ spec:
               - key: httpd.conf
                 path: httpd.conf
             name: cm-httpd-conf
-  triggers:
-    - type: ConfigChange
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-          - xdmod
-        from:
-          kind: ImageStreamTag
-          namespace: xdmod
-          name: "moc-xdmod-dev:latest"
