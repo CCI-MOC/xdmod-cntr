@@ -525,7 +525,8 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                     "request_id": compute_event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
                 }
                 event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
-                events_by_date = events_to_event_by_date(event_list)
+                compute_events_by_date = events_to_event_by_date(event_list)
+                events_by_date = merge_event_by_date(compute_events_by_date, events_by_date)
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
