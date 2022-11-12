@@ -361,42 +361,62 @@ def compile_server_state(server, project_dict, flavor_dict, user_dict):
     if server.user_id in user_dict:
         user_name = user_dict[server.user_id]["name"]
 
+    # because the NERC has flavors IDs that don't exist in their flavor dictionary
+    disk_gb = "0"
+    ephemeral_gb = "0"
+    instance_type = f"unknown flavor({server.flavor['id']})"
+    memory_mb = "0"
+    root_gb = "0"
+    vcpus = "0"
+    if server.flavor["id"] in flavor_dict:
+        disk_gb = str(flavor_dict[server.flavor["id"]]["disk"])
+        ephemeral_gb = str(flavor_dict[server.flavor["id"]]["ephemeral"])
+        instance_type = flavor_dict[server.flavor["id"]]["name"]
+        memory_mb = str(flavor_dict[server.flavor["id"]]["ram"])
+        root_gb = str(flavor_dict[server.flavor["id"]]["disk"])
+        vcpus = str(flavor_dict[server.flavor["id"]]["vcpus"])
+
+    domain = f"unkown tenant_id ({server.tenant_id})"
+    project_name = f"unkown tenant_id ({server.tenant_id})"
+    if server.tenant_id in project_dict:
+        domain = project_dict[server.tenant_id]["domain_id"]
+        project_name = project_dict[server.tenant_id]["name"]
     # I am including all of the commented out fields just to document the entire compute structure
     # in one spot.
     server_state = {
         # "audit_period_beginning": start_ts,   --- only add for compute.instance.exists (either active or deleted)
         # "audit_period_ending": "end_ts",
-        "disk_gb": flavor_dict[server.flavor["id"]]["disk"],
-        "domain": project_dict[server.tenant_id]["domain_id"],
-        "ephemeral_gb": flavor_dict[server.flavor["id"]]["ephemeral"],
+        "disk_gb": disk_gb,
+        "domain": domain,
+        "ephemeral_gb": ephemeral_gb,
         # "event_type": event_type,
         # "generated": end_ts,
         "host": host,
         "instance_id": server.id,
-        "instance_type": flavor_dict[server.flavor["id"]]["name"],
+        "instance_type": instance_type,
         # what this should be
         #   "instance_type_id": server.flavor["id"],
         # what xdmod is expecting:
         "instance_type_id": "9",
         "launched_at": launched_ts,
         # "deleted_at": terminated_ts,
-        "memory_mb": str(flavor_dict[server.flavor["id"]]["ram"]),
+        "memory_mb": memory_mb,
         # Probably unknowable - I suspect this is what ceilometer adds.
         # "message_id": "17d6645e-90f9-481e-9751-f8ec3b9397a2",
         "project_id": server.tenant_id,
-        "project_name": project_dict[server.tenant_id]["name"],
+        "project_name": project_name,
         "raw": {},
         # request_id can be NULL
         # "request_id": "req-00b3079e-8cb1-4e63-aa6f-f96fcbd4771c",
         # For compute evens, resource_id is the instance id
         "resource_id": server.id,
-        "root_gb": str(flavor_dict[server.flavor["id"]]["disk"]),
+        "root_gb": root_gb,
         "service": "compute",
         "state": server.status,
         "tenant_id": server.tenant_id,
         "user_id": server.user_id,
         "user_name": user_name,
-        "vcpus": str(flavor_dict[server.flavor["id"]]["vcpus"]),
+        "vcpus": vcpus,
     }
     if terminated_ts is not None:
         server_state["deleted_at"] = terminated_ts
@@ -505,7 +525,8 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                     "request_id": compute_event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
                 }
                 event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
-                events_by_date = events_to_event_by_date(event_list)
+                compute_events_by_date = events_to_event_by_date(event_list)
+                events_by_date = merge_event_by_date(compute_events_by_date, events_by_date)
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
@@ -549,7 +570,14 @@ def create_volume_event(openstack_data, vol_id, event_type):
     volume_data = openstack_data["volume_dict"][vol_id]
     host_name = getattr(volume_data, "os-val-host-attr:host", "")
     tenant_id = getattr(volume_data, "os-vol-tenant-attr:tenant_id", "")
-    project_rec = openstack_data["project_dict"][tenant_id]
+
+    project_name = f"unknown tenant_id ({tenant_id})"
+    domain_id = f"unknown tenant_id ({tenant_id})"
+    if tenant_id in openstack_data["project_dict"]:
+        project_rec = openstack_data["project_dict"][tenant_id]
+        project_name = project_rec["name"]
+        domain_id = project_rec["domain_id"]
+
     volume_event_template = {
         "availability_zone": volume_data.availability_zone,
         "created_at": volume_data.created_at,
@@ -559,7 +587,7 @@ def create_volume_event(openstack_data, vol_id, event_type):
         "host": host_name,
         "message_id": "",
         "project_id": tenant_id,
-        "project_name": project_rec["name"],
+        "project_name": project_name,
         "raw": {},
         "request_id": "",
         "resource_id": volume_data.id,
@@ -570,7 +598,7 @@ def create_volume_event(openstack_data, vol_id, event_type):
         "type": "",
         "user_id": volume_data.user_id,
         "user_name": openstack_data["user_dict"][volume_data.user_id]["name"],
-        "domain": project_rec["domain_id"],
+        "domain": domain_id,
     }
 
     event_to_status = {
