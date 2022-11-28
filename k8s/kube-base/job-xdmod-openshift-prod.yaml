@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: xdmod-openshift-prod-job
+spec:
+  schedule: "0 1 */1 * *"
+  concurrencyPolicy: "Forbid"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: xdmod-openshift-prod-job
+              image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: xdmod-openshift-prod-secret
+              env:
+                - name: OPENSHIFT_PROMETHEUS_URL
+                  value: https://prometheus-k8s-openshift-monitoring.apps.nerc-ocp-prod.rc.fas.harvard.edu
+                - name: OPENSHIFT_CLUSTER_NAME
+                  value: nerc-openshift-prod
+                - name: OPENSHIFT_SERVER_URL
+                  value: https://api.nerc-ocp-prod.rc.fas.harvard.edu:6443
+                - name: OUTPUT_DIR
+                  value: /data/xdmod_openshift_data/nerc_openshift_prod
+                - name: XDMOD_RESOURCE
+                  value: nerc_openshift_prod
+              command: ["/usr/bin/xdmod-openshift-reporting.sh"]
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-xdmod-src
+                  mountPath: /usr/share/xdmod
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+                - name: vol-xdmod-openshift-data
+                  mountPath: /data/xdmod_openshift_data
+          volumes:
+            - name: vol-xdmod-init
+              configMap:
+                items:
+                  - key: xdmod_init.json
+                    path: xdmod_init.json
+                name: cm-xdmod-init-json
+            - name: vol-var-log-xdmod
+              emptyDir: {}
+            - name: vol-xdmod-openshift-data
+              persistentVolumeClaim:
+                claimName: pvc-xdmod-openshift-data
+          restartPolicy: Never
+    backoffLimit: 1

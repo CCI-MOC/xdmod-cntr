@@ -1,5 +1,8 @@
 #!/bin/bash
 
+/usr/bin/xdmod-get-config-files 
+/usr/bin/sleep 30
+
 mkdir $OUTPUT_DIR
 mkdir $OUTPUT_DIR/logs
 cd $OUTPUT_DIR
