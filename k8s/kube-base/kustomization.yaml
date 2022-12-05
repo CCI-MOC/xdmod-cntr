@@ -18,6 +18,8 @@ resources:
   - deployment-mariadb.yaml
   - deployment-xdmod.yaml
   - route-xdmod.yaml
+  - cron-job-xdmod-ingestor.yaml
+  - cron-job-xdmod-openshift-prod.yaml
 
 configMapGenerator:
   - name: cm-xdmod-init-json
