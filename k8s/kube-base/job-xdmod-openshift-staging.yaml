@@ -6,6 +6,7 @@ spec:
   schedule: "0 1 */1 * *"
   jobTemplate:
     spec:
+      backoffLimit: 1
       template:
         spec:
           containers:
@@ -57,4 +58,3 @@ spec:
               persistentVolumeClaim:
                 claimName: pvc-xdmod-openshift-data
           restartPolicy: Never
-    backoffLimit: 1
