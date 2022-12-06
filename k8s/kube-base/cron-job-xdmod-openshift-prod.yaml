@@ -30,10 +30,6 @@ spec:
                   value: nerc_openshift_prod
               command: ["/usr/bin/xdmod-openshift-reporting.sh"]
               volumeMounts:
-                - name: vol-xdmod-conf
-                  mountPath: /etc/xdmod
-                - name: vol-xdmod-src
-                  mountPath: /usr/share/xdmod
                 - name: vol-xdmod-init
                   mountPath: /mnt/xdmod_init
                 - name: vol-var-log-xdmod
