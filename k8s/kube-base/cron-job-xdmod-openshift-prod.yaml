@@ -13,7 +13,7 @@ spec:
           containers:
             - name: xdmod-openshift-prod-job
               image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
               envFrom:
                 - secretRef:
                     name: xdmod-openshift-prod-secret
