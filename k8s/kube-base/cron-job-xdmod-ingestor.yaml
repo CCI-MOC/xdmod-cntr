@@ -12,7 +12,7 @@ spec:
           containers:
             - name: moc-xdmod
               image: moc-xdmod
-              imagePullPolicy: Always
+              imagePullPolicy: IfNotPresent
               command:
                 - "/usr/bin/xdmod-run-ingestor.sh"
               volumeMounts:
