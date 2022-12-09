@@ -78,6 +78,7 @@ COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
 COPY ./xdmod-run-ingestor.sh /usr/bin/xdmod-run-ingestor.sh
 COPY ./run-xdmod-openstack.sh /usr/bin/run-xdmod-openstack.sh
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
+COPY ./run-xdmod-openstack-hypervisor.sh /usr/bin/run-xdmod-openstack-hypervisor.sh
 RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
     && chmod 774 /usr/bin/xdmod-openstack-reporting \
@@ -90,6 +91,8 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-run-ingestor.sh \ 
     && chmod 774 /usr/bin/run-xdmod-openstack.sh \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack.sh \ 
+    && chmod 774 /usr/bin/run-xdmod-openstack-hypervisor.sh \
+    && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack-hypervisor.sh \
     && chmod -R g+rwx /usr/bin \
     && chgrp -R 0 /usr/bin \
     && chmod -R g+rwx /root \
