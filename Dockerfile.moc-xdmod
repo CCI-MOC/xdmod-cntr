@@ -91,11 +91,8 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-run-ingestor.sh \ 
     && chmod 774 /usr/bin/run-xdmod-openstack.sh \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack.sh \ 
-<<<<<<< HEAD
     && chmod 774 /usr/bin/run-xdmod-openstack-hypervisor.sh \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack-hypervisor.sh \
-=======
->>>>>>> 3615c57 (Adding the xdmod openstack shredding job)
     && chmod -R g+rwx /usr/bin \
     && chgrp -R 0 /usr/bin \
     && chmod -R g+rwx /root \
