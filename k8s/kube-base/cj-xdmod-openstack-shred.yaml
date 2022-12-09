@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cj-xdmod-openstack
+spec:
+  schedule: "0/20 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cj-xdmod-openstack
+              image: moc-xdmod
+              imagePullPolicy: Always
+              command:
+                - "/usr/bin/run-xdmod-openstack.sh"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-clouds-yaml
+                  mountPath: /etc/openstack
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+                - name: vol-openstack-data
+                  mountPath: /data
+          restartPolicy: Never
+          backoffLimit: 1
+          volumes:
+            - name: vol-xdmod-init
+              configMap:
+                items:
+                  - key: xdmod_init.json
+                    path: xdmod_init.json
+                name: cm-xdmod-init-json
+            - name: vol-xdmod-conf
+              emptyDir: {}
+            - name: vol-clouds-yaml
+              emptyDir: {}
+            - name: vol-var-log-xdmod
+              emptyDir: {}
+            - name: vol-openstack-data
+              persistentVolumeClaim:
+                claimName: pvc-xdmod-openstack-data
