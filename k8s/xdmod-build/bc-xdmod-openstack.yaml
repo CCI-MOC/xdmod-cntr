@@ -1,0 +1,24 @@
+piVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: bc-xdmod
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/CCI-MOC/xdmod-cntr.git
+    contextDir: /
+  strategy:
+    type: Docker
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: python-3.9.0
+      dockerfilePath: Dockerfile.xdmod-openstack
+  output:
+    to:
+      kind: ImageStreamTag
+      name: xdmod-openstack:latest
+  triggers:
+    - type: ConfigChange
