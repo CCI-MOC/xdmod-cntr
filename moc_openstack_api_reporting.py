@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 """ This is intended to poll openstack for changes to be reported in xdmod """
 # pylint: disable=line-too-long chained-comparison too-many-locals
 
