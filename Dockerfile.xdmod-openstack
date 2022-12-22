@@ -1,0 +1,45 @@
+# Dependencies needed by XDMoD
+FROM python:3.9.0
+
+
+# the python clients required to connect to openstack
+RUN apt-get update \
+    && apt-get install -y apt-transport-https \
+    && apt-get install -y default-mysql-client \
+    && apt-get install -y tar gzip \
+    && mkdir /app \
+    && pip3 install --upgrade pip \
+    && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk \
+    mysql mysql-connector-python-rf pexpect \
+    && pip3 install -I mysql-connector-python==8.0.29
+
+# openstack reporting
+COPY ./hypervisor_facts.py /app/xdmod-openstack-hypervisor
+COPY ./moc_openstack_api_reporting.py /app/xdmod-openstack-reporting
+COPY ./GetConfigFiles.py /app/xdmod-get-config-files
+COPY ./xdmod-run-ingestor.sh /app/xdmod-run-ingestor.sh
+COPY ./run-xdmod-openstack-hypervisor.sh /app/run-xdmod-openstack-hypervisor.sh
+COPY ./run-xdmod-openstack.sh /app/run-xdmod-openstack.sh 
+
+RUN chmod 774 /app/xdmod-openstack-hypervisor \
+    && sed -i -e 's/\r$//' /app/xdmod-openstack-hypervisor \
+    && chmod 774 /app/xdmod-openstack-reporting \
+    && sed -i -e 's/\r$//' /app/xdmod-openstack-reporting \ 
+    && chmod 774 /app/xdmod-get-config-files \
+    && sed -i -e 's/\r$//' /app/xdmod-get-config-files \ 
+    && chmod 774 /app/run-xdmod-openstack.sh \
+    && sed -i -e 's/\r$//' /app/run-xdmod-openstack.sh \ 
+    && chmod 774 /app/run-xdmod-openstack-hypervisor.sh \
+    && sed -i -e 's/\r$//' /app/run-xdmod-openstack-hypervisor.sh \
+    && chmod -R g+rwx /app \
+    && chgrp -R 0 /app 
+
+# force downgrade of mysql-connector-python
+# https://stackoverflow.com/questions/73244027/character-set-utf8-unsupported-in-python-mysql-connector
+RUN pip3 install -I mysql-connector-python==8.0.29
+
+EXPOSE 8080
+
+CMD ["/app/run-xdmod-openstack.sh"]
+
+WORKDIR /
