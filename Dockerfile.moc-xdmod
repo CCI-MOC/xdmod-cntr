@@ -25,7 +25,7 @@ RUN yum makecache && \
     libreoffice \
     mariadb-server mariadb cronie logrotate \
     perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
-    chromium-headless librsvg2-toolsm 
+    chromium-headless librsvg2-tools
 
 RUN yum clean all && \
     rm -rf /var/cache/yum
