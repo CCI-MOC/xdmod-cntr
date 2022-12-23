@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 """ This pulls the config files from the database and copies them in to /etc/xdmod
 
     Will be unnecessary if RWX volumes become available
@@ -62,7 +62,7 @@ def main():
         print(f"errors: {b64_err}")
         with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:
             fptr.write(b64_out)
-        os.system("/usr/bin/tar -xzf /etc/xdmod/etc_xdmod.tgz")
+        os.system("/bin/tar -xzf /etc/xdmod/etc_xdmod.tgz --directory /")
 
     cnx.commit()
     cnx.close()
