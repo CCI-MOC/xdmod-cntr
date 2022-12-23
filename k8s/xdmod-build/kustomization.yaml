@@ -5,3 +5,5 @@ resources:
   - is-xdmod.yaml
   - bc-xdmod-dev.yaml
   - is-xdmod-dev.yaml
+  - bc-xdmod-openstack.yaml
+  - is-xdmod-openstack.yaml
