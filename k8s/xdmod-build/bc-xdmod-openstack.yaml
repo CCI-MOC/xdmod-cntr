@@ -1,7 +1,7 @@
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  name: bc-xdmod
+  name: bc-xdmod-openstack
 spec:
   runPolicy: Serial
   source:
