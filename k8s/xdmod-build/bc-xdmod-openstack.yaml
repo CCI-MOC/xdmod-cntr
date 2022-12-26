@@ -1,7 +1,7 @@
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  name: bc-xdmod
+  name: bc-xdmod-openstack
 spec:
   runPolicy: Serial
   source:
@@ -14,7 +14,7 @@ spec:
     dockerStrategy:
       from:
         kind: DockerImage
-        name: python-3.9.0
+        name: python:3.9.0
       dockerfilePath: Dockerfile.xdmod-openstack
   output:
     to:
