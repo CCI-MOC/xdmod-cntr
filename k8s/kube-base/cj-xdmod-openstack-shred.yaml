@@ -9,12 +9,47 @@ spec:
     spec:
       template:
         spec:
+          initContainers:
+            - name: cj-init-xdmod-openstack
+              image: xdmod-openstack
+              resources:
+                requests:
+                  memory: "1Gi"
+                limits:
+                  memory: "2Gi"
+              imagePullPolicy: Always
+              command:
+                - "/app/run-xdmod-openstack.sh"
+              env:
+                - name: OPENSTACK_INSTANCE
+                  value: "nerc-openstack"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-clouds-yaml
+                  mountPath: /etc/openstack
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+                - name: vol-openstack-data
+                  mountPath: /data
           containers:
             - name: cj-xdmod-openstack
               image: moc-xdmod
               imagePullPolicy: Always
               command:
-                - "/usr/bin/run-xdmod-openstack.sh"
+                - xdmod-shredder
+              args:
+                [
+                  "--debug",
+                  "-f",
+                  "openstack",
+                  "-d",
+                  "/data",
+                  "-r",
+                  "nerc-openstack",
+                ]
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
