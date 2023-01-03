@@ -1,0 +1,32 @@
+piVersion: batch/v1beata1
+kind: CronJob
+metadata:
+  name: cj-xdmod-openstack
+spec:
+  schedule: "0/20 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          initContainers:
+            - name: cj-init-xdmod-openstack
+              env:
+                - name: OPENSTACK_INSTANCE
+                  value: "nerc-openstack"
+          containers:
+            - name: cj-xdmod-openstack
+              image: moc-xdmod
+              imagePullPolicy: Always
+              command:
+                - xdmod-shredder
+              args:
+                [
+                  "--debug",
+                  "-f",
+                  "openstack",
+                  "-d",
+                  "/data",
+                  "-r",
+                  "nerc-openstack",
+                ]
