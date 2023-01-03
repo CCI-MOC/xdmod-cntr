@@ -20,7 +20,7 @@ resources:
   - route-xdmod.yaml
   - cron-job-xdmod-ingestor.yaml
   - cron-job-xdmod-openshift-prod.yaml
-  - cj-xdmod-opestack-shred.yaml
+  - cj-xdmod-openstack-shred.yaml
 
 configMapGenerator:
   - name: cm-xdmod-init-json
