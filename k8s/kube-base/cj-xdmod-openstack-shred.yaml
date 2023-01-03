@@ -7,6 +7,7 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      backoffLimit: 1
       template:
         spec:
           initContainers:
@@ -62,7 +63,6 @@ spec:
                 - name: vol-openstack-data
                   mountPath: /data
           restartPolicy: Never
-          backoffLimit: 1
           volumes:
             - name: vol-xdmod-init
               configMap:
