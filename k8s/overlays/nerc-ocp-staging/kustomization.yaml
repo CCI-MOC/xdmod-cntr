@@ -1,8 +1,8 @@
 kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 commonLabels:
-  app: xdmod
-namespace: xdmod
+  app: xdmod-staging
+namespace: xdmod-staging
 
 resources:
   - ../../xdmod-build
