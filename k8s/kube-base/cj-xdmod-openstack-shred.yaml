@@ -23,7 +23,7 @@ spec:
                 - "/app/run-xdmod-openstack.sh"
               env:
                 - name: OPENSTACK_INSTANCE
-                  value: "nerc-openstack"
+                  value: "admin-kaizen"
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
@@ -42,15 +42,7 @@ spec:
               command:
                 - xdmod-shredder
               args:
-                [
-                  "--debug",
-                  "-f",
-                  "openstack",
-                  "-d",
-                  "/data",
-                  "-r",
-                  "nerc-openstack",
-                ]
+                ["--debug", "-f", "openstack", "-d", "/data", "-r", "kaizen"]
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
