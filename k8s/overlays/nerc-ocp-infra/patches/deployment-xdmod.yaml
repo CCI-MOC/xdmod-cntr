@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xdmod-ui
+  labels:
+    component: xdmod-ui
+spec:
+  selector:
+    matchLabels:
+      component: xdmod-ui
+  template:
+    metadata:
+      labels:
+        component: xdmod-ui
+    spec:
+      containers:
+        - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
+          name: xdmod
+      initContainers:
+        - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod-dev:latest
+          name: xdmod-init-1
+        - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
+          name: xdmod-init-2

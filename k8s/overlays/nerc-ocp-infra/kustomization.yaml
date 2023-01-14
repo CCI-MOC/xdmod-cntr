@@ -10,3 +10,4 @@ resources:
 
 patchesStrategicMerge:
   - patches/cj-xdmod-openstack-shred.yaml
+  - patches/deployment-xdmod.yaml
