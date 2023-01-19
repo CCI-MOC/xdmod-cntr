@@ -11,7 +11,7 @@ spec:
         spec:
           initContainers:
             - name: download-config
-              image: moc-xdmod-openstack
+              image: xdmod-openstack
               imagePullPolicy: IfNotPresent
               command:
                 - "/app/xdmod-get-config.sh"
