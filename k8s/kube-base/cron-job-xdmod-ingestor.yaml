@@ -9,12 +9,27 @@ spec:
       backoffLimit: 1
       template:
         spec:
+          initContainers:
+            - name: download-config
+              image: moc-xdmod-openstack
+              imagePullPolicy: IfNotPresent
+              command:
+                - "/app/xdmod-get-config.sh"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-clouds-yaml
+                  mountPath: /etc/openstack
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
           containers:
             - name: moc-xdmod
               image: moc-xdmod
               imagePullPolicy: IfNotPresent
               command:
-                - "/usr/bin/xdmod-run-ingestor.sh"
+                - "/usr/bin/xdmod-ingestor"
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
