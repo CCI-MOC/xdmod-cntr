@@ -14,7 +14,7 @@ RUN apt-get update \
 COPY ./hypervisor_facts.py /app/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /app/xdmod-openstack-reporting
 COPY ./GetConfigFiles.py /app/xdmod-get-config-files
-COPY ./xdmod-run-ingestor.sh /app/xdmod-run-ingestor.sh
+COPY ./xdmod-get-config.sh  /app/xdmod-get-config.sh 
 COPY ./run-xdmod-openstack-hypervisor.sh /app/run-xdmod-openstack-hypervisor.sh
 COPY ./run-xdmod-openstack.sh /app/run-xdmod-openstack.sh 
 
@@ -28,6 +28,8 @@ RUN chmod 774 /app/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /app/run-xdmod-openstack.sh \ 
     && chmod 774 /app/run-xdmod-openstack-hypervisor.sh \
     && sed -i -e 's/\r$//' /app/run-xdmod-openstack-hypervisor.sh \
+    && chmod 774 /app/xdmod-get-config.sh  \
+    && sed -i -e 's/\r$//' /app/xdmod-get-config.sh  \
     && chmod -R g+rwx /app \
     && chgrp -R 0 /app 
 
