@@ -75,7 +75,6 @@ RUN rm -f /etc/httpd/conf.d/ssl.conf \
 COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
-COPY ./xdmod-run-ingestor.sh /usr/bin/xdmod-run-ingestor.sh
 COPY ./run-xdmod-openstack.sh /usr/bin/run-xdmod-openstack.sh
 COPY ./xdmod_init.py /usr/bin/xdmod-init 
 COPY ./run-xdmod-openstack-hypervisor.sh /usr/bin/run-xdmod-openstack-hypervisor.sh
@@ -87,8 +86,6 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
     && chmod 774 /usr/bin/xdmod-get-config-files \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-get-config-files \ 
-    && chmod 774 /usr/bin/xdmod-run-ingestor.sh \
-    && sed -i -e 's/\r$//' /usr/bin/xdmod-run-ingestor.sh \ 
     && chmod 774 /usr/bin/run-xdmod-openstack.sh \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack.sh \ 
     && chmod 774 /usr/bin/run-xdmod-openstack-hypervisor.sh \
