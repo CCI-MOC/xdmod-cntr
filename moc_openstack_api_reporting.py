@@ -530,8 +530,9 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
-        cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
-        cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
+        if event_data["event_time"]:
+            cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
+            cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
 
         if server["state"] == "DELETED":
             del cluster_state["vm_timestamps"][server["instance_id"]]
