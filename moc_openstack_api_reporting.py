@@ -485,7 +485,6 @@ def events_to_event_by_date(event_list):
 
 def process_compute_events(openstack_conn, script_datetime, openstack_data, cluster_state):
     """collects and processes event data"""
-    event_data_defined = 0
     events_by_date = {}
     openstack_nova = nova_client.Client(2, session=openstack_conn.session)
 
@@ -498,6 +497,7 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
     last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
 
     for server in openstack_data["server_dict"].values():
+        event_data_defined = 0
         # need to generate an existence event for each server in server_dict
         if server["state"] == "ACTIVE" or server["state"] == "DELETED":
             event_data = {
