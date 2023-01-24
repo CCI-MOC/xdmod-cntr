@@ -414,5 +414,8 @@ def main():
         cnx.commit()
         cnx.close()
 
+        # This is just to add some time for manual intervention
+        time.sleep(600)
+
 
 main()
