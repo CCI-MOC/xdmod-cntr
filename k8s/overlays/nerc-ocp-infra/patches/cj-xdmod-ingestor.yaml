@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: xdmod-ingestor
+spec:
+  schedule: "@daily"
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          initContainers:
+            - name: download-config
+              image: image-registry.openshift-image-registry.svc:5000/xdmod/xdmod-openstack
+          containers:
+            - name: moc-xdmod
+              image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod
