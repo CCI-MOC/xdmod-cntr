@@ -16,7 +16,7 @@ spec:
                   value: "nerc-openstack"
           containers:
             - name: cj-xdmod-openstack
-              image: moc-xdmod
+              image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod
               imagePullPolicy: Always
               command:
                 - xdmod-shredder
