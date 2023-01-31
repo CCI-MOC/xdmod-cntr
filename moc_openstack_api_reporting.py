@@ -497,6 +497,7 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
     last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
 
     for server in openstack_data["server_dict"].values():
+        event_data = dict()
         # need to generate an existence event for each server in server_dict
         if server["state"] == "ACTIVE" or server["state"] == "DELETED":
             event_data = {
@@ -530,8 +531,9 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
-        cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
-        cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
+        if event_data:
+            cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
+            cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
 
         if server["state"] == "DELETED":
             del cluster_state["vm_timestamps"][server["instance_id"]]
