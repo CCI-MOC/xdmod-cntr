@@ -497,7 +497,7 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
     last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
 
     for server in openstack_data["server_dict"].values():
-        event_data_defined = 0
+        event_data = dict()
         # need to generate an existence event for each server in server_dict
         if server["state"] == "ACTIVE" or server["state"] == "DELETED":
             event_data = {
@@ -507,7 +507,6 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                 "event_type": "compute.instance.exists",
                 "event_time": script_datetime.isoformat(),
             }
-            event_data_defined = 1
             event_timestamp = script_datetime.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
             if event_timestamp not in events_by_date:
                 events_by_date[event_timestamp] = []
@@ -526,14 +525,13 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                     "event_time": compute_event.start_time,
                     "request_id": compute_event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
                 }
-                event_data_defined = 1
                 event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
                 compute_events_by_date = events_to_event_by_date(event_list)
                 events_by_date = merge_event_by_date(compute_events_by_date, events_by_date)
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
-        if event_data_defined == 1:
+        if event_data:
             cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
             cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
 
