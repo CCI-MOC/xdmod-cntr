@@ -1,8 +1,6 @@
 FROM centos:7.9.2009
 ENV BRANCH=xdmod10.0
 
-COPY assets/google-chrome.repo /etc/yum.repos.d
-
 # Dependencies needed by XDMoD
 RUN yum makecache && \
     yum -y install epel-release centos-release-scl-rh && \
@@ -10,7 +8,6 @@ RUN yum makecache && \
     expect \
     gcc-c++ \
     gnu-free-sans-fonts \
-    google-chrome-stable \
     npm \
     openssl \
     postfix \ 
