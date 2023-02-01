@@ -29,5 +29,5 @@ spec:
                   "-d",
                   "/data",
                   "-r",
-                  "nerc-openstack",
+                  "nerc_openstack",
                 ]
