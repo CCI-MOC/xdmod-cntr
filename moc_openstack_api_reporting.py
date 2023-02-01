@@ -727,17 +727,19 @@ def main():
 
     vm_keys = list(cluster_state["vm_timestamps"].keys())
     for key in vm_keys:
-        if cluster_state["vm_timestamps"][key].get("updated") == 0:
-            del cluster_state["vm_timestamps"][key]
-        else:
-            del cluster_state["vm_timestamps"][key]["updated"]
+        if cluster_state["vm_timestamps"][key].get("updated") is not None: 
+            if cluster_state["vm_timestamps"][key]["updated"] == 0:
+                del cluster_state["vm_timestamps"][key]
+            else:
+                del cluster_state["vm_timestamps"][key]["updated"]
 
     vol_keys = list(cluster_state["vol_timestamps"].keys())
     for key in vol_keys:
-        if cluster_state["vol_timestamps"][key].get("updated") == 0:
-            del cluster_state["vol_timestamps"][key]
-        else:
-            del cluster_state["vol_timestamps"][key]["updated"]
+        if cluster_state["vol_timestamps"][key].get("updated") is not None: 
+            if cluster_state["vol_timestamps"][key]["updated"] == 0:
+                del cluster_state["vol_timestamps"][key]
+            else:
+                del cluster_state["vol_timestamps"][key]["updated"]
 
     with open("hierarchy.csv", "w+", encoding="utf-8") as file:
         json.dump(openstack_data["user_dict"], file)
