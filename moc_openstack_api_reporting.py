@@ -734,7 +734,7 @@ def main():
 
     vol_keys = list(cluster_state["vol_timestamps"].keys())
     for key in vol_keys:
-        if cluster_state["vol_timestamps"][key]["updated"] == 0:
+        if cluster_state["vol_timestamps"][key].get("updated") == 0:
             del cluster_state["vol_timestamps"][key]
         else:
             del cluster_state["vol_timestamps"][key]["updated"]
