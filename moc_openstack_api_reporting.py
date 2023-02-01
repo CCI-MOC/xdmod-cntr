@@ -727,7 +727,7 @@ def main():
 
     vm_keys = list(cluster_state["vm_timestamps"].keys())
     for key in vm_keys:
-        if cluster_state["vm_timestamps"][key]["updated"] == 0:
+        if cluster_state["vm_timestamps"][key].get("updated") == 0:
             del cluster_state["vm_timestamps"][key]
         else:
             del cluster_state["vm_timestamps"][key]["updated"]
