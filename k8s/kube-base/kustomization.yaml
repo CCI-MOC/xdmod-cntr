@@ -19,6 +19,7 @@ resources:
   - deployment-mariadb.yaml
   - deployment-xdmod.yaml
   - route-xdmod.yaml
+  - secret-xdmod-openshift-prod.yaml
   - cron-job-xdmod-ingestor.yaml
   - cron-job-xdmod-openshift-prod.yaml
   - cj-xdmod-openstack-shred.yaml
