@@ -10,6 +10,19 @@ spec:
       backoffLimit: 1
       template:
         spec:
+          initContainers:
+            - name: download-config
+              image: xdmod-openstack
+              imagePullPolicy: IfNotPresent
+              command:
+                - "/app/xdmod-get-config.sh"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
           containers:
             - name: xdmod-openshift-prod-job
               image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
@@ -45,6 +58,8 @@ spec:
                   - key: xdmod_init.json
                     path: xdmod_init.json
                 name: cm-xdmod-init-json
+            - name: vol-xdmod-conf
+              emptyDir: {}
             - name: vol-var-log-xdmod
               emptyDir: {}
             - name: vol-xdmod-openshift-data
