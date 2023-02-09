@@ -14,9 +14,6 @@ spec:
             - name: xdmod-openshift-prod-job
               image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
               imagePullPolicy: Always
-              envFrom:
-                - secretRef:
-                    name: xdmod-openshift-prod-secret
               env:
                 - name: OPENSHIFT_PROMETHEUS_URL
                   value: https://prometheus-k8s-openshift-monitoring.apps.nerc-ocp-prod.rc.fas.harvard.edu
@@ -28,6 +25,11 @@ spec:
                   value: /data/xdmod_openshift_data/nerc_openshift_prod
                 - name: XDMOD_RESOURCE
                   value: nerc_openshift_prod
+                - name: OPENSHIFT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: xdmod-openshift-prod-secret
               command: ["/usr/bin/xdmod-openshift-reporting.sh"]
               volumeMounts:
                 - name: vol-xdmod-init
