@@ -19,6 +19,8 @@ spec:
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
+                - name: vol-clouds-yaml
+                  mountPath: /etc/openstack
                 - name: vol-xdmod-init
                   mountPath: /mnt/xdmod_init
                 - name: vol-var-log-xdmod
@@ -58,6 +60,8 @@ spec:
                   - key: xdmod_init.json
                     path: xdmod_init.json
                 name: cm-xdmod-init-json
+            - name: vol-clouds-yaml
+              emptyDir: {}
             - name: vol-xdmod-conf
               emptyDir: {}
             - name: vol-var-log-xdmod
