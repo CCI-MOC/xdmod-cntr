@@ -53,6 +53,8 @@ spec:
                   mountPath: /var/log/xdmod
                 - name: vol-xdmod-openshift-data
                   mountPath: /data/xdmod_openshift_data
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
           volumes:
             - name: vol-xdmod-init
               configMap:
