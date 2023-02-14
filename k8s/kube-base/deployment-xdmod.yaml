@@ -45,10 +45,14 @@ spec:
         - image: moc-xdmod:latest
           name: xdmod-acl-work-a-round
           imagePullPolicy: IfNotPresent
-          command: ["/usr/bin/bash"]
-          args: ["-c", "while true; do /usr/bin/acl-config; sleep 420; done"]
-          ports:
-            - containerPort: 8080
+          command: 
+            - /bin/bash
+            - -c
+            - |
+              while true; do
+                /usr/bin/acl-config
+                sleep 420
+              done
           volumeMounts:
             - name: vol-xdmod-conf
               mountPath: /etc/xdmod
