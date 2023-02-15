@@ -42,6 +42,38 @@ spec:
               mountPath: /run/httpd
             - name: vol-php-session
               mountPath: /var/lib/php/session
+        - image: moc-xdmod:latest
+          name: xdmod-acl-work-a-round
+          imagePullPolicy: IfNotPresent
+          command: 
+            - /bin/bash
+            - -c
+            - |
+              while true; do
+                /usr/bin/acl-config
+                sleep 420
+              done
+          volumeMounts:
+            - name: vol-xdmod-conf
+              mountPath: /etc/xdmod
+            - name: vol-xdmod-src
+              mountPath: /usr/share/xdmod
+            - name: vol-xdmod-data
+              mountPath: /root/xdmod_data
+            - name: vol-httpd-conf
+              mountPath: /etc/httpd
+            - name: vol-clouds-yaml
+              mountPath: /etc/openstack
+            - name: vol-httpd-conf
+              mountPath: /root/httpd
+            - name: vol-var-log-xdmod
+              mountPath: /var/log/xdmod
+            - name: vol-var-log-httpd
+              mountPath: /var/log/httpd
+            - name: vol-run-httpd
+              mountPath: /run/httpd
+            - name: vol-php-session
+              mountPath: /var/lib/php/session
       initContainers:
         - image: moc-xdmod-dev:latest
           name: xdmod-init-1
