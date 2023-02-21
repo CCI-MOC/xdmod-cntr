@@ -9,4 +9,6 @@ resources:
   - ../../kube-base
 
 patchesStrategicMerge:
+  - patches/cj-xdmod-ingestor.yaml
   - patches/cj-xdmod-openstack-shred.yaml
+  - patches/deployment-xdmod.yaml
