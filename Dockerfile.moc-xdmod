@@ -3,28 +3,31 @@ ENV BRANCH=xdmod10.0
 
 # Dependencies needed by XDMoD
 RUN yum makecache && \
-    yum -y install epel-release centos-release-scl-rh && \
     yum -y install \
-    expect \
-    gcc-c++ \
-    gnu-free-sans-fonts \
-    npm \
-    openssl \
-    postfix \ 
-    rh-nodejs6 \
-    rpm-build \
-    wget \
-    rh-python38.x86_64 \
-    python3-pip.noarch \
-    git \
-    openssh-clients.x86_64 \
-    httpd php php-cli php-mysql php-gd php-pdo php-xml \
-    libreoffice \
-    mariadb-server mariadb cronie logrotate \
-    perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
-    chromium-headless librsvg2-tools
-
-RUN yum clean all && \
+        epel-release \
+        centos-release-scl-rh \
+	&& \
+    yum -y install \
+        expect \
+        gcc-c++ \
+        gnu-free-sans-fonts \
+        npm \
+        openssl \
+        postfix \
+        rh-nodejs6 \
+        rpm-build \
+        wget \
+        rh-python38.x86_64 \
+        python3-pip.noarch \
+        git \
+        openssh-clients.x86_64 \
+        httpd php php-cli php-mysql php-gd php-pdo php-xml \
+        libreoffice \
+        mariadb-server mariadb cronie logrotate \
+        perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
+        chromium-headless librsvg2-tools \
+	&& \
+    yum clean all && \
     rm -rf /var/cache/yum
 
 # Set PHP timezone before installing XDMoD as the setup scripts need it. Be careful
@@ -62,7 +65,9 @@ RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk mysql-connector-python pexpect
 
 # RPM install of xdmod
-RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm
+RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 
 #COPY ./xdmod_conf/httpd.conf /etc/httpd/conf/httpd.conf
 RUN rm -f /etc/httpd/conf.d/ssl.conf \
@@ -73,18 +78,18 @@ COPY ./hypervisor_facts.py /usr/bin/xdmod-openstack-hypervisor
 COPY ./moc_openstack_api_reporting.py /usr/bin/xdmod-openstack-reporting
 COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
 COPY ./run-xdmod-openstack.sh /usr/bin/run-xdmod-openstack.sh
-COPY ./xdmod_init.py /usr/bin/xdmod-init 
+COPY ./xdmod_init.py /usr/bin/xdmod-init
 COPY ./run-xdmod-openstack-hypervisor.sh /usr/bin/run-xdmod-openstack-hypervisor.sh
 RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
     && chmod 774 /usr/bin/xdmod-openstack-reporting \
-    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \ 
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-reporting \
     && chmod 774 /usr/bin/xdmod-init \
-    && sed -i -e 's/\r$//' /usr/bin/xdmod-init \ 
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-init \
     && chmod 774 /usr/bin/xdmod-get-config-files \
-    && sed -i -e 's/\r$//' /usr/bin/xdmod-get-config-files \ 
+    && sed -i -e 's/\r$//' /usr/bin/xdmod-get-config-files \
     && chmod 774 /usr/bin/run-xdmod-openstack.sh \
-    && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack.sh \ 
+    && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack.sh \
     && chmod 774 /usr/bin/run-xdmod-openstack-hypervisor.sh \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack-hypervisor.sh \
     && chmod -R g+rwx /usr/bin \
