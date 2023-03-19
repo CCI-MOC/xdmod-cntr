@@ -3,7 +3,11 @@ repos:
     rev: v1.1.11
     hooks:
       - id: remove-tabs
-        exclude: ^er_diagrams/
+        exclude: |
+          (?x)(
+            ^er_diagrams/|
+            \.cnf$
+          )
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0

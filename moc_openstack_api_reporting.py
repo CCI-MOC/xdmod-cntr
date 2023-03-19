@@ -130,17 +130,41 @@ event_types = [
 
 def do_parse_args(config):
     """Parse args and return a config dict"""
-    parser = argparse.ArgumentParser(description="Generate accounting records for OpenStack instances", epilog="-D and -A are mutually exclusive")
-    parser.add_argument("-v", "--verbose", help="output debugging information", action="store_true")
-    parser.add_argument("-n", "--nostate", help="Skip state messages", action="store_true")
-    parser.add_argument("-c", "--collapse-traits", help="Collapse the traits array to the top level", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="Generate accounting records for OpenStack instances",
+        epilog="-D and -A are mutually exclusive",
+    )
+    parser.add_argument(
+        "-v", "--verbose", help="output debugging information", action="store_true"
+    )
+    parser.add_argument(
+        "-n", "--nostate", help="Skip state messages", action="store_true"
+    )
+    parser.add_argument(
+        "-c",
+        "--collapse-traits",
+        help="Collapse the traits array to the top level",
+        action="store_true",
+    )
     parser.add_argument("-C", "--config-dir", help="Configuration directory")
-    parser.add_argument("-s", "--start", help="Start time for records", required=False)  # pulls the time of the event from the event list
-    parser.add_argument("-e", "--end", help="End time for records", required=False)  # defaults to current time
+    parser.add_argument(
+        "-s", "--start", help="Start time for records", required=False
+    )  # pulls the time of the event from the event list
+    parser.add_argument(
+        "-e", "--end", help="End time for records", required=False
+    )  # defaults to current time
     parser.add_argument("-o", "--outdir", help="Output directory")
-    parser.add_argument("--cloud", help="Using the name/credentials in the cloud config file to connect with OpenStack")
+    parser.add_argument(
+        "--cloud",
+        help="Using the name/credentials in the cloud config file to connect with OpenStack",
+    )
     parser.add_argument("-d", "--db", help="Database name, only valid for --use-db")
-    parser.add_argument("-f", "--filter-noise", help="Filter out noisy events. Requires panko patch", action="store_true")
+    parser.add_argument(
+        "-f",
+        "--filter-noise",
+        help="Filter out noisy events. Requires panko patch",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
@@ -184,7 +208,9 @@ def do_parse_args(config):
 def do_read_config(config):
     """reads from the config file if present"""
     if os.path.isfile(f"{config['config_dir']}/openstack_reporting.json"):
-        with open(f"{config['config_dir']}/openstack_reporting.json", "r", encoding="utf-8") as config_fp:
+        with open(
+            f"{config['config_dir']}/openstack_reporting.json", "r", encoding="utf-8"
+        ) as config_fp:
             newconfig = json.load(config_fp)
             config.update(newconfig)
 
@@ -346,7 +372,9 @@ def convert_to_ceilometer_event_types(event):
     for ceilometer_event in event_list:
         new_event = copy.deepcopy(event)
         new_event["event_type"] = ceilometer_event
-        new_event["generated"] = (time_0 + datetime.timedelta(seconds=delta_time)).isoformat()
+        new_event["generated"] = (
+            time_0 + datetime.timedelta(seconds=delta_time)
+        ).isoformat()
         ret_list.append(new_event)
         delta_time += 10
     return ret_list
@@ -454,14 +482,21 @@ def collect_data_from_openstack(openstack_conn, script_datetime):
         openstack_data["project_dict"][project.id] = project
 
     openstack_data["volume_dict"] = {}
-    for volume in openstack_cinder.volumes.list(search_opts={"all_tenants": True}, detailed=True):
+    for volume in openstack_cinder.volumes.list(
+        search_opts={"all_tenants": True}, detailed=True
+    ):
         openstack_data["volume_dict"][volume.id] = volume
 
     openstack_data["server_dict"] = {}
     openstack_data["min_event_time"] = script_datetime
-    for server in openstack_nova.servers.list(search_opts={"all_tenants": True}, detailed=True):
+    for server in openstack_nova.servers.list(
+        search_opts={"all_tenants": True}, detailed=True
+    ):
         openstack_data["server_dict"][server.id] = compile_server_state(
-            server, openstack_data["project_dict"], openstack_data["flavor_dict"], openstack_data["user_dict"]
+            server,
+            openstack_data["project_dict"],
+            openstack_data["flavor_dict"],
+            openstack_data["user_dict"],
         )
         launched_at = getattr(server, "OS-SRV-USG:launched_at", None)
         if launched_at:
@@ -476,14 +511,20 @@ def events_to_event_by_date(event_list):
     """takes an event list and hashes it by date"""
     events_by_date = {}
     for event in event_list:
-        event_timestamp = datetime.datetime.fromisoformat(event["generated"]).replace(hour=0, minute=0, second=0).isoformat()
+        event_timestamp = (
+            datetime.datetime.fromisoformat(event["generated"])
+            .replace(hour=0, minute=0, second=0)
+            .isoformat()
+        )
         if event_timestamp not in events_by_date:
             events_by_date[event_timestamp] = []
         events_by_date[event_timestamp].append(event)
     return events_by_date
 
 
-def process_compute_events(openstack_conn, script_datetime, openstack_data, cluster_state):
+def process_compute_events(
+    openstack_conn, script_datetime, openstack_data, cluster_state
+):
     """collects and processes event data"""
     events_by_date = {}
     openstack_nova = nova_client.Client(2, session=openstack_conn.session)
@@ -493,8 +534,12 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
         server["updated"] = 0
 
     if not cluster_state["last_run_timestamp"]:
-        cluster_state["last_run_timestamp"] = openstack_data["min_event_time"].isoformat()
-    last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
+        cluster_state["last_run_timestamp"] = openstack_data[
+            "min_event_time"
+        ].isoformat()
+    last_run_datetime = datetime.datetime.fromisoformat(
+        cluster_state["last_run_timestamp"]
+    )
 
     for server in openstack_data["server_dict"].values():
         event_data = dict()
@@ -507,7 +552,9 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                 "event_type": "compute.instance.exists",
                 "event_time": script_datetime.isoformat(),
             }
-            event_timestamp = script_datetime.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+            event_timestamp = script_datetime.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            ).isoformat()
             if event_timestamp not in events_by_date:
                 events_by_date[event_timestamp] = []
             events_by_date[event_timestamp].append(build_event(server, event_data))
@@ -525,14 +572,20 @@ def process_compute_events(openstack_conn, script_datetime, openstack_data, clus
                     "event_time": compute_event.start_time,
                     "request_id": compute_event.request_id,  # not certain if this is meaningful or that this is the request id xdmod is expecting
                 }
-                event_list = convert_to_ceilometer_event_types(build_event(server, event_data))
+                event_list = convert_to_ceilometer_event_types(
+                    build_event(server, event_data)
+                )
                 compute_events_by_date = events_to_event_by_date(event_list)
-                events_by_date = merge_event_by_date(compute_events_by_date, events_by_date)
+                events_by_date = merge_event_by_date(
+                    compute_events_by_date, events_by_date
+                )
 
         if server["instance_id"] not in cluster_state["vm_timestamps"]:
             cluster_state["vm_timestamps"][server["instance_id"]] = {}
         if event_data:
-            cluster_state["vm_timestamps"][server["instance_id"]]["timestamp"] = event_data["event_time"]
+            cluster_state["vm_timestamps"][server["instance_id"]][
+                "timestamp"
+            ] = event_data["event_time"]
             cluster_state["vm_timestamps"][server["instance_id"]]["updated"] = 1
 
         if server["state"] == "DELETED":
@@ -638,19 +691,32 @@ def process_volume_events(openstack_data, cluster_state):
         # consider using volume_data.updated_at for resize events
         # event_datetime = datetime.datetime.fromisoformat(volume_data.updated_at)
         last_run_datetime = datetime.datetime.utcfromtimestamp(0)
-        if "last_run_timestamp" in cluster_state and cluster_state["last_run_timestamp"]:
-            last_run_datetime = datetime.datetime.fromisoformat(cluster_state["last_run_timestamp"])
+        if (
+            "last_run_timestamp" in cluster_state
+            and cluster_state["last_run_timestamp"]
+        ):
+            last_run_datetime = datetime.datetime.fromisoformat(
+                cluster_state["last_run_timestamp"]
+            )
         vol_create_datetime = datetime.datetime.fromisoformat(volume_data.created_at)
 
         if last_run_datetime < vol_create_datetime:
-            volume_event_list = create_volume_event(openstack_data, vol_id, "volume.create")
-            events_by_date = merge_cache_with_current_data(volume_event_list, events_by_date)
+            volume_event_list = create_volume_event(
+                openstack_data, vol_id, "volume.create"
+            )
+            events_by_date = merge_cache_with_current_data(
+                volume_event_list, events_by_date
+            )
             cluster_state["vol_timestamps"][vol_id]["updated"] = 1
 
         if volume_data.status == "deleted":
             del cluster_state["vol_timestamps"][vol_id]
-            volume_event_list = create_volume_event(openstack_data, vol_id, "volume.delete")
-            events_by_date = merge_cache_with_current_data(openstack_data, events_by_date)
+            volume_event_list = create_volume_event(
+                openstack_data, vol_id, "volume.delete"
+            )
+            events_by_date = merge_cache_with_current_data(
+                openstack_data, events_by_date
+            )
             cluster_state["vol_timestamps"][vol_id]["updated"] = 1
 
     return events_by_date
@@ -669,7 +735,9 @@ def merge_event_by_date(events_by_date_1, events_by_date_2):
     ret_events_by_date = copy.deepcopy(events_by_date_1)
     for date in events_by_date_2:
         if date in ret_events_by_date:
-            ret_events_by_date[date] = ret_events_by_date[date] + copy.deepcopy(events_by_date_2[date])
+            ret_events_by_date[date] = ret_events_by_date[date] + copy.deepcopy(
+                events_by_date_2[date]
+            )
         else:
             ret_events_by_date[date] = copy.deepcopy(events_by_date_2[date])
     return ret_events_by_date
@@ -681,7 +749,9 @@ def merge_cache_with_current_data(event_cache, events_by_date):
         events_by_date = {}
     for event in event_cache:
         event_datetime = datetime.datetime.fromisoformat(event["generated"])
-        event_hash = event_datetime.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        event_hash = event_datetime.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ).isoformat()
         if event_hash not in events_by_date:
             events_by_date[event_hash] = []
         events_by_date[event_hash].append(copy.deepcopy(event))
@@ -704,25 +774,37 @@ def main():
 
     openstack_data = collect_data_from_openstack(openstack_conn, script_datetime)
 
-    cluster_state = read_json_file("last_report_time.json", {"last_run_timestamp": None, "vm_timestamps": {}, "vol_timestamps": {}})
+    cluster_state = read_json_file(
+        "last_report_time.json",
+        {"last_run_timestamp": None, "vm_timestamps": {}, "vol_timestamps": {}},
+    )
     event_cache = read_json_file("CachedEvents.json", [])
 
-    compute_events_by_date = process_compute_events(openstack_conn, script_datetime, openstack_data, cluster_state)
+    compute_events_by_date = process_compute_events(
+        openstack_conn, script_datetime, openstack_data, cluster_state
+    )
     volume_events_by_date = process_volume_events(openstack_data, cluster_state)
 
-    script_file_datetime = script_datetime.replace(hour=0, minute=0, second=0).isoformat()
+    script_file_datetime = script_datetime.replace(
+        hour=0, minute=0, second=0
+    ).isoformat()
 
     events_by_date = merge_event_by_date(compute_events_by_date, volume_events_by_date)
     events_by_date = merge_cache_with_current_data(event_cache, events_by_date)
 
     for start_timestamp, daily_events in events_by_date.items():
         if start_timestamp < script_file_datetime:
-            end_timestamp = (datetime.datetime.fromisoformat(start_timestamp) + datetime.timedelta(days=1)).isoformat()
+            end_timestamp = (
+                datetime.datetime.fromisoformat(start_timestamp)
+                + datetime.timedelta(days=1)
+            ).isoformat()
             json_out = f"{config['outdir']}/{start_timestamp}_{end_timestamp}.json"
         else:
             json_out = "CachedEvents.json"
         with open(json_out, "w+", encoding="utf-8") as outfile:
-            json.dump(daily_events, outfile, indent=2, sort_keys=True, separators=(",", ": "))
+            json.dump(
+                daily_events, outfile, indent=2, sort_keys=True, separators=(",", ": ")
+            )
         print(f"output file: {json_out}")
 
     vm_keys = list(cluster_state["vm_timestamps"].keys())

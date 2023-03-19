@@ -38,7 +38,10 @@ if os.path.isfile("/usr/share/xdmod/libraries/security.php"):
         if match1_str:
             match2_str = re.search(r"true", match1_str.group())
             if match2_str:
-                replace_span = (match2_str.span()[0] + match1_str.span()[0], match2_str.span()[1] + match1_str.span()[0])
+                replace_span = (
+                    match2_str.span()[0] + match1_str.span()[0],
+                    match2_str.span()[1] + match1_str.span()[0],
+                )
                 begining_str = security_php[: replace_span[0]]
                 after_str = security_php[replace_span[1] :]
                 security_php = "".join([begining_str, "false", after_str])

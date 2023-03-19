@@ -1,9 +1,9 @@
 # from configmap
 # MariaDB database server configuration file.
-# 
+#
 # This is from /etc/mysql/my.cnf
 # overlaying the my.cnf file that is there
-# 
+#
 # One can use all long options that the program supports.
 # Run program with --help to get a list of available options and with
 # --print-defaults to see which it would actually understand and use.

@@ -30,7 +30,11 @@ def connect_to_db(database):
 def write_file_from_db(cursor, script):
     """As a work-a-round for RWM, share config files though the database"""
     print(f"write {script} file_share_db")
-    data = exec_fetchall(cursor, "select file_name, file_data from file_share_db.file where script=%s", (script,))
+    data = exec_fetchall(
+        cursor,
+        "select file_name, file_data from file_share_db.file where script=%s",
+        (script,),
+    )
 
     if data and isinstance(data, list):
         rec = data[0]
@@ -57,7 +61,11 @@ def main():
     cursor = cnx.cursor()
 
     write_file_from_db(cursor, "etc-xdmod")
-    with subprocess.Popen(["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as base64:
+    with subprocess.Popen(
+        ["/usr/bin/base64", "-d", "/etc/xdmod/etc_xdmod.b64"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ) as base64:
         b64_out, b64_err = base64.communicate()
         print(f"errors: {b64_err}")
         with open("/etc/xdmod/etc_xdmod.tgz", "wb") as fptr:

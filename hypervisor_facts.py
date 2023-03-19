@@ -20,8 +20,13 @@ def deep_compare(obj):
 
 def do_parse_args(config):
     """Parse args and return a config dict"""
-    parser = argparse.ArgumentParser(description="Generate accounting records for OpenStack instances", epilog="-D and -A are mutually exclusive")
-    parser.add_argument("-v", "--verbose", help="output debugging information", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="Generate accounting records for OpenStack instances",
+        epilog="-D and -A are mutually exclusive",
+    )
+    parser.add_argument(
+        "-v", "--verbose", help="output debugging information", action="store_true"
+    )
     parser.add_argument("-C", "--config-file", help="Configuration file")
     parser.add_argument("-o", "--outdir", help="Output directory")
     parser.add_argument("--cloud", help="cloud name (in .config/openstack/cloud.json)")
@@ -85,7 +90,12 @@ def get_latest_facts(config):
     if len(file_list) == 0:
         return {"hypervisors": []}
 
-    newest = max(file_list, key=lambda d: datetime.datetime.strptime(d, f"{config['outdir']}/hypervisor_facts_%Y-%m-%dT%H:%M:%S.json"))
+    newest = max(
+        file_list,
+        key=lambda d: datetime.datetime.strptime(
+            d, f"{config['outdir']}/hypervisor_facts_%Y-%m-%dT%H:%M:%S.json"
+        ),
+    )
 
     with open(newest, "r", encoding="utf-8") as file:
         latest_facts = json.load(file)
@@ -110,7 +120,11 @@ def main():
     do_parse_args(config)
     do_read_config(config)
 
-    logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=config["loglevel"])
+    logging.basicConfig(
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=config["loglevel"],
+    )
 
     data = get_data(config)
 

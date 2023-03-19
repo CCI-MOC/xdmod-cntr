@@ -4,7 +4,7 @@ A project to deploy XDMoD on kubernetes/OpenShift.
 
 ## deploying xdmod on minikube
 1) Start minikube (not needed for kubernetes):
- 
+
     minikube start --driver=hyperkit --extra-config=apiserver.service-node-port-range=1-65535
     kubectl config use-context minikube
 
@@ -62,7 +62,7 @@ A project to deploy XDMoD on kubernetes/OpenShift.
                 {
                     "name": "nerc-openstack",
                     "formal_name": "NERC OpenShift Cluster 0",
-                    
+
                     "type": "cloud"
                 },
                 {
@@ -73,16 +73,16 @@ A project to deploy XDMoD on kubernetes/OpenShift.
                 }
             ]
         }
-    
+
 5)  create the necessary configmaps/secrets
-     
-    kubectl create cm --from-file xdmod_conf/xdmod_init.json cm-xdmod-init-json 
-    oc create cm --from-file xdmod_conf/xdmod_init.json cm-xdmod-init-json 
+
+    kubectl create cm --from-file xdmod_conf/xdmod_init.json cm-xdmod-init-json
+    oc create cm --from-file xdmod_conf/xdmod_init.json cm-xdmod-init-json
 
     kubectl create cm --from-file xdmod_conf/httpd.conf cm-httpd-conf
     oc create cm --from-file xdmod_conf/httpd.conf cm-httpd-conf
 
-    add the secret(s) to the deployment in both the init-2 
+    add the secret(s) to the deployment in both the init-2
 
       spec:
         template:
@@ -91,7 +91,7 @@ A project to deploy XDMoD on kubernetes/OpenShift.
               - name: xdmod-init-2
                 volume_mounts:
                     ...
-                    - name vol-[secret name]                        
+                    - name vol-[secret name]
                       readOnly: true
                       mountPath "/root/resources/[resource_name]/"
             volumes:
@@ -99,9 +99,9 @@ A project to deploy XDMoD on kubernetes/OpenShift.
               - name: vol-[secret name]
                 secret:
                   secretName: [secret_name]
-                
-    
-6) Create the namespace (project) - use kubectl for minikube, or oc for openshift 
+
+
+6) Create the namespace (project) - use kubectl for minikube, or oc for openshift
 
    - not needed for the NERC
 
@@ -115,4 +115,3 @@ A project to deploy XDMoD on kubernetes/OpenShift.
 8) Add the route
 
     oc -n xdmod apply -f ./k8s/kube-base/xdmod-route.yaml
-

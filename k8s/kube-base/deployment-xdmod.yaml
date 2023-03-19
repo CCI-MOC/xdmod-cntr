@@ -45,7 +45,7 @@ spec:
         - image: moc-xdmod:latest
           name: xdmod-acl-work-a-round
           imagePullPolicy: IfNotPresent
-          command: 
+          command:
             - /bin/bash
             - -c
             - |
