@@ -1,13 +1,13 @@
 FROM moc-xdmod
 
-RUN yum -y install vim rsync vim 
+RUN yum -y install vim rsync vim
 RUN chmod 777 /usr/bin/xdmod-openstack-hypervisor \
     && chmod 777 /usr/bin/xdmod-openstack-reporting \
     && chmod 777 /usr/bin/xdmod-init \
     && chmod -R 777 /usr/bin \
     && chmod -R 777 /root \
     && chmod -R 777 /etc/xdmod \
-    && chmod -R 777 /etc/httpd 
+    && chmod -R 777 /etc/httpd
 
 EXPOSE 8080
 

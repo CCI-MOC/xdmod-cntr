@@ -331,9 +331,9 @@ DELIMITER ;;
 
 	IF NEW.password <> OLD.password THEN
 
-		SET NEW.password_last_updated = NOW(); 
+		SET NEW.password_last_updated = NOW();
 
-	END IF; 
+	END IF;
 
 	SET NEW.time_last_updated = NOW();
 
