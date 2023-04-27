@@ -1,9 +1,9 @@
 #!/usr/local/bin/python3
-""" 
-This processes data from coldfront, keycloak and historic data to 
+"""
+This processes data from coldfront, keycloak and historic data to
 generate the following xdmod files:
     hierarchy.json    - 3 layers institution, field-of-science, pi
-    groups.json       - information linking project ids to the pi 
+    groups.json       - information linking project ids to the pi
     pi2project.json   - this links cloud-projects ids to projects ids
     names.json        - links ids to project names
 """
@@ -13,6 +13,8 @@ import pprint
 import copy
 import hashlib
 import moc_db_helper_functions
+
+development_only = True
 
 
 def get_data_from_coldfront():
@@ -78,9 +80,7 @@ def create_hierarchy_db(cursor):
         )",
         None,
     )
-    cursor.execute(
-        "create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;"
-    )
+    cursor.execute("create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;")
     # The sha256 field is a compsite key based on all
     cursor.execute(
         "create table hierarchy_db.hierarchy_keys ( \
@@ -106,12 +106,6 @@ def create_hierarchy_db(cursor):
         )",
         None,
     )
-
-
-def delete_hierarchy_db(cursor):
-    """delete the database but only in initial development"""
-    if moc_db_helper_functions.db_exist(cursor, "hierarchy_db"):
-        cursor.execute("drop database hierarchy_db", None)
 
 
 def process_record(cursor, rec, current_dict):
@@ -258,9 +252,7 @@ def create_hierarchy_files(hierarchy):
             unique_key = create_xdmod_key(rec_id)
             hierarchy_file.write(f"{unique_key},{rec['name']},\n")
         for l2_id, l2 in hierarchy["field-of-science"].items():
-            unique_key = create_xdmod_key(
-                hierarchy["inistitution"][l2["parent_id"]], l2_id
-            )
+            unique_key = create_xdmod_key(hierarchy["inistitution"][l2["parent_id"]], l2_id)
             parent_key = create_xdmod_key(l2["parent_id"])
             hierarchy_file.write(f"{unique_key},{l2['name']},{parent_key}\n")
         for l3_id, l3_rec in hierarchy["pi"].items():
@@ -291,9 +283,7 @@ def create_hierarchy_files(hierarchy):
         for l5 in hierarchy["cloud-project"].values():
             l4_rec = hierarchy["cloud-project"][l5["parent_id"]]
             l4_id = l4_rec["id"]
-            pi2project_file.write(
-                f"{hierarchy['cloud-project'][l4_id]['name']}, {l5['name']}\n"
-            )
+            pi2project_file.write(f"{hierarchy['cloud-project'][l4_id]['name']}, {l5['name']}\n")
 
     # construct the names (rename projects)
 
@@ -358,7 +348,6 @@ def process_expected_data(cursor, hierarchy):
                 process_record(cursor, record, hierarchy["project"])
                 record["parent_id"] = record["id"]
                 process_record(cursor, record, hierarchy["cloud-project"])
-    return 1
 
 
 def process_coldfront_data(cursor, hierarchy):
@@ -377,9 +366,7 @@ def process_coldfront_data(cursor, hierarchy):
         pi_id = find_hierarchy_id(pi_rec["name"], hierarchy["pi"])
         if not pi_id:
             # need to assign unknown as field of science and univeristy
-            pi_rec["parent_id"] = find_hierarchy_id(
-                "unknown", hierarchy["field-of-science"]
-            )
+            pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
 
         process_record(cursor, pi_rec, hierarchy["pi"])
 
@@ -390,16 +377,10 @@ def process_coldfront_data(cursor, hierarchy):
             "status": record["status"],
         }
 
-        if (
-            record["resource"]["name"] == "NERC"
-            and record["resource"]["resource_type"] == "OpenShift"
-        ):
+        if record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenShift":
             project_rec["type"] = "openshift-project"
             process_record(cursor, project_rec, hierarchy["project"])
-        elif (
-            record["resource"]["name"] == "NERC"
-            and record["resource"]["resource_type"] == "OpenStack"
-        ):
+        elif record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenStack":
             project_rec["type"] = "openstack-project"
             process_record(cursor, project_rec, hierarchy["project"])
             project_rec["parent_id"] = record["id"]
@@ -421,10 +402,6 @@ def main():
 
     cnx = moc_db_helper_functions.connect_to_db(config)
     cursor = cnx.cursor(dictionary=True)
-
-    # This is here for development
-    if moc_db_helper_functions.db_exist(cursor, "hierarchy_db"):
-        delete_hierarchy_db(cursor)
 
     if not moc_db_helper_functions.db_exist(cursor, "hierarchy_db"):
         create_hierarchy_db(cursor)
@@ -460,13 +437,9 @@ def main():
     for project_id, project_rec in hierarchy["project"].items():
         if project_rec["type"] == "openshift-project":
             new_bottom_layer[project_id] = copy.copy(project_rec)
-            new_bottom_layer[project_id]["parent_id"] = hierarchy["pi"][
-                project_rec["parent_id"]
-            ]["parent_id"]
+            new_bottom_layer[project_id]["parent_id"] = hierarchy["pi"][project_rec["parent_id"]]["parent_id"]
             new_pi_id_count = new_pi_id_count + 1
-            new_pi_id = hierarchy["pi"][project_rec["parent_id"]]["name"] + str(
-                new_pi_id_count
-            )
+            new_pi_id = hierarchy["pi"][project_rec["parent_id"]]["name"] + str(new_pi_id_count)
             new_pis[new_pi_id] = copy.copy(hierarchy["pi"][project_rec["parent_id"]])
             new_pis[new_pi_id]["parent_id"] = project_id
 
