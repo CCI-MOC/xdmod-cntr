@@ -97,26 +97,6 @@ spec:
               mountPath: /root/httpd
             - name: vol-xdmod-init
               mountPath: /root/xdmod_init
-        - image: moc-xdmod:latest
-          name: xdmod-init-2
-          imagePullPolicy: IfNotPresent
-          command:
-            - "/usr/bin/xdmod-init"
-          ports:
-            - containerPort: 8080
-          volumeMounts:
-            - name: vol-xdmod-conf
-              mountPath: /etc/xdmod
-            - name: vol-xdmod-src
-              mountPath: /usr/share/xdmod
-            - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
-            - name: vol-httpd-conf
-              mountPath: /etc/httpd
-            - name: vol-clouds-yaml
-              mountPath: /etc/openstack
-            - name: vol-httpd-conf
-              mountPath: /root/httpd
       volumes:
         - name: vol-xdmod-conf
           persistentVolumeClaim:

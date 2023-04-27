@@ -19,5 +19,3 @@ spec:
       initContainers:
         - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod-dev:latest
           name: xdmod-init-1
-        - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
-          name: xdmod-init-2
