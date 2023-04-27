@@ -4,8 +4,7 @@ import mysql.connector
 def exec_fetchall(cursor, sql_stmt, params):
     """executes the sql statmement and fetches all in a list"""
     cursor.execute(sql_stmt, params)
-    result = cursor.fetchall()
-    return result
+    return cursor.fetchall()
 
 
 def connect_to_db(database):
@@ -14,8 +13,7 @@ def connect_to_db(database):
     admin_acct = "root"
     admin_pass = database["admin_password"]
     # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
-    cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-    return cnx
+    return mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
 
 
 def write_file_from_db(cursor, script):
