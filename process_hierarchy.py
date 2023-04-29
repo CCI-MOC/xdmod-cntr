@@ -70,7 +70,9 @@ def create_hierarchy_db(cursor):
         )",
         None,
     )
-    cursor.execute("create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;")
+    cursor.execute(
+        "create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;"
+    )
     # insert the 2 unknown institution and field-of-science here as opposed to using the data file
     cursor.execute("use hierarchy_db", None)
     cursor.execute(
@@ -120,13 +122,13 @@ def process_record(cursor, rec, current_dict):
                 display_name, \
                 parent_id \
                 ) values ( \
-                %(id)d, \
+                %(id)s, \
                 now(), \
                 %(type)s, \
                 %(name)s, \
                 %(status)s, \
                 %(display_name)s, \
-                %(parent_id)d \
+                %(parent_id)s \
                 )",
                 {
                     "id": hierarchy_id,
@@ -222,41 +224,26 @@ def create_hierarchy_files(hierarchy):
     # construct hierarchy.csv
     with open("hierarchy.csv", "w", encoding="utf-8") as hierarchy_file:
         for rec_id, rec in hierarchy["institution"].items():
-            unique_key = create_xdmod_key(rec_id)
-            hierarchy_file.write(f"{unique_key},{rec['name']},\n")
+            hierarchy_file.write(f"{rec_id},{rec['name']},\n")
         for l2_id, l2 in hierarchy["field-of-science"].items():
-            unique_key = create_xdmod_key(hierarchy["inistitution"][l2["parent_id"]], l2_id)
-            parent_key = create_xdmod_key(l2["parent_id"])
-            hierarchy_file.write(f"{unique_key},{l2['name']},{parent_key}\n")
+            hierarchy_file.write(f"{l2_id},{l2['name']},{l2['parent_id']}\n")
         for l3_id, l3_rec in hierarchy["pi"].items():
-            unique_key = create_xdmod_key(
-                (hierarchy["field-of-science"][l3_rec["parent_id"]])["parent_id"],
-                l3_rec["parent_id"],
-                l3_id,
-            )
-            parent_key = create_xdmod_key(
-                (hierarchy["field-of-science"][l3_rec["parent_id"]])["parent_id"],
-                l3_rec["parent_id"],
-            )
-            hierarchy_file.write(f"{unique_key},{l3_rec['name']},{parent_key}\n")
+            hierarchy_file.write(f"{l3_id},{l3_rec['name']},{l3_rec['parent_id']}\n")
 
     # constrcut groups.csv (level 4 of the hierarchy, though this is a mapping table between pi/group and the hiearachy)
     with open("group.csv", "w", encoding="utf-8") as group_file:
         for l4_id, l4_rec in hierarchy["project"].items():
             l3_rec = hierarchy["pi"][l4_rec["parent_id"]]
-            unique_key = create_xdmod_key(
-                (hierarchy["field-of-science"][l3_rec["parent_id"]])["parent_id"],
-                l3_rec["parent_id"],
-                l3_rec["id"],
-            )
-            group_file.write(f'"{l4_rec["name"]}", "{unique_key}" \n')
+            group_file.write(f'"{l4_rec["name"]}", "{l4_rec["parent_id"]}"\n')
 
     # constrcut pi2project
     with open("pi2project.csv", "w", encoding="utf-8") as pi2project_file:
         for l5 in hierarchy["cloud-project"].values():
             l4_rec = hierarchy["cloud-project"][l5["parent_id"]]
             l4_id = l4_rec["id"]
-            pi2project_file.write(f"{hierarchy['cloud-project'][l4_id]['name']}, {l5['name']}\n")
+            pi2project_file.write(
+                f"{hierarchy['cloud-project'][l4_id]['name']}, {l5['name']}\n"
+            )
 
     # construct the names (rename projects)
 
@@ -327,11 +314,15 @@ def process_coldfront_data(cursor, hierarchy):
             if parent_id:
                 pi_rec["parent_id"] = parent_id
             else:
-                pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
+                pi_rec["parent_id"] = find_hierarchy_id(
+                    "unknown", hierarchy["field-of-science"]
+                )
         else:
             # look  up field-of-science and institutuion in keycloak
             # for now assign "unknown"
-            pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
+            pi_rec["parent_id"] = find_hierarchy_id(
+                "unknown", hierarchy["field-of-science"]
+            )
 
         process_record(cursor, pi_rec, hierarchy["pi"])
 
@@ -348,10 +339,16 @@ def process_coldfront_data(cursor, hierarchy):
         if not project_rec["name"]:
             project_rec["name"] = project_rec["display_name"]
 
-        if record["resource"]["name"] == "NERC-OCP" and record["resource"]["resource_type"] == "OpenShift":
+        if (
+            record["resource"]["name"] == "NERC-OCP"
+            and record["resource"]["resource_type"] == "OpenShift"
+        ):
             project_rec["type"] = "openshift-project"
             process_record(cursor, project_rec, hierarchy["project"])
-        elif record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenStack":
+        elif (
+            record["resource"]["name"] == "NERC"
+            and record["resource"]["resource_type"] == "OpenStack"
+        ):
             project_rec["type"] = "openstack-project"
             process_record(cursor, project_rec, hierarchy["project"])
             project_rec["parent_id"] = record["id"]
@@ -410,9 +407,13 @@ def main():
     for project_id, project_rec in hierarchy["project"].items():
         if project_rec["type"] == "openshift-project":
             new_bottom_layer[project_id] = copy.copy(project_rec)
-            new_bottom_layer[project_id]["parent_id"] = hierarchy["pi"][project_rec["parent_id"]]["parent_id"]
+            new_bottom_layer[project_id]["parent_id"] = hierarchy["pi"][
+                project_rec["parent_id"]
+            ]["parent_id"]
             new_pi_id_count = new_pi_id_count + 1
-            new_pi_id = hierarchy["pi"][project_rec["parent_id"]]["name"] + str(new_pi_id_count)
+            new_pi_id = hierarchy["pi"][project_rec["parent_id"]]["name"] + str(
+                new_pi_id_count
+            )
             new_pis[new_pi_id] = copy.copy(hierarchy["pi"][project_rec["parent_id"]])
             new_pis[new_pi_id]["parent_id"] = project_id
 
