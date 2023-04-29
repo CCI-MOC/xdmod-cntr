@@ -102,8 +102,8 @@ def create_hierarchy_db(cursor):
             status, \
             display_name, \
             parent_id) values \
-            ('1', now(), 'institution', 'unknown', 'Active', 'Unknown', null )\
-        )",
+            ('1', now(), 'institution', 'unknown', 'Active', 'Unknown', null ), \
+            ('2', now(), 'field-of-science', 'unknown', 'Active', 'Unknown', '1')",
         None,
     )
 
@@ -123,18 +123,14 @@ def process_record(cursor, rec, current_dict):
     """
     hierarchy_id = find_hierarchy_id(rec["name"], current_dict)
     if hierarchy_id:
-        add_update = False
-
-        if current_dict[hierarchy_id]["name"] != rec["name"]:
-            add_update = True
-        if current_dict[hierarchy_id]["display_name"] != rec["display_name"]:
-            add_update = True
-        if current_dict[hierarchy_id]["parent_id"] != rec["parent_id00"]:
-            add_update = True
-        if add_update:
+        if (
+            current_dict[hierarchy_id]["name"] != rec["name"]
+            or current_dict[hierarchy_id]["display_name"] != rec["display_name"]
+            or current_dict[hierarchy_id]["parent_id"] != rec.get("parent_id")
+        ):
             # create a new record with a new id
             cursor.execute(
-                "insert into hierarchy_db.hierarchy_rec ( \
+                "insert into hierarchy_rec ( \
                 id, \
                 create_ts, \
                 type, \
@@ -169,8 +165,9 @@ def process_record(cursor, rec, current_dict):
             current_dict[hierarchy_id]["still_active"] = True
     else:
         # create a new record with a new id
+        cursor.execute("use hierarchy_db")
         cursor.execute(
-            "insert into hierarchy_db.hierarchy_rec ( \
+            "insert into hierarchy_rec ( \
             id, \
             create_ts, \
             type, \
@@ -204,28 +201,23 @@ def process_record(cursor, rec, current_dict):
                 {"type": rec["type"], "name": rec["name"]},
             )
         )[0]
-        hierarchy_id = None
-        if result and "id" in result:
-            hierarchy_id = result["id"]
+        hierarchy_id = result.get("id")
         if hierarchy_id:
             current_dict[hierarchy_id] = copy.copy(rec)
-            current_dict[hierarchy_id]["id"] = id
+            current_dict[hierarchy_id]["id"] = hierarchy_id
             current_dict[hierarchy_id]["still_active"] = True
     pprint.pprint(current_dict)
 
 
 def create_hierarchy_dictionary(cursor, sql_stmt, params):
     """
-    This creates a dictionary of the records returned
+    This creates a dictionary of the records returned.
 
-    currently the primary key is (id, create_ts) in order to
-    track history -
+    Assuming that the sql places things in chronological order
+    this will return a dictionary of the latest record for each id
     """
     records = moc_db_helper_functions.exec_fetchall(cursor, sql_stmt, params)
-    ret_dict = {}
-    for rec in records:
-        ret_dict[rec["id"]] = copy.deepcopy(rec)
-    return ret_dict
+    return {rec["id"]: rec for rec in records}
 
 
 def create_xdmod_key(high_key, mid_key="", low_key=""):
@@ -297,7 +289,9 @@ def find_hierarchy_id(name, dictionary):
 
 
 def get_hierarchy_from_db(cursor):
-    """This fetches the data from the database and only keeps the most recent record based on its id"""
+    """
+    fetch the most recent record for each item in the hierarchy
+    """
     hierarchy = {}
     hierarchy["institution"] = create_hierarchy_dictionary(
         cursor,
@@ -364,7 +358,7 @@ def process_coldfront_data(cursor, hierarchy):
             "status": "Active",
         }
         pi_id = find_hierarchy_id(pi_rec["name"], hierarchy["pi"])
-        if not pi_id:
+        if not pi_id or (hierarchy["pi"][pi_id]).get("parent_id") == None:
             # need to assign unknown as field of science and univeristy
             pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
 
@@ -372,12 +366,14 @@ def process_coldfront_data(cursor, hierarchy):
 
         project_rec = {
             "name": record["attributes"]["Allocated Project ID"],
-            "display_name": record["attributes"]["Allocated Project Name"],
+            "display_name": f"{record['project']['title']} - {record['attributes']['Allocated Project Name']}",
             "parent_id": record["project"]["pi"],
             "status": record["status"],
         }
+        if not project_rec["name"]:
+            project_rec["name"] = project_rec["display_name"]
 
-        if record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenShift":
+        if record["resource"]["name"] == "NERC-OCP" and record["resource"]["resource_type"] == "OpenShift":
             project_rec["type"] = "openshift-project"
             process_record(cursor, project_rec, hierarchy["project"])
         elif record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenStack":
@@ -407,7 +403,6 @@ def main():
         create_hierarchy_db(cursor)
 
     hierarchy = get_hierarchy_from_db(cursor)
-    process_expected_data(cursor, hierarchy)
     process_coldfront_data(cursor, hierarchy)
 
     # projects is consider tier 4 of this hierarchy, and cloud_projects is lower, so the parent_id of the cloud_projects
