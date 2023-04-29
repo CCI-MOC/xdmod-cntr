@@ -54,43 +54,23 @@ def get_data_from_coldfront():
     return None
 
 
-def get_data():
-    """this just fetches idealized data and will eventually go away!"""
-    with open("../hierarchy_data.json", "r", encoding="utf-8") as hierarchy_file:
-        data = json.load(hierarchy_file)
-        for rec in data:
-            rec["status"] = "Active"
-        return data
-    return None
-
-
 def create_hierarchy_db(cursor):
     """creates the tables of the hierarchy database"""
     cursor.execute("create database hierarchy_db", None)
     cursor.execute(
         "create table hierarchy_db.hierarchy_rec ( \
-            id varchar(256), \
+            id bigint, \
             create_ts timestamp, \
             type varchar(100) not null, \
             name varchar(500) not null, \
             status varchar(100), \
             display_name varchar(500), \
-            parent_id varchar(256), \
+            parent_id bigint, \
             primary key (id, create_ts) \
         )",
         None,
     )
     cursor.execute("create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;")
-    # The sha256 field is a compsite key based on all
-    cursor.execute(
-        "create table hierarchy_db.hierarchy_keys ( \
-            root_level_id bigint not null, \
-            mid_level_id bigint, \
-            bottome_level_id bigint, \
-            sha256 varchar(32) \
-        )",
-        None,
-    )
     # insert the 2 unknown institution and field-of-science here as opposed to using the data file
     cursor.execute("use hierarchy_db", None)
     cursor.execute(
@@ -102,8 +82,8 @@ def create_hierarchy_db(cursor):
             status, \
             display_name, \
             parent_id) values \
-            ('1', now(), 'institution', 'unknown', 'Active', 'Unknown', null ), \
-            ('2', now(), 'field-of-science', 'unknown', 'Active', 'Unknown', '1')",
+            (1, now(), 'institution', 'unknown', 'Active', 'Unknown', null ), \
+            (2, now(), 'field-of-science', 'unknown', 'Active', 'Unknown', 1)",
         None,
     )
 
@@ -129,6 +109,7 @@ def process_record(cursor, rec, current_dict):
             or current_dict[hierarchy_id]["parent_id"] != rec.get("parent_id")
         ):
             # create a new record with a new id
+            cursor.execute("use hierarchy_db")
             cursor.execute(
                 "insert into hierarchy_rec ( \
                 id, \
@@ -139,13 +120,13 @@ def process_record(cursor, rec, current_dict):
                 display_name, \
                 parent_id \
                 ) values ( \
-                %(id)s, \
+                %(id)d, \
                 now(), \
                 %(type)s, \
                 %(name)s, \
                 %(status)s, \
                 %(display_name)s, \
-                %(parent_id)s \
+                %(parent_id)d \
                 )",
                 {
                     "id": hierarchy_id,
@@ -193,7 +174,7 @@ def process_record(cursor, rec, current_dict):
             },
         )
         # lastrowid doesn't seem to work with nextval()
-        # id = cursor.lastrowid
+        # hierarchy_id = cursor.lastrowid
         result = (
             moc_db_helper_functions.exec_fetchall(
                 cursor,
@@ -203,7 +184,7 @@ def process_record(cursor, rec, current_dict):
         )[0]
         hierarchy_id = result.get("id")
         if hierarchy_id:
-            current_dict[hierarchy_id] = copy.copy(rec)
+            current_dict[hierarchy_id] = rec
             current_dict[hierarchy_id]["id"] = hierarchy_id
             current_dict[hierarchy_id]["still_active"] = True
     pprint.pprint(current_dict)
@@ -321,29 +302,6 @@ def get_hierarchy_from_db(cursor):
     return hierarchy
 
 
-def process_expected_data(cursor, hierarchy):
-    """This fits idealized data into the hierarchy from the database
-
-    This is currently needed as we are not getting the data from
-    keycloak yet.
-    """
-    data = get_data()
-    for record in data:
-        match record["type"]:
-            case "institution":
-                process_record(cursor, record, hierarchy["institution"])
-            case "field-of-science":
-                process_record(cursor, record, hierarchy["field-of-science"])
-            case "pi":
-                process_record(cursor, record, hierarchy["pi"])
-            case "openshift-project":
-                process_record(cursor, record, hierarchy["project"])
-            case "openstack-project":
-                process_record(cursor, record, hierarchy["project"])
-                record["parent_id"] = record["id"]
-                process_record(cursor, record, hierarchy["cloud-project"])
-
-
 def process_coldfront_data(cursor, hierarchy):
     """this processes the coldfront data (pi and project/cloud-project
         into the hierarchy
@@ -358,16 +316,33 @@ def process_coldfront_data(cursor, hierarchy):
             "status": "Active",
         }
         pi_id = find_hierarchy_id(pi_rec["name"], hierarchy["pi"])
-        if not pi_id or (hierarchy["pi"][pi_id]).get("parent_id") == None:
-            # need to assign unknown as field of science and univeristy
+
+        # (institution, field_of_science) get_institution_and_fos_from_keycloak()
+        # inst_id = find_hierarchy_id(institution, hierarchy["institution"])
+        # fos_id = find_hierarchy_id(institution, hierarchy["field-of-science"])
+        if pi_id:
+            # there is a pi_id
+            pi_rec["id"] = pi_id
+            parent_id = (hierarchy["pi"][pi_id]).get("parent_id")
+            if parent_id:
+                pi_rec["parent_id"] = parent_id
+            else:
+                pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
+        else:
+            # look  up field-of-science and institutuion in keycloak
+            # for now assign "unknown"
             pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
 
         process_record(cursor, pi_rec, hierarchy["pi"])
 
+        if not pi_id:
+            pi_id = find_hierarchy_id(pi_rec["name"], hierarchy["pi"])
+            pi_rec = hierarchy["pi"][pi_id]
+
         project_rec = {
             "name": record["attributes"]["Allocated Project ID"],
             "display_name": f"{record['project']['title']} - {record['attributes']['Allocated Project Name']}",
-            "parent_id": record["project"]["pi"],
+            "parent_id": pi_id,
             "status": record["status"],
         }
         if not project_rec["name"]:
@@ -401,6 +376,7 @@ def main():
 
     if not moc_db_helper_functions.db_exist(cursor, "hierarchy_db"):
         create_hierarchy_db(cursor)
+        cnx.commit()
 
     hierarchy = get_hierarchy_from_db(cursor)
     process_coldfront_data(cursor, hierarchy)
@@ -409,6 +385,8 @@ def main():
     # will point to the id in the projects - which happens to be the same as it's id
     for rec_id, rec in hierarchy["cloud-project"].items():
         rec["parent_id"] = rec_id
+
+    # update the database changing the status of the records that haven't been accessed
     cnx.commit()
     cnx.close()
 
