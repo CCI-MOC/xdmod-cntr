@@ -4,28 +4,28 @@ ENV BRANCH=xdmod10.0
 # Dependencies needed by XDMoD
 RUN yum makecache && \
     yum -y install \
-        epel-release \
-        centos-release-scl-rh \
+    epel-release \
+    centos-release-scl-rh \
     && \
     yum -y install \
-        expect \
-        gcc-c++ \
-        gnu-free-sans-fonts \
-        npm \
-        openssl \
-        postfix \
-        rh-nodejs6 \
-        rpm-build \
-        wget \
-        rh-python38.x86_64 \
-        python3-pip.noarch \
-        git \
-        openssh-clients.x86_64 \
-        httpd php php-cli php-mysql php-gd php-pdo php-xml \
-        libreoffice \
-        mariadb-server mariadb cronie logrotate \
-        perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
-        chromium-headless librsvg2-tools \
+    expect \
+    gcc-c++ \
+    gnu-free-sans-fonts \
+    npm \
+    openssl \
+    postfix \
+    rh-nodejs6 \
+    rpm-build \
+    wget \
+    rh-python38.x86_64 \
+    python3-pip.noarch \
+    git \
+    openssh-clients.x86_64 \
+    httpd php php-cli php-mysql php-gd php-pdo php-xml \
+    libreoffice \
+    mariadb-server mariadb cronie logrotate \
+    perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
+    chromium-headless librsvg2-tools \
     && \
     yum clean all && \
     rm -rf /var/cache/yum
@@ -80,6 +80,7 @@ COPY ./GetConfigFiles.py /usr/bin/xdmod-get-config-files
 COPY ./run-xdmod-openstack.sh /usr/bin/run-xdmod-openstack.sh
 COPY ./xdmod_init.py /usr/bin/xdmod-init
 COPY ./run-xdmod-openstack-hypervisor.sh /usr/bin/run-xdmod-openstack-hypervisor.sh
+COPY ./file_share_through_db.py /usr/bin/file_share_through_db.py
 RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/xdmod-openstack-hypervisor \
     && chmod 774 /usr/bin/xdmod-openstack-reporting \
@@ -92,6 +93,8 @@ RUN chmod 774 /usr/bin/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack.sh \
     && chmod 774 /usr/bin/run-xdmod-openstack-hypervisor.sh \
     && sed -i -e 's/\r$//' /usr/bin/run-xdmod-openstack-hypervisor.sh \
+    && chmod 774 /usr/bin/file_share_through_db.py \
+    && sed -i -e 's/\r$//' /usr/bin/file_share_through_db.py \
     && chmod -R g+rwx /usr/bin \
     && chgrp -R 0 /usr/bin \
     && chmod -R g+rwx /root \

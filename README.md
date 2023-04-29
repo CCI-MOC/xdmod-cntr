@@ -1,6 +1,28 @@
 # xdmod-cntr
 A project to deploy XDMoD on kubernetes/OpenShift.
 
+# temporary removal of xdmod-init container.
+
+In the initial setup of the cluster xdmod-init will run the xdmod-setup to
+initialize the databases, create an admin account, set the organization name,
+and some other functions.  Here is the link to some documentation of xdmod-setup
+use in the configuration of xdmod (https://open.xdmod.org/10.0/configuration.html)
+
+Occasionally xdmod-setup needs to be run to change configuration paramters, for example
+adding other accounts not found in the xdmod_init.json.  This can be done manually
+by connecting with rsh the xdmod pod (on kubernetes) and running xdmod-setup from
+the command line:
+
+    oc rsh <xdmod pod name>
+    > xdmod-setup
+
+Additionally, xdmod-init will copy the configuration directory to the database
+so anytime a change in confiration is made that modifies the files in
+/etc/xdmod, these need to be saved to the database in order to share the configuration
+with the kubernetes cron jobs to do the shredding and ingesting of data.  This
+can be manually with the following script:
+
+    > python3 file_share_through_db.py
 
 ## deploying xdmod on minikube
 1) Start minikube (not needed for kubernetes):
@@ -14,6 +36,7 @@ A project to deploy XDMoD on kubernetes/OpenShift.
     kubectl apply -f ./pv-xdmod-conf.yaml
     kubectl apply -f ./pv-xdmod-src.yaml
     kubectl apply -f ./pv-xdmod-data.yaml
+
 ## deploying on kubernetes/openshift
 
 3) build the docker files
@@ -30,7 +53,6 @@ A project to deploy XDMoD on kubernetes/OpenShift.
 4)  Set the values in the file xdmod-conf/xdmod_init.json
 
         {
-            "server_name": "kubernetes address",
             "admin_account": {
                 "admin_username": "Admin",
                 "admin_password": "pass",
@@ -55,20 +77,15 @@ A project to deploy XDMoD on kubernetes/OpenShift.
             },
             "resource": [
                 {
-                    "name": "test",
-                    "formal_name": "Sample Data",
-                    "type": "cloud"
-                },
-                {
-                    "name": "nerc-openstack",
-                    "formal_name": "NERC OpenShift Cluster 0",
-
+                    "name": "testOpenstack",
+                    "formal_name": "Test OpenStack",
+                    "Auth_URL": "Test's Auth URL",
                     "type": "cloud"
                 },
                 {
                     "name": "kaizen",
-                    "formal_name": "MOC Kaizen",
-                    "Auth_URL": "Open stack's Auth URL",
+                    "formal_name": "Kaizen OpenStack",
+                    "Auth_URL": "kaizen's Auth URL",
                     "type": "cloud"
                 }
             ]
