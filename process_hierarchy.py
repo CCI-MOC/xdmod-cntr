@@ -13,6 +13,7 @@ import pprint
 import copy
 import hashlib
 import moc_db_helper_functions
+import get_users_from_keycloak
 
 development_only = True
 
@@ -70,9 +71,7 @@ def create_hierarchy_db(cursor):
         )",
         None,
     )
-    cursor.execute(
-        "create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;"
-    )
+    cursor.execute("create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;")
     # insert the 2 unknown institution and field-of-science here as opposed to using the data file
     cursor.execute("use hierarchy_db", None)
     cursor.execute(
@@ -186,7 +185,7 @@ def process_record(cursor, rec, current_dict):
         )[0]
         hierarchy_id = result.get("id")
         if hierarchy_id:
-            current_dict[hierarchy_id] = rec
+            current_dict[hierarchy_id] = copy.copy(rec)
             current_dict[hierarchy_id]["id"] = hierarchy_id
             current_dict[hierarchy_id]["still_active"] = True
     pprint.pprint(current_dict)
@@ -241,9 +240,7 @@ def create_hierarchy_files(hierarchy):
         for l5 in hierarchy["cloud-project"].values():
             l4_rec = hierarchy["cloud-project"][l5["parent_id"]]
             l4_id = l4_rec["id"]
-            pi2project_file.write(
-                f"{hierarchy['cloud-project'][l4_id]['name']}, {l5['name']}\n"
-            )
+            pi2project_file.write(f"{hierarchy['cloud-project'][l4_id]['name']}, {l5['name']}\n")
 
     # construct the names (rename projects)
 
@@ -314,15 +311,11 @@ def process_coldfront_data(cursor, hierarchy):
             if parent_id:
                 pi_rec["parent_id"] = parent_id
             else:
-                pi_rec["parent_id"] = find_hierarchy_id(
-                    "unknown", hierarchy["field-of-science"]
-                )
+                pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
         else:
             # look  up field-of-science and institutuion in keycloak
             # for now assign "unknown"
-            pi_rec["parent_id"] = find_hierarchy_id(
-                "unknown", hierarchy["field-of-science"]
-            )
+            pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
 
         process_record(cursor, pi_rec, hierarchy["pi"])
 
@@ -336,22 +329,19 @@ def process_coldfront_data(cursor, hierarchy):
             "parent_id": pi_id,
             "status": record["status"],
         }
+        if project_rec["name"] == "5e1cbcfe729a4c7e8fb2fd5328456eea":
+            print(f"{project_rec['name']}")
         if not project_rec["name"]:
             project_rec["name"] = project_rec["display_name"]
 
-        if (
-            record["resource"]["name"] == "NERC-OCP"
-            and record["resource"]["resource_type"] == "OpenShift"
-        ):
+        if record["resource"]["name"] == "NERC-OCP" and record["resource"]["resource_type"] == "OpenShift":
             project_rec["type"] = "openshift-project"
             process_record(cursor, project_rec, hierarchy["project"])
-        elif (
-            record["resource"]["name"] == "NERC"
-            and record["resource"]["resource_type"] == "OpenStack"
-        ):
+        elif record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenStack":
             project_rec["type"] = "openstack-project"
             process_record(cursor, project_rec, hierarchy["project"])
-            project_rec["parent_id"] = record["id"]
+            project_rec["id"] = find_hierarchy_id(project_rec["name"], hierarchy["project"])
+            project_rec["parent_id"] = project_rec["id"]
             process_record(cursor, project_rec, hierarchy["cloud-project"])
         else:
             print("Unknown project record type")
@@ -407,13 +397,9 @@ def main():
     for project_id, project_rec in hierarchy["project"].items():
         if project_rec["type"] == "openshift-project":
             new_bottom_layer[project_id] = copy.copy(project_rec)
-            new_bottom_layer[project_id]["parent_id"] = hierarchy["pi"][
-                project_rec["parent_id"]
-            ]["parent_id"]
+            new_bottom_layer[project_id]["parent_id"] = hierarchy["pi"][project_rec["parent_id"]]["parent_id"]
             new_pi_id_count = new_pi_id_count + 1
-            new_pi_id = hierarchy["pi"][project_rec["parent_id"]]["name"] + str(
-                new_pi_id_count
-            )
+            new_pi_id = hierarchy["pi"][project_rec["parent_id"]]["name"] + str(new_pi_id_count)
             new_pis[new_pi_id] = copy.copy(hierarchy["pi"][project_rec["parent_id"]])
             new_pis[new_pi_id]["parent_id"] = project_id
 
