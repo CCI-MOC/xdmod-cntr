@@ -4,28 +4,28 @@ ENV BRANCH=xdmod10.0
 # Dependencies needed by XDMoD
 RUN yum makecache && \
     yum -y install \
-    epel-release \
-    centos-release-scl-rh \
+        epel-release \
+        centos-release-scl-rh \
     && \
     yum -y install \
-    expect \
-    gcc-c++ \
-    gnu-free-sans-fonts \
-    npm \
-    openssl \
-    postfix \
-    rh-nodejs6 \
-    rpm-build \
-    wget \
-    rh-python38.x86_64 \
-    python3-pip.noarch \
-    git \
-    openssh-clients.x86_64 \
-    httpd php php-cli php-mysql php-gd php-pdo php-xml \
-    libreoffice \
-    mariadb-server mariadb cronie logrotate \
-    perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
-    chromium-headless librsvg2-tools \
+        expect \
+        gcc-c++ \
+        gnu-free-sans-fonts \
+        npm \
+        openssl \
+        postfix \
+        rh-nodejs6 \
+        rpm-build \
+        wget \
+        rh-python38.x86_64 \
+        python3-pip.noarch \
+        git \
+        openssh-clients.x86_64 \
+        httpd php php-cli php-mysql php-gd php-pdo php-xml \
+        libreoffice \
+        mariadb-server mariadb cronie logrotate \
+        perl-Image-ExifTool php-mbstring php-pecl-apcu jq \
+        chromium-headless librsvg2-tools \
     && \
     yum clean all && \
     rm -rf /var/cache/yum
