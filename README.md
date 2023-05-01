@@ -1,15 +1,15 @@
 # xdmod-cntr
 A project to deploy XDMoD on kubernetes/OpenShift.
 
-# temporary removal of xdmod-init container.
+# Configuring and updating the configuration of XDMoD.
 
 In the initial setup of the cluster xdmod-init will run the xdmod-setup to
 initialize the databases, create an admin account, set the organization name,
 and some other functions.  Here is the link to some documentation of xdmod-setup
 use in the configuration of xdmod (https://open.xdmod.org/10.0/configuration.html)
 
-Occasionally xdmod-setup needs to be run to change configuration paramters, for example
-adding other accounts not found in the xdmod_init.json.  This can be done manually
+Occasionally xdmod-setup needs to be run to change configuration parameters, for example
+adding other accounts not found in the xdmod_init.json.  This can be manually done
 by connecting with rsh the xdmod pod (on kubernetes) and running xdmod-setup from
 the command line:
 
@@ -17,10 +17,10 @@ the command line:
     > xdmod-setup
 
 Additionally, xdmod-init will copy the configuration directory to the database
-so anytime a change in confiration is made that modifies the files in
+so anytime a change in configration is made that modifies the files in
 /etc/xdmod, these need to be saved to the database in order to share the configuration
 with the kubernetes cron jobs to do the shredding and ingesting of data.  This
-can be manually with the following script:
+can be manually done with the following script:
 
     > python3 file_share_through_db.py
 
