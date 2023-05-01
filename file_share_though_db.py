@@ -5,23 +5,8 @@ the ingestor kubernetes cron jobs)
 """
 import os
 import json
+import moc_db_helper_functions as moc_db
 import mysql.connector
-
-
-def exec_fetchone(cursor, sql_stmt, params=None):
-    """executes the sql stmt and fetches the first one in the result list"""
-    cursor.execute(sql_stmt, params)
-    result = cursor.fetchone()
-    return result[0]
-
-
-def connect_to_db(database):
-    """This just connects to the database"""
-    host = database["host"]
-    admin_acct = "root"
-    admin_pass = database["admin_password"]
-    cnx = mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
-    return cnx
 
 
 def write_file_to_db(cursor, filename, script):
@@ -30,8 +15,8 @@ def write_file_to_db(cursor, filename, script):
     if os.path.isfile(filename):
         print(f" Writing {filename} to db")
         with open(filename, "rb") as file:
-            file_contents = file.read()
-            count = exec_fetchone(
+            file_contents = file.read()i
+            count = moc_db.exec_fetchone(
                 cursor,
                 "select count(*) from file_share_db.file where script=%s",
                 (script,),
@@ -56,7 +41,7 @@ def main():
     """Creates the tarball to upload to the database and cleansup after itself"""
     with open("/etc/xdmod/xdmod_init.json", encoding="utf-8") as json_file:
         xdmod_init_json = json.load(json_file)
-        cnx = connect_to_db(xdmod_init_json["database"])
+        cnx = moc_db.connect_to_db(xdmod_init_json["database"])
 
         os.system("tar -czf /etc/xdmod/etc_xdmod.tgz /etc/xdmod/*")
         os.system("base64 /etc/xdmod/etc_xdmod.tgz > /etc/xdmod/etc_xdmod.b64")
