@@ -17,7 +17,7 @@ the command line:
     > xdmod-setup
 
 Additionally, xdmod-init will copy the configuration directory to the database
-so anytime a change in configration is made that modifies the files in
+so anytime a change in configuration is made that modifies the files in
 /etc/xdmod, these need to be saved to the database in order to share the configuration
 with the kubernetes cron jobs to do the shredding and ingesting of data.  This
 can be manually done with the following script:
