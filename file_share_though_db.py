@@ -6,7 +6,6 @@ the ingestor kubernetes cron jobs)
 import os
 import json
 import moc_db_helper_functions as moc_db
-import mysql.connector
 
 
 def write_file_to_db(cursor, filename, script):
@@ -15,7 +14,7 @@ def write_file_to_db(cursor, filename, script):
     if os.path.isfile(filename):
         print(f" Writing {filename} to db")
         with open(filename, "rb") as file:
-            file_contents = file.read()i
+            file_contents = file.read()
             count = moc_db.exec_fetchone(
                 cursor,
                 "select count(*) from file_share_db.file where script=%s",
