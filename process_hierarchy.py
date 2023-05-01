@@ -120,9 +120,7 @@ def create_hierarchy_db(cursor):
         )",
         None,
     )
-    cursor.execute(
-        "create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;"
-    )
+    cursor.execute("create sequence hierarchy_db.hierarchy_db_id_seq start with 3 increment by 1;")
     # insert the 2 unknown institution and field-of-science here as opposed to using the data file
     cursor.execute("use hierarchy_db", None)
     cursor.execute(
@@ -277,9 +275,7 @@ def create_hierarchy_files(hierarchy):
         for l2_id, l2 in hierarchy["field-of-science"].items():
             hierarchy_file.write(f'"{l2_id}","{l2["name"]}","{l2["parent_id"]}"\n')
         for l3_id, l3_rec in hierarchy["pi"].items():
-            hierarchy_file.write(
-                f'"{l3_id}","{l3_rec["name"]}","{l3_rec["parent_id"]}"\n'
-            )
+            hierarchy_file.write(f'"{l3_id}","{l3_rec["name"]}","{l3_rec["parent_id"]}"\n')
 
     # constrcut groups.csv (level 4 of the hierarchy, though this is a mapping table between pi/group and the hiearachy)
     with open("group.csv", "w", encoding="utf-8") as group_file:
@@ -292,9 +288,7 @@ def create_hierarchy_files(hierarchy):
         for l5 in hierarchy["cloud-project"].values():
             l4_rec = hierarchy["cloud-project"][l5["parent_id"]]
             l4_id = l4_rec["id"]
-            pi2project_file.write(
-                f'"{hierarchy["cloud-project"][l4_id]["name"]}", "{l5["name"]}"\n'
-            )
+            pi2project_file.write(f'"{hierarchy["cloud-project"][l4_id]["name"]}", "{l5["name"]}"\n')
 
     # construct the names.csv (rename records in the hierarchy)
     with open("names.csv", "w", encoding="utf-8") as name_file:
@@ -384,16 +378,12 @@ def process_data(cursor, hierarchy):
 
         # find the pi's field of science - the pi's parent_id
         if keycloak_rec is None:
-            pi_rec["parent_id"] = find_hierarchy_id(
-                "unknown", hierarchy["field-of-science"]
-            )
+            pi_rec["parent_id"] = find_hierarchy_id("unknown", hierarchy["field-of-science"])
         else:
             # pick the first element of the list and assume it is the primary one
             #  - can the cilogon_idp_name have either 0 or more th1n 1 elements?
             institution = keycloak_rec["attributes"]["cilogon_idp_name"][0]
-            institution_id = process_institution(
-                cursor, institution, hierarchy["institution"]
-            )
+            institution_id = process_institution(cursor, institution, hierarchy["institution"])
             institution = hierarchy["institution"][institution_id]["name"]
 
             # here again, pick the first element of the list and assume it is the primary one
@@ -404,24 +394,18 @@ def process_data(cursor, hierarchy):
                 fos_rec = {
                     "type": "field-of-science",
                     "name": field_of_science,
-                    "display_name": keycloak_rec["attributes"]["mss_research_domain"][
-                        0
-                    ],
+                    "display_name": keycloak_rec["attributes"]["mss_research_domain"][0],
                     "status": "Active",
                     "parent_id": institution_id,
                 }
                 process_record(cursor, fos_rec, hierarchy["field-of-science"])
-                fos_id = find_hierarchy_id(
-                    field_of_science, hierarchy["field-of-science"]
-                )
+                fos_id = find_hierarchy_id(field_of_science, hierarchy["field-of-science"])
 
             # now that we know the pi's field of science id (fos_id)
             if fos_id:
                 pi_rec["parent_id"] = fos_id
             else:
-                pi_rec["parent_id"] = find_hierarchy_id(
-                    "Unknown", hierarchy["field-of-science"]
-                )
+                pi_rec["parent_id"] = find_hierarchy_id("Unknown", hierarchy["field-of-science"])
 
         process_record(cursor, pi_rec, hierarchy["pi"])
 
@@ -438,23 +422,15 @@ def process_data(cursor, hierarchy):
         if not project_rec["name"]:
             project_rec["name"] = project_rec["display_name"]
 
-        if (
-            record["resource"]["name"] == "NERC-OCP"
-            and record["resource"]["resource_type"] == "OpenShift"
-        ):
+        if record["resource"]["name"] == "NERC-OCP" and record["resource"]["resource_type"] == "OpenShift":
             project_rec["type"] = "openshift-project"
             process_record(cursor, project_rec, hierarchy["project"])
-        elif (
-            record["resource"]["name"] == "NERC"
-            and record["resource"]["resource_type"] == "OpenStack"
-        ):
+        elif record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenStack":
             project_rec["type"] = "openstack-project"
             process_record(cursor, project_rec, hierarchy["project"])
-            project_rec["id"] = find_hierarchy_id(
-                project_rec["name"], hierarchy["project"]
-            )
+            project_rec["parent_id"] = find_hierarchy_id(project_rec["name"], hierarchy["project"])
             project_rec["type"] = "openstack-cloud-project"
-            project_rec["parent_id"] = project_rec["id"]
+            project_rec["id"] = find_hierarchy_id(project_rec["name"], hierarchy["cloud-project"])
             process_record(cursor, project_rec, hierarchy["cloud-project"])
         else:
             logging.info("Unknown project_record type %s", json.dumps(record))
@@ -479,11 +455,6 @@ def main():
 
     hierarchy = get_hierarchy_from_db(cursor)
     process_data(cursor, hierarchy)
-
-    # projects is consider tier 4 of this hierarchy, and cloud_projects is lower, so the parent_id of the cloud_projects
-    # will point to the id in the projects - which happens to be the same as it's id
-    for rec_id, rec in hierarchy["cloud-project"].items():
-        rec["parent_id"] = rec_id
 
     # update the database changing the status of the records that haven't been accessed
     cnx.commit()
