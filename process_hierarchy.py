@@ -263,7 +263,7 @@ def create_xdmod_key(high_key, mid_key="", low_key=""):
     return m.hexdigest()
 
 
-def create_hierarchy_files(hierarchy):
+def create_hierarchy_files(hierarchy, coldfront2resource):
     """
     This builds the hierarchy files from the data coming from coldfront, keycloak
     and historic data from the database
@@ -277,23 +277,24 @@ def create_hierarchy_files(hierarchy):
         for l3_id, l3_rec in hierarchy["pi"].items():
             hierarchy_file.write(f'"{l3_id}","{l3_rec["name"]}","{l3_rec["parent_id"]}"\n')
 
-    # constrcut groups.csv (level 4 of the hierarchy, though this is a mapping table between pi/group and the hiearachy)
+    # construct groups.csv (level 4 of the hierarchy, though this is a mapping table between pi/group and the hiearachy)
     with open("group.csv", "w", encoding="utf-8") as group_file:
         for l4_id, l4_rec in hierarchy["project"].items():
             l3_rec = hierarchy["pi"][l4_rec["parent_id"]]
             group_file.write(f'"{l4_rec["name"]}", "{l4_rec["parent_id"]}"\n')
 
-    # constrcut pi2project
+    # construct pi2project
     with open("pi2project.csv", "w", encoding="utf-8") as pi2project_file:
         for l5 in hierarchy["cloud-project"].values():
-            l4_rec = hierarchy["cloud-project"][l5["parent_id"]]
+            l4_rec = hierarchy["project"][l5["parent_id"]]
             l4_id = l4_rec["id"]
-            pi2project_file.write(f'"{hierarchy["cloud-project"][l4_id]["name"]}", "{l5["name"]}"\n')
+            # need to add in a project type ( NERC, openstack ) to resource name ('nerc-ocp-prod')
+            pi2project_file.write(f'"{hierarchy["project"][l4_id]["name"]}", "{l5["name"]}", "{coldfront2resource[l4_rec["type"]]["resource_name"]}"\n')
 
     # construct the names.csv (rename records in the hierarchy)
     with open("names.csv", "w", encoding="utf-8") as name_file:
         for l4_id, l4_rec in hierarchy["project"].items():
-            name_file.write(f'"{l4_rec["name"]}", "{l4_rec["display_name"]}"\n')
+            name_file.write(f'"{l4_rec["name"]}", , "{l4_rec["display_name"]}"\n')
 
 
 def find_hierarchy_id(name, dictionary):
@@ -414,7 +415,7 @@ def process_data(cursor, hierarchy):
             pi_rec = hierarchy["pi"][pi_id]
 
         project_rec = {
-            "name": record["attributes"]["Allocated Project ID"],
+            "name": record["attributes"]["Allocated Project Name"],
             "display_name": f"{record['project']['title']} - {record['attributes']['Allocated Project Name']}",
             "parent_id": pi_id,
             "status": record["status"],
@@ -423,13 +424,13 @@ def process_data(cursor, hierarchy):
             project_rec["name"] = project_rec["display_name"]
 
         if record["resource"]["name"] == "NERC-OCP" and record["resource"]["resource_type"] == "OpenShift":
-            project_rec["type"] = "openshift-project"
+            project_rec["type"] = "NERC-OCP-OpenShift"
             process_record(cursor, project_rec, hierarchy["project"])
         elif record["resource"]["name"] == "NERC" and record["resource"]["resource_type"] == "OpenStack":
-            project_rec["type"] = "openstack-project"
+            project_rec["type"] = "NERC-OpenStack"
             process_record(cursor, project_rec, hierarchy["project"])
             project_rec["parent_id"] = find_hierarchy_id(project_rec["name"], hierarchy["project"])
-            project_rec["type"] = "openstack-cloud-project"
+            project_rec["type"] = "cloud-project"
             project_rec["id"] = find_hierarchy_id(project_rec["name"], hierarchy["cloud-project"])
             process_record(cursor, project_rec, hierarchy["cloud-project"])
         else:
@@ -438,15 +439,19 @@ def process_data(cursor, hierarchy):
 
 def main():
     """the main function"""
-    config = {"host": "localhost", "xdmod_password": "pass", "admin_password": "pass"}
+    # read in the xdmod_init.json file to get the database and resource configs
+    try:
+        with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
+            config = json.load(file)
+    except IOError:
+        print("Ensure the xdmod-init.json file is in /etc/xdmod/xdmod_init.json")
 
-    # try:
-    #    with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
-    #        config = json.load(file)["database"]
-    # except IOError:
-    #    print("Ensure the xdmod-init.json file is in /etc/xdmod/xdmod_init.json")
+    coldfront2resource = {}
+    for resource in config["resource"]:
+        if "ColdFront" in resource:
+            coldfront2resource[resource["ColdFront"]] = {"resource_name": resource["name"], "resource_type": resource["type"]}
 
-    cnx = moc_db_helper_functions.connect_to_db(config)
+    cnx = moc_db_helper_functions.connect_to_db(config["database"])
     cursor = cnx.cursor(dictionary=True)
 
     if not moc_db_helper_functions.db_exist(cursor, "hierarchy_db"):
@@ -460,7 +465,7 @@ def main():
     cnx.commit()
     cnx.close()
 
-    create_hierarchy_files(hierarchy)
+    create_hierarchy_files(hierarchy, coldfront2resource)
 
 
 if __name__ == "__main__":
