@@ -30,6 +30,7 @@
         {
             "name": "nerc_openstack",
             "formal_name": "NERC OpenStack",
+            "ColdFront": "NERC-OpenStack",
             "auth_url": "https://stack.nerc.mghpcc.org:13000",
             "type": "cloud"
         },
@@ -41,6 +42,7 @@
         {
             "name": "nerc_openshift_staging",
             "formal_name": "NERC OpenShift Staging",
+            "ColdFront": "NERC-OCP-OpenShift",
             "type": "hpc"
         },
         {
