@@ -1,3 +1,7 @@
+"""
+Some reusable database functions
+"""
+import os
 import mysql.connector
 
 
@@ -39,11 +43,12 @@ def write_file_from_db(cursor, script):
         if not os.path.isdir(directory):
             print(f"Creating Direcotry {directory}")
             os.makedirs(directory)
-        with open(file, "wb+") as fp:
-            fp.write(rec[1])
+        with open(file, "wb+") as file_from_db:
+            file_from_db.write(rec[1])
 
 
 def db_exist(cursor, db_name):
+    """This returns true if the db_name database exists"""
     result = exec_fetchall(cursor, "show databases", None)
     for database in result:
         if database["Database"] == db_name:
