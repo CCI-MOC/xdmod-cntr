@@ -39,10 +39,7 @@ def write_file_from_db(cursor, script):
     if data and isinstance(data, list):
         rec = data[0]
         file = rec[0]
-        directory = os.path.dirname(file)
-        if not os.path.isdir(directory):
-            print(f"Creating Direcotry {directory}")
-            os.makedirs(directory)
+        os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb+") as file_from_db:
             file_from_db.write(rec[1])
 
