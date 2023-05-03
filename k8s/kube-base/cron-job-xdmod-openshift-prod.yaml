@@ -31,11 +31,11 @@ spec:
               imagePullPolicy: Always
               env:
                 - name: OPENSHIFT_PROMETHEUS_URL
-                  value: https://prometheus-k8s-openshift-monitoring.apps.nerc-ocp-prod.rc.fas.harvard.edu
+                  value: https://prometheus-k8s-openshift-monitoring.apps.shift.nerc.mghpcc.org
                 - name: OPENSHIFT_CLUSTER_NAME
                   value: nerc-openshift-prod
                 - name: OPENSHIFT_SERVER_URL
-                  value: https://api.nerc-ocp-prod.rc.fas.harvard.edu:6443
+                  value: https://api.shift.nerc.mghpcc.org:6443
                 - name: OUTPUT_DIR
                   value: /data/xdmod_openshift_data/nerc_openshift_prod
                 - name: XDMOD_RESOURCE
