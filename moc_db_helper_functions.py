@@ -27,7 +27,7 @@ def connect_to_db(database):
     return mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
 
 
-def write_file_from_db(cursor, script):
+def fetch_file_from_db(cursor, script):
     """As a work-a-round for RWM, share config files though the database"""
     print(f"write {script} file_share_db")
     data = exec_fetchall(
@@ -42,6 +42,34 @@ def write_file_from_db(cursor, script):
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb+") as file_from_db:
             file_from_db.write(rec[1])
+
+
+def save_file_to_db(cursor, filename, script):
+    """As a work-a-round for RWM, share config files though the database"""
+    # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
+    if os.path.isfile(filename):
+        print(f" Writing {filename} to db")
+        with open(filename, "rb") as file:
+            file_contents = file.read()
+            count = moc_db.exec_fetchone(
+                cursor,
+                "select count(*) from file_share_db.file where script=%s",
+                (script,),
+            )
+            if count == 0:
+                cursor.execute(
+                    "insert into file_share_db.file \
+                        (script, file_name, file_data) \
+                     values \
+                        (%s,%s,%s)",
+                    (script, filename, file_contents),
+                )
+            else:
+                cursor.execute(
+                    "update file_share_db.file \
+                     set file_name=%s, file_data=%s where script=%s",
+                    (filename, file_contents, script),
+                )
 
 
 def db_exist(cursor, db_name):
