@@ -1,4 +1,12 @@
+import os
 import mysql.connector
+
+
+def exec_fetchone(cursor, sql_stmt, params=None):
+    """executes the sql stmt and fetches the first one in the result list"""
+    cursor.execute(sql_stmt, params)
+    result = cursor.fetchone()
+    return result
 
 
 def exec_fetchall(cursor, sql_stmt, params):
@@ -25,15 +33,11 @@ def write_file_from_db(cursor, script):
         (script,),
     )
 
-    if data and isinstance(data, list):
-        rec = data[0]
-        file = rec[0]
-        directory = os.path.dirname(file)
-        if not os.path.isdir(directory):
-            print(f"Creating Direcotry {directory}")
-            os.makedirs(directory)
-        with open(file, "wb+") as fp:
-            fp.write(rec[1])
+    rec = data[0]
+    file = rec[0]
+    os.makedirs(os.path.dirname(file), exist_ok=True)
+    with open(file, "wb+") as fp:
+        fp.write(rec[1])
 
 
 def db_exist(cursor, db_name):
