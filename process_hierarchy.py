@@ -18,7 +18,18 @@ import moc_db_helper_functions as moc_db
 # import get_users_from_keycloak
 
 # only here for development
-keycloak_data = {}
+keycloak_data = None
+
+
+def get_all_keycloak_data():
+    """
+    This returns all of the keycloak
+    This is for ease of testing as it gives something to mock
+
+    It is my understanding that to lookup data in keycloak you need the PI name
+    """
+    with open("../keycloak_data.json", "r", encoding="utf-8") as keycloak_file:
+        return json.load(keycloak_file)
 
 
 def get_keycloak_data(username):
@@ -54,17 +65,13 @@ def get_keycloak_data(username):
         ...
     ]
     """
-    keycloak_rec = keycloak_data.get(username)
-    if not keycloak_rec:
-        with open("../keycloak_data.json", "r", encoding="utf-8") as keycloak_file:
-            keycloak_records = json.load(keycloak_file)
-        if len(keycloak_records) == 0:
-            logging.error("zero keycloak records found")
-            sys.exit()
+    global keycloak_data
+    if keycloak_data is None:
+        keycloak_data = {}
+        keycloak_records = get_all_keycloak_data()
         for rec in keycloak_records:
             keycloak_data[rec["username"]] = rec
-        return keycloak_data.get(username)
-    return keycloak_rec
+    return keycloak_data.get(username)
 
 
 def get_coldfront_data():
@@ -109,7 +116,7 @@ def create_hierarchy_db(cursor):
     cursor.execute(
         "create table hierarchy_db.hierarchy_rec ( \
             id bigint, \
-            create_ts datetime, \
+            create_ts datetime(4), \
             type varchar(100) not null, \
             name varchar(500) not null, \
             status varchar(100), \
@@ -192,7 +199,7 @@ def process_record(cursor, rec, current_dict):
             parent_id \
             ) values ( \
             %(id)s, \
-            now(), \
+            current_timestamp(4), \
             %(type)s, \
             %(name)s, \
             %(status)s, \
@@ -201,11 +208,11 @@ def process_record(cursor, rec, current_dict):
             )",
             {
                 "id": hierarchy_id,
-                "type": rec["type"],
-                "name": rec["name"],
-                "display_name": rec["display_name"],
-                "status": rec["status"],
-                "parent_id": rec["parent_id"],
+                "type": current_dict[hierarchy_id]["type"],
+                "name": current_dict[hierarchy_id]["name"],
+                "display_name": current_dict[hierarchy_id]["display_name"],
+                "status": current_dict[hierarchy_id]["status"],
+                "parent_id": current_dict[hierarchy_id]["parent_id"],
             },
         )
 
