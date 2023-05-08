@@ -19,7 +19,7 @@ spec:
       containers:
         - image: mongo:6.0.5
           name: mongo
-          args: ["--dbpath","/data/db"]
+          args: ["--dbpath", "/data/db"]
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
               value: root
