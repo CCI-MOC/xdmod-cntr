@@ -393,9 +393,9 @@ def compile_server_state(server, project_dict, flavor_dict, user_dict):
     disk_gb = "0"
     ephemeral_gb = "0"
     instance_type = f"unknown flavor({server.flavor['id']})"
-    memory_mb = "0"
-    root_gb = "0"
-    vcpus = "0"
+    memory_mb = "1"
+    root_gb = "1"
+    vcpus = "1"
     if server.flavor["id"] in flavor_dict:
         disk_gb = str(flavor_dict[server.flavor["id"]]["disk"])
         ephemeral_gb = str(flavor_dict[server.flavor["id"]]["ephemeral"])
