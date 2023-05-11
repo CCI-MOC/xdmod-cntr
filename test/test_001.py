@@ -183,5 +183,3 @@ def test_001(mocker):
         with open(filename, "r", encoding="utf-8") as file:
             output[filename] = file.readlines()
         assert output[filename] == ds[filename]
-    # assert False, print("%s", pprint.pformat(output, indent=4, width=120))
-    # check files
