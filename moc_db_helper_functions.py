@@ -1,4 +1,10 @@
+"""
+Some reusable database functions
+
+assumes the cursor is created with cnx.cursor(dictionary=True)
+"""
 import os
+import subprocess
 import mysql.connector
 
 
@@ -22,6 +28,29 @@ def connect_to_db(database):
     admin_pass = database["admin_password"]
     # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
     return mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
+
+
+def delete_db(cursor, db_name):
+    """delete the database"""
+    if moc_db_helper_functions.db_exist(cursor, db_name):
+        cursor.execute("drop database %(name)s", {"name": db_name})
+
+
+def fetch_file_from_db(cursor, script):
+    """As a work-a-round for RWM, share config files though the database"""
+    print(f"write {script} file_share_db")
+    data = exec_fetchall(
+        cursor,
+        "select file_name, file_data from file_share_db.file where script=%(script)s",
+        {"script": script},
+    )
+
+    if data and isinstance(data, list):
+        rec = data[0]
+        file = rec[0]
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with open(file, "wb+") as file_from_db:
+            file_from_db.write(rec[1])
 
 
 def write_file_from_db(cursor, script):

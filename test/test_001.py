@@ -215,8 +215,12 @@ dataset = {
 def test_000(mocker):
     delete_hierarchy_db.delete_db()
     ds = dataset["0"]
-    mocker.patch("process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"])
-    mocker.patch("process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"])
+    mocker.patch(
+        "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
+    )
+    mocker.patch(
+        "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
+    )
     process_hierarchy.main()
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
@@ -228,8 +232,12 @@ def test_000(mocker):
 def test_001(mocker):
     delete_hierarchy_db.delete_db()
     ds = dataset["1"]
-    mocker.patch("process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"])
-    mocker.patch("process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"])
+    mocker.patch(
+        "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
+    )
+    mocker.patch(
+        "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
+    )
     process_hierarchy.main()
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
@@ -242,8 +250,12 @@ def test_002(mocker):
     delete_hierarchy_db.delete_db()
     for ds_id in ["1", "2"]:
         ds = dataset[ds_id]
-        mocker.patch("process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"])
-        mocker.patch("process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"])
+        mocker.patch(
+            "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
+        )
+        mocker.patch(
+            "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
+        )
         process_hierarchy.main()
         output = {}
         for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
