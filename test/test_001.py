@@ -7,6 +7,7 @@ import pprint
 
 # need to modk process_hierarchy
 dataset = {
+    # empty dataset
     "0": {
         "coldfront_data": [],
         "keycloak_data": [],
@@ -15,6 +16,7 @@ dataset = {
         "pi2project.csv": [],
         "names.csv": [],
     },
+    # dataset 2 pis 3 projets
     "1": {
         "coldfront_data": [
             {
@@ -146,6 +148,7 @@ dataset = {
             '"Test Project 2-ff0e78e", "Test Project 2-ff0e78e", "nerc_openstack"\n',
         ],
     },
+    # dataset 1 pi 1 project subset of ("1" dataset 2 pis 3 projets)
     "2": {
         "coldfront_data": [
             {
@@ -212,15 +215,11 @@ dataset = {
 }
 
 
-def test_000(mocker):
+def test_empty_dataset(mocker):
     delete_hierarchy_db.delete_db()
     ds = dataset["0"]
-    mocker.patch(
-        "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
-    )
-    mocker.patch(
-        "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
-    )
+    mocker.patch("process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"])
+    mocker.patch("process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"])
     process_hierarchy.main()
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
@@ -229,15 +228,11 @@ def test_000(mocker):
         assert output[filename] == ds[filename]
 
 
-def test_001(mocker):
+def test_2PIs_3Projects(mocker):
     delete_hierarchy_db.delete_db()
     ds = dataset["1"]
-    mocker.patch(
-        "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
-    )
-    mocker.patch(
-        "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
-    )
+    mocker.patch("process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"])
+    mocker.patch("process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"])
     process_hierarchy.main()
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
@@ -246,16 +241,12 @@ def test_001(mocker):
         assert output[filename] == ds[filename]
 
 
-def test_002(mocker):
+def test_removal_project_and_pi(mocker):
     delete_hierarchy_db.delete_db()
     for ds_id in ["1", "2"]:
         ds = dataset[ds_id]
-        mocker.patch(
-            "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
-        )
-        mocker.patch(
-            "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
-        )
+        mocker.patch("process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"])
+        mocker.patch("process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"])
         process_hierarchy.main()
         output = {}
         for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
