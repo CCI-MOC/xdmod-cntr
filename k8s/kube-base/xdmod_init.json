@@ -41,12 +41,16 @@
         {
             "name": "nerc_openshift_staging",
             "formal_name": "NERC OpenShift Staging",
-            "type": "hpc"
+            "type": "hpc",
+            "timezone": "US/Eastern",
+            "shared_jobs": true
         },
         {
             "name": "nerc_openshift_prod",
             "formal_name": "NERC OpenShift Prod",
-            "type": "hpc"
+            "type": "hpc",
+            "timezone": "US/Eastern",
+            "shared_jobs": true
         }
     ]
 }
