@@ -12,7 +12,7 @@ spec:
         spec:
           initContainers:
             - name: download-config
-              image: xdmod-openstack
+              image: image-registry.openshift-image-registry.svc:5000/xdmod/xdmod-openstack:latest
               imagePullPolicy: IfNotPresent
               command:
                 - "/app/xdmod-get-config.sh"
