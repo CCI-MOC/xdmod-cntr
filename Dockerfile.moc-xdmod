@@ -64,8 +64,11 @@ RUN mkdir -p /root/rpmbuild/RPMS/noarch \
     && pip3 install --upgrade pip \
     && pip3 install keystoneauth python-keystoneclient python-novaclient python-cinderclient cryptography python-openstacksdk mysql-connector-python pexpect
 
-# RPM install of xdmod
-RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm && \
+# RPM install of xdmod, some mongo db tools and Supremm
+RUN yum -y install  https://github.com/ubccr/xdmod/releases/download/v10.0.0/xdmod-10.0.0-1.0.el7.noarch.rpm \
+        https://fastdl.mongodb.org/tools/db/mongodb-database-tools-rhel70-x86_64-100.7.0.rpm \
+        https://downloads.mongodb.com/compass/mongodb-mongosh-1.8.2.x86_64.rpm \
+        https://github.com/ubccr/xdmod-supremm/releases/download/v10.0.0/xdmod-supremm-10.0.0-1.0.el7.noarch.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
