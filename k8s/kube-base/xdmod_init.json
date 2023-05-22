@@ -50,5 +50,10 @@
             "formal_name": "NERC OpenShift Prod",
             "type": "hpc"
         }
-    ]
+    ],
+    "keycloak_info": {
+        "url": null,
+        "client_id": null,
+        "client_secret": null
+    }
 }

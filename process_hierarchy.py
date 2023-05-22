@@ -13,6 +13,7 @@ import copy
 import sys
 import logging
 import hashlib
+import get_users_from_keycloak as keycloak
 import moc_db_helper_functions as moc_db
 
 # import get_users_from_keycloak
@@ -32,7 +33,7 @@ def get_all_keycloak_data():
         return json.load(keycloak_file)
 
 
-def get_keycloak_data(username):
+def get_keycloak_data(keycloak_info, username):
     """
     This links institution, field-of-science and PI together
 
@@ -68,7 +69,7 @@ def get_keycloak_data(username):
     global keycloak_data
     if keycloak_data is None:
         keycloak_data = {}
-        keycloak_records = get_all_keycloak_data()
+        keycloak_records = keycloak.get_keycloak_data(keycloak_info)
         for rec in keycloak_records:
             keycloak_data[rec["username"]] = rec
     return keycloak_data.get(username)
@@ -347,7 +348,7 @@ def process_institution(cursor, institution, institution_dict):
     return institution_id
 
 
-def process_data(cursor, hierarchy):
+def process_data(cursor, hierarchy, keycloak_info):
     """
     This combines the cold front data with the
     """
@@ -364,7 +365,7 @@ def process_data(cursor, hierarchy):
         if pi_id:
             pi_rec["id"] = pi_id
 
-        keycloak_rec = get_keycloak_data(pi_rec["name"])
+        keycloak_rec = get_keycloak_data(keycloak_info, pi_rec["name"])
 
         # find the pi's field of science - the pi's parent_id
         if keycloak_rec is None:
@@ -488,7 +489,7 @@ def main():
         cnx.commit()
 
     hierarchy = get_hierarchy_from_db(cursor)
-    process_data(cursor, hierarchy)
+    process_data(cursor, hierarchy, config["keycloak_info"])
     update_hierarchy_status(cursor, hierarchy)
 
     # update the database changing the status of the records that haven't been accessed

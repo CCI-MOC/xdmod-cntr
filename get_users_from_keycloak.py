@@ -6,15 +6,15 @@ from requests.auth import HTTPBasicAuth
 logger = logging.getLogger()
 
 
-def get_client_token():
+def get_client_token(keycloak_url, keycloak_client_id, keycloak_client_secret):
     client_token = None
-    token_url = "<KEYCLOAK URL>/auth/realms/mss/protocol/openid-connect/token"
+    token_url = f"{keycloak_url}/auth/realms/mss/protocol/openid-connect/token"
 
     try:
         r = requests.post(
             token_url,
             data={"grant_type": "client_credentials"},
-            auth=HTTPBasicAuth("<PUT CLIENT ID HERE>", "<PUT CLIENT SECRET HERE>"),
+            auth=HTTPBasicAuth(keycloak_client_id, keycloak_client_secret),
         )
 
         token_response = r.json()
@@ -35,14 +35,21 @@ def get_client_token():
     return client_token
 
 
-session = requests.session()
-headers = {
-    "Authorization": ("Bearer %s" % get_client_token()),
-    "Content-Type": "application/json",
-}
-session.headers.update(headers)
+def get_keycloak_data(keycloak_info):
+    session = requests.session()
+    headers = {
+        "Authorization": (
+            "Bearer %s"
+            % get_client_token(
+                keycloak_info["url"],
+                keycloak_info["client_id"],
+                keycloak_info["client_secret"],
+            )
+        ),
+        "Content-Type": "application/json",
+    }
+    session.headers.update(headers)
 
-users = session.get("<KEYCLOAK URL>/auth/admin/realms/mss/users").json()
+    users = session.get(f"{keycloak_info['url']}/auth/admin/realms/mss/users").json()
 
-with open("keycloak_data.json", "w") as f:
-    json.dump(users, f)
+    return users
