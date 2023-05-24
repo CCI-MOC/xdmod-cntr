@@ -10,105 +10,84 @@ generate the following xdmod files:
 # pylint: disable=line-too-long invalid-name
 import json
 import copy
-import sys
 import logging
 import hashlib
-import get_users_from_keycloak as keycloak
+import sys
 import moc_db_helper_functions as moc_db
-
-# import get_users_from_keycloak
-
-# only here for development
-keycloak_data = None
+import get_users_from_keycloak as user_data
 
 
-def get_all_keycloak_data():
-    """
-    This returns all of the keycloak
-    This is for ease of testing as it gives something to mock
+# from keycloak
+#
+# This links institution, field-of-science and PI together
+#
+# expected format:
+# [{
+#    'access': {
+#        'impersonate': True,
+#        'manage': True,
+#        'manageGroupMembership': True,
+#        'mapRoles': True,
+#        'view': True
+#    },
+#    'attributes': {
+#        'cilogon_idp_name': ['<institution>'],
+#        'mss_research_domain': ['<field-of-science>']
+#    },
+#    'createdTimestamp': <unix timestamp>,
+#    'disableableCredentialTypes': [],
+#    'email': '<PI's email>',
+#    'emailVerified': True,
+#    'enabled': True,
+#    'firstName': '<PI's first name>',
+#    'id': '<id>',
+#    'lastName': '<PI's last name>',
+#    'notBefore': 0,
+#    'requiredActions': [],
+#    'totp': False,
+#    'username': '<PI's username>'
+#    },
+#    ...
+# ]
+#
+# from coldfront:
+#
+# This links PI with project/cloud_project.
+#
+# This fetches the allocation data from coldfront with the format of:
+# [
+# {
+#    "id": <num>,                      # coldfront allocation id
+#    "project": {
+#        "id": <num>,                  # coldfront project id
+#        "title": <str>,               # colfront project title
+#        "pi": "willjt@bu.edu",        # principle investigator
+#        "description": <str>,         # coldfront project description
+#        "field_of_science": <str>,    # coldfront project field of science
+#        "status": "New"               # coldfront project status, ("New", ...)
+#    },
+#    "description": "",                # coldfront allocation
+#    "resource": {
+#        "name": "NERC-OCP",           # coldfront allocation resource
+#        "resource_type": "OpenShift"  # coldfront allocation resource type
+#    },
+#    "status": "Active",               # coldfront allocation status
+#    "attributes": {
+#        "Allocated Project ID": str,  # rosource specific project id
+#        "Allocated Project Name": str # resource specific project name
+#    }
+# },
+# ...
+# ]
 
-    It is my understanding that to lookup data in keycloak you need the PI name
-    """
-    with open("../keycloak_data.json", "r", encoding="utf-8") as keycloak_file:
-        return json.load(keycloak_file)
 
-
-def get_keycloak_data(keycloak_info, username):
-    """
-    This links institution, field-of-science and PI together
-
-    expected format:
-    [{
-        'access': {
-            'impersonate': True,
-            'manage': True,
-            'manageGroupMembership': True,
-            'mapRoles': True,
-            'view': True
-        },
-        'attributes': {
-            'cilogon_idp_name': ['<institution>'],
-            'mss_research_domain': ['<field-of-science>']
-        },
-        'createdTimestamp': <unix timestamp>,
-        'disableableCredentialTypes': [],
-        'email': '<PI's email>',
-        'emailVerified': True,
-        'enabled': True,
-        'firstName': '<PI's first name>',
-        'id': '<id>',
-        'lastName': '<PI's last name>',
-        'notBefore': 0,
-        'requiredActions': [],
-        'totp': False,
-        'username': '<PI's username>'
-        },
-        ...
-    ]
-    """
-    global keycloak_data
-    if keycloak_data is None:
-        keycloak_data = {}
-        keycloak_records = keycloak.get_keycloak_data(keycloak_info)
-        for rec in keycloak_records:
-            keycloak_data[rec["username"]] = rec
-    return keycloak_data.get(username)
-
-
-def get_coldfront_data():
-    """
-    This links PI with project/cloud_project.
-
-    This fetches the allocation data from coldfront with the format of:
-    [
-    {
-        "id": <num>,                      # coldfront allocation id
-        "project": {
-            "id": <num>,                  # coldfront project id
-            "title": <str>,               # colfront project title
-            "pi": "willjt@bu.edu",        # principle investigator
-            "description": <str>,         # coldfront project description
-            "field_of_science": <str>,    # coldfront project field of science
-            "status": "New"               # coldfront project status, ("New", ...)
-        },
-        "description": "",                # coldfront allocation
-        "resource": {
-            "name": "NERC-OCP",           # coldfront allocation resource
-            "resource_type": "OpenShift"  # coldfront allocation resource type
-        },
-        "status": "Active",               # coldfront allocation status
-        "attributes": {
-            "Allocated Project ID": str,  # rosource specific project id
-            "Allocated Project Name": str # resource specific project name
-        }
-    },
-    ...
-    ]
-
-    """
-    with open("../coldfront_data.json", "r", encoding="utf-8") as coldfront_file:
-        data = json.load(coldfront_file)
-        return data
+def get_keycloak_dict(keycloak_info):
+    """Processes the keycloak data from a list to a dictionary"""
+    allocations = user_data.get_keycloak_data(keycloak_info)
+    allocation_dict = {}
+    for rec in allocations:
+        allocation_dict[rec["email"]] = rec
+    return allocation_dict
 
 
 def create_hierarchy_db(cursor):
@@ -117,7 +96,7 @@ def create_hierarchy_db(cursor):
     cursor.execute(
         "create table hierarchy_db.hierarchy_rec ( \
             id bigint, \
-            create_ts datetime(4), \
+            create_ts datetime(6), \
             type varchar(100) not null, \
             name varchar(500) not null, \
             status varchar(100), \
@@ -141,8 +120,8 @@ def create_hierarchy_db(cursor):
             status, \
             display_name, \
             parent_id) values \
-            (1, now(), 'institution', 'unknown', 'Active', 'Unknown', null ), \
-            (2, now(), 'field-of-science', 'unknown', 'Active', 'Unknown', 1)",
+            (1, CURRENT_TIMESTAMP(6), 'institution', 'unknown', 'Active', 'Unknown', null ), \
+            (2, CURRENT_TIMESTAMP(6), 'field-of-science', 'unknown', 'Active', 'Unknown', 1)",
         None,
     )
 
@@ -167,7 +146,7 @@ def process_record(cursor, rec, current_dict):
             current_dict[hierarchy_id]["name"] != rec["name"]
             or current_dict[hierarchy_id]["display_name"] != rec["display_name"]
             or current_dict[hierarchy_id]["parent_id"] != rec.get("parent_id")
-            or current_dict[hierarchy_id]["status"] != rec["status"]
+            or current_dict[hierarchy_id]["status"] != rec.get("status")
         ):
             # update the dictionary
             current_dict[hierarchy_id]["type"] = rec["type"]
@@ -182,10 +161,12 @@ def process_record(cursor, rec, current_dict):
         hierarchy_id = moc_db.exec_fetchone(
             cursor, "select nextval(hierarchy_db_id_seq) as hierarchy_id", None
         )["hierarchy_id"]
-        if hierarchy_id:
-            current_dict[hierarchy_id] = copy.copy(rec)
-            current_dict[hierarchy_id]["id"] = hierarchy_id
-            update = True
+        if not hierarchy_id:
+            logging.error("Cannot get hierarchy_id from sequencer")
+            sys.exit()
+        current_dict[hierarchy_id] = copy.copy(rec)
+        current_dict[hierarchy_id]["id"] = hierarchy_id
+        update = True
     current_dict[hierarchy_id]["accessed"] = True
     if update:
         cursor.execute("use hierarchy_db")
@@ -200,7 +181,7 @@ def process_record(cursor, rec, current_dict):
             parent_id \
             ) values ( \
             %(id)s, \
-            current_timestamp(4), \
+            CURRENT_TIMESTAMP(6), \
             %(type)s, \
             %(name)s, \
             %(status)s, \
@@ -209,11 +190,11 @@ def process_record(cursor, rec, current_dict):
             )",
             {
                 "id": hierarchy_id,
-                "type": current_dict[hierarchy_id]["type"],
-                "name": current_dict[hierarchy_id]["name"],
-                "display_name": current_dict[hierarchy_id]["display_name"],
-                "status": current_dict[hierarchy_id]["status"],
-                "parent_id": current_dict[hierarchy_id]["parent_id"],
+                "type": rec["type"],
+                "name": rec["name"],
+                "display_name": rec["display_name"],
+                "status": rec["status"],
+                "parent_id": rec["parent_id"],
             },
         )
 
@@ -251,7 +232,7 @@ def create_hierarchy_files(hierarchy, coldfront2resource):
     with open("hierarchy.csv", "w", encoding="utf-8") as hierarchy_file:
         for rec_id, rec in hierarchy["institution"].items():
             if rec["status"] == "Active":
-                hierarchy_file.write(f'"{rec_id}","{rec["display_name"]}",\n')
+                hierarchy_file.write(f'"{rec_id}","{rec["name"]}",\n')
         for l2_id, l2 in hierarchy["field-of-science"].items():
             if l2["status"] == "Active":
                 hierarchy_file.write(f'"{l2_id}","{l2["name"]}","{l2["parent_id"]}"\n')
@@ -288,10 +269,10 @@ def create_hierarchy_files(hierarchy, coldfront2resource):
 
 def find_hierarchy_id(name, dictionary):
     """returns the hierarchy_id if found in the dictionary"""
-    for rec in dictionary.values():
+    for rec_id, rec in dictionary.items():
         if name == rec["name"]:
-            dictionary[rec["id"]]["accessed"] = True
-            return rec["id"]
+            dictionary[rec_id]["accessed"] = True
+            return rec_id
     return None
 
 
@@ -348,24 +329,26 @@ def process_institution(cursor, institution, institution_dict):
     return institution_id
 
 
-def process_data(cursor, hierarchy, keycloak_info):
+# pylint: disable=too-many-locals
+def process_data(cursor, hierarchy, keycloak_info, coldfront_info):
     """
     This combines the cold front data with the
     """
-    coldfront_data = get_coldfront_data()
+    keycloak_data = get_keycloak_dict(keycloak_info)
+    coldfront_data = user_data.get_coldfront_data(keycloak_info, coldfront_info)
     for record in coldfront_data:
         # nee the PI name to look up the PI meta data from keycloak
         pi_rec = {
             "type": "pi",
             "name": record["project"]["pi"],
-            "display_name": record["project"]["pi"],  # default to the username
+            "display_name": record["project"]["pi"],
             "status": "Active",
         }
         pi_id = find_hierarchy_id(pi_rec["name"], hierarchy["pi"])
         if pi_id:
             pi_rec["id"] = pi_id
 
-        keycloak_rec = get_keycloak_data(keycloak_info, pi_rec["name"])
+        keycloak_rec = keycloak_data[pi_rec["name"]]
 
         # find the pi's field of science - the pi's parent_id
         if keycloak_rec is None:
@@ -373,14 +356,6 @@ def process_data(cursor, hierarchy, keycloak_info):
                 "unknown", hierarchy["field-of-science"]
             )
         else:
-            # set the PI displayName to his first and last name:
-            if (
-                keycloak_rec["firstName"] is not None
-                and keycloak_rec["lastName"] is not None
-            ):
-                pi_rec[
-                    "display_name"
-                ] = f"{keycloak_rec['firstName']} {keycloak_rec['lastName']} <{pi_rec['name']}>"
             # pick the first element of the list and assume it is the primary one
             #  - can the cilogon_idp_name have either 0 or more th1n 1 elements?
             institution = keycloak_rec["attributes"]["cilogon_idp_name"][0]
@@ -416,6 +391,10 @@ def process_data(cursor, hierarchy, keycloak_info):
                     "Unknown", hierarchy["field-of-science"]
                 )
 
+            # add in the pi's name
+            pi_rec[
+                "display_name"
+            ] = f"{keycloak_rec['firstName']} {keycloak_rec['lastName']} <{keycloak_rec['email']}>"
         process_record(cursor, pi_rec, hierarchy["pi"])
 
         if not pi_id:
@@ -455,11 +434,12 @@ def process_data(cursor, hierarchy, keycloak_info):
             logging.info("Unknown project_record type %s", json.dumps(record))
 
 
-def update_hierarchy_status(cursor, hierarchy):
+def process_inactive(cursor, hierarchy):
+    """Marks records in the hierarchy as being inactive if they were not accessed"""
     for level in ["institution", "field-of-science", "pi", "project", "cloud-project"]:
-        for hierarchy_rec in hierarchy[level].values():
-            if hierarchy_rec.get("accessed") is None:
-                rec = copy.copy(hierarchy_rec)
+        for rec_id in hierarchy[level]:
+            if not hierarchy[level][rec_id].get("accessed", False):
+                rec = copy.copy(hierarchy[level][rec_id])
                 rec["status"] = "Inactive"
                 process_record(cursor, rec, hierarchy[level])
 
@@ -489,10 +469,8 @@ def main():
         cnx.commit()
 
     hierarchy = get_hierarchy_from_db(cursor)
-    process_data(cursor, hierarchy, config["keycloak_info"])
-    update_hierarchy_status(cursor, hierarchy)
-
-    # update the database changing the status of the records that haven't been accessed
+    process_data(cursor, hierarchy, config["keycloak_info"], config["coldfront_info"])
+    process_inactive(cursor, hierarchy)
     cnx.commit()
     cnx.close()
 

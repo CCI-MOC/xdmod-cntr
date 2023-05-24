@@ -51,5 +51,23 @@ def get_keycloak_data(keycloak_info):
     session.headers.update(headers)
 
     users = session.get(f"{keycloak_info['url']}/auth/admin/realms/mss/users").json()
-
     return users
+
+
+def get_coldfront_data(keycloak_info, coldfront_info):
+    session = requests.session()
+    headers = {
+        "Authorization": (
+            "Bearer %s"
+            % get_client_token(
+                keycloak_info["url"],
+                keycloak_info["client_id"],
+                keycloak_info["client_secret"],
+            )
+        ),
+        "Content-Type": "application/json",
+    }
+    session.headers.update(headers)
+
+    allocations = session.get(f"{coldfront_info['url']}/api/allocations/").json()
+    return allocations

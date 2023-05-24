@@ -3,7 +3,7 @@ import pytest
 import json
 import process_hierarchy
 import delete_hierarchy_db
-import pprint
+import get_users_from_keycloak
 
 # need to modk process_hierarchy
 dataset = {
@@ -219,10 +219,10 @@ def test_empty_dataset(mocker):
     delete_hierarchy_db.delete_db()
     ds = dataset["0"]
     mocker.patch(
-        "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
+        "get_users_from_keycloak.get_coldfront_data", return_value=ds["coldfront_data"]
     )
     mocker.patch(
-        "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
+        "get_users_from_keycloak.get_keycloak_data", return_value=ds["keycloak_data"]
     )
     process_hierarchy.main()
     output = {}
@@ -236,10 +236,10 @@ def test_2PIs_3Projects(mocker):
     delete_hierarchy_db.delete_db()
     ds = dataset["1"]
     mocker.patch(
-        "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
+        "get_users_from_keycloak.get_coldfront_data", return_value=ds["coldfront_data"]
     )
     mocker.patch(
-        "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
+        "get_users_from_keycloak.get_keycloak_data", return_value=ds["keycloak_data"]
     )
     process_hierarchy.main()
     output = {}
@@ -254,10 +254,12 @@ def test_removal_project_and_pi(mocker):
     for ds_id in ["1", "2"]:
         ds = dataset[ds_id]
         mocker.patch(
-            "process_hierarchy.get_coldfront_data", return_value=ds["coldfront_data"]
+            "get_users_from_keycloak.get_coldfront_data",
+            return_value=ds["coldfront_data"],
         )
         mocker.patch(
-            "process_hierarchy.get_all_keycloak_data", return_value=ds["keycloak_data"]
+            "get_users_from_keycloak.get_keycloak_data",
+            return_value=ds["keycloak_data"],
         )
         process_hierarchy.main()
         output = {}
