@@ -16,6 +16,8 @@ spec:
       containers:
         - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
           name: xdmod
+        - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod:latest
+          name: xdmod-acl-work-a-round
       initContainers:
         - image: image-registry.openshift-image-registry.svc:5000/xdmod/moc-xdmod-dev:latest
           name: xdmod-init-1
