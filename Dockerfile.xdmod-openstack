@@ -17,6 +17,8 @@ COPY ./GetConfigFiles.py /app/xdmod-get-config-files
 COPY ./xdmod-get-config.sh  /app/xdmod-get-config.sh
 COPY ./run-xdmod-openstack-hypervisor.sh /app/run-xdmod-openstack-hypervisor.sh
 COPY ./run-xdmod-openstack.sh /app/run-xdmod-openstack.sh
+COPY ./moc_db_helper_functions.py /app/moc_db_helper_functions.py
+COPY ./get_users_from_keycloak.py /app/get_users_from_keycloak.py
 COPY ./process_hierarchy.py /app/xdmod-process-hierarchy
 
 RUN chmod 774 /app/xdmod-openstack-hypervisor \
