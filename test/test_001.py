@@ -11,6 +11,7 @@ dataset = {
     "0": {
         "coldfront_data": [],
         "keycloak_data": [],
+        "cli_args": {"output_directory": "./test/data"},
         "hierarchy.csv": [],
         "group.csv": [],
         "pi2project.csv": [],
@@ -126,12 +127,13 @@ dataset = {
                 },
             },
         ],
+        "cli_args": {"output_directory": "./test/data"},
         "hierarchy.csv": [
             '"3","Some University",\n',
             '"4","Some University - engineering","3"\n',
             '"8","Some University - other","3"\n',
-            '"5","R B <rbb@some.edu>","4"\n',
-            '"9","J G <jim@some.edu>","8"\n',
+            '"5","R B","4"\n',
+            '"9","J G","8"\n',
         ],
         "group.csv": [
             '"Test Project 1-ff0e78e", "5"\n',
@@ -197,10 +199,11 @@ dataset = {
                 },
             },
         ],
+        "cli_args": {},
         "hierarchy.csv": [
             '"3","Some University",\n',
             '"4","Some University - engineering","3"\n',
-            '"5","R B <rbb@some.edu>","4"\n',
+            '"5","R B","4"\n',
         ],
         "group.csv": [
             '"Test Project 1-ff0e78e", "5"\n',
@@ -224,6 +227,7 @@ def test_empty_dataset(mocker):
     mocker.patch(
         "get_users_from_keycloak.get_keycloak_data", return_value=ds["keycloak_data"]
     )
+    mocker.patch("process_hierarchy.get_args", return_value=ds["cli_args"])
     process_hierarchy.main()
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
@@ -241,6 +245,7 @@ def test_2PIs_3Projects(mocker):
     mocker.patch(
         "get_users_from_keycloak.get_keycloak_data", return_value=ds["keycloak_data"]
     )
+    mocker.patch("process_hierarchy.get_args", return_value=ds["cli_args"])
     process_hierarchy.main()
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
@@ -261,6 +266,7 @@ def test_removal_project_and_pi(mocker):
             "get_users_from_keycloak.get_keycloak_data",
             return_value=ds["keycloak_data"],
         )
+        mocker.patch("process_hierarchy.get_args", return_value=ds["cli_args"])
         process_hierarchy.main()
         output = {}
         for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
