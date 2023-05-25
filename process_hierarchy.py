@@ -396,7 +396,7 @@ def process_data(cursor, hierarchy, keycloak_info, coldfront_info):
             # add in the pi's name
             pi_rec[
                 "display_name"
-            ] = f"{keycloak_rec['firstName']} {keycloak_rec['lastName']} <{keycloak_rec['email']}>"
+            ] = f"{keycloak_rec['firstName']} {keycloak_rec['lastName']}"
         process_record(cursor, pi_rec, hierarchy["pi"])
 
         if not pi_id:
