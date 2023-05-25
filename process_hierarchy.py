@@ -12,7 +12,9 @@ import json
 import copy
 import logging
 import hashlib
+import os
 import sys
+import argparse
 import moc_db_helper_functions as moc_db
 import get_users_from_keycloak as user_data
 
@@ -444,14 +446,31 @@ def process_inactive(cursor, hierarchy):
                 process_record(cursor, rec, hierarchy[level])
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-directory", required=False)
+    args = parser.parse_args()
+
+    arg_dict = {}
+    if args.output_directory:
+        arg_dict = {"output_directory": args.output_directory}
+    return arg_dict
+
+
 def main():
     """the main function"""
+
     # read in the xdmod_init.json file to get the database and resource configs
     try:
         with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
             config = json.load(file)
     except IOError:
         print("Ensure the xdmod-init.json file is in /etc/xdmod/xdmod_init.json")
+
+    cli_args = get_args()
+    output_directory = cli_args.get("output_directory", None)
+    if output_directory:
+        os.chdir(output_directory)
 
     coldfront2resource = {}
     for resource in config["resource"]:
