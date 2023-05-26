@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cj-xdmod-hierarchy
+spec:
+  schedule: "0/20 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          initContainers:
+            - name: download-config
+              image: xdmod-openstack
+              imagePullPolicy: IfNotPresent
+              command:
+                - "/app/xdmod-get-config.sh"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+            - name: process_hierarchy_data
+              image: xdmod-openstack
+              imagePullPolicy: IfNotPresent
+              command:
+                - "/app/xdmod-process-hierarchy --directory /data"
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+                - name: vol-heirarchy-data
+                  mountPath: /data
+          containers:
+            - name: cj-xdmod-openstack
+              image: moc-xdmod
+              imagePullPolicy: Always
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  /usr/bin/xdmod-import-csv -t hierarchy -i /data/hierarchy.csv
+                  /usr/bin/xdmod-import-csv -t group-to-hierarchy -i /data/group.csv
+                  /usr/bin/xdmod-import-csv -t names -i /data/names.csv
+                  /usr/bin/xdmod-import-csv -t cloud-project-to-pi -i /data/pi2project.csv
+                  /usr/bin/acl-config
+              volumeMounts:
+                - name: vol-xdmod-conf
+                  mountPath: /etc/xdmod
+                - name: vol-clouds-yaml
+                  mountPath: /etc/openstack
+                - name: vol-xdmod-init
+                  mountPath: /mnt/xdmod_init
+                - name: vol-var-log-xdmod
+                  mountPath: /var/log/xdmod
+                - name: vol-heirarchy-data
+                  mountPath: /data
+          restartPolicy: Never
+          volumes:
+            - name: vol-xdmod-init
+              configMap:
+                items:
+                  - key: xdmod_init.json
+                    path: xdmod_init.json
+                name: cm-xdmod-init-json
+            - name: vol-xdmod-conf
+              emptyDir: {}
+            - name: vol-clouds-yaml
+              emptyDir: {}
+            - name: vol-var-log-xdmod
+              emptyDir: {}
+            - name: vol-hierarchy-data
+              persistentVolumeClaim:
+                claimName: pvc-xdmod-hierarchy-data
