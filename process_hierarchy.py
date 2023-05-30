@@ -88,7 +88,7 @@ def get_keycloak_dict(keycloak_info):
     allocations = user_data.get_keycloak_data(keycloak_info)
     allocation_dict = {}
     for rec in allocations:
-        allocation_dict[rec["email"]] = rec
+        allocation_dict[rec["username"]] = rec
     return allocation_dict
 
 
@@ -350,7 +350,7 @@ def process_data(cursor, hierarchy, keycloak_info, coldfront_info):
         if pi_id:
             pi_rec["id"] = pi_id
 
-        keycloak_rec = keycloak_data[pi_rec["name"]]
+        keycloak_rec = keycloak_data.get(pi_rec["name"])
 
         # find the pi's field of science - the pi's parent_id
         if keycloak_rec is None:

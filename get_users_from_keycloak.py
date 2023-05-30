@@ -50,7 +50,9 @@ def get_keycloak_data(keycloak_info):
     }
     session.headers.update(headers)
 
-    users = session.get(f"{keycloak_info['url']}/auth/admin/realms/mss/users").json()
+    users = session.get(
+        f"{keycloak_info['url']}/auth/admin/realms/mss/users?max=500"
+    ).json()
     return users
 
 
