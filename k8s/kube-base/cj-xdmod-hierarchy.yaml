@@ -35,7 +35,7 @@ spec:
                   mountPath: /mnt/xdmod_init
                 - name: vol-var-log-xdmod
                   mountPath: /var/log/xdmod
-                - name: vol-heirarchy-data
+                - name: vol-hierarchy-data
                   mountPath: /data
           containers:
             - name: cj-xdmod-openstack
@@ -59,7 +59,7 @@ spec:
                   mountPath: /mnt/xdmod_init
                 - name: vol-var-log-xdmod
                   mountPath: /var/log/xdmod
-                - name: vol-heirarchy-data
+                - name: vol-hierarchy-data
                   mountPath: /data
           restartPolicy: Never
           volumes:
