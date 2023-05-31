@@ -19,6 +19,8 @@ spec:
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
+                - name: vol-clouds-yaml
+                  mountPath: /etc/openstack
                 - name: vol-xdmod-init
                   mountPath: /mnt/xdmod_init
                 - name: vol-var-log-xdmod
@@ -27,7 +29,9 @@ spec:
               image: xdmod-openstack
               imagePullPolicy: IfNotPresent
               command:
-                - "/app/xdmod-process-hierarchy --directory /data"
+                - /app/xdmod-process-hierarchy
+              args:
+                [ "--output-directory", "/data" ]
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
