@@ -23,7 +23,7 @@ spec:
                   mountPath: /mnt/xdmod_init
                 - name: vol-var-log-xdmod
                   mountPath: /var/log/xdmod
-            - name: process_hierarchy_data
+            - name: process-hierarchy-data
               image: xdmod-openstack
               imagePullPolicy: IfNotPresent
               command:
