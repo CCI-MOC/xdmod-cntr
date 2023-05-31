@@ -33,12 +33,10 @@ RUN chmod 774 /app/xdmod-openstack-hypervisor \
     && sed -i -e 's/\r$//' /app/run-xdmod-openstack-hypervisor.sh \
     && chmod 774 /app/xdmod-get-config.sh  \
     && sed -i -e 's/\r$//' /app/xdmod-get-config.sh  \
-
     && chmod 774 /app/moc_db_helper_functions.py  \
     && sed -i -e 's/\r$//' /app/moc_db_helper_functions.py  \
     && chmod 774 /app/get_users_from_keycloak.py  \
     && sed -i -e 's/\r$//' /app/get_users_from_keycloak.py  \
-
     && chmod 774 /app/xdmod-process-hierarchy  \
     && sed -i -e 's/\r$//' /app/xdmod-process-hierarchy  \
     && chmod -R g+rwx /app \
