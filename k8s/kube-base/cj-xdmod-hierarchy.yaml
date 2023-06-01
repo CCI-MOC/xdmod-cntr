@@ -31,7 +31,7 @@ spec:
               command:
                 - /app/xdmod-process-hierarchy
               args:
-                [ "--output-directory", "/data" ]
+                ["--output-directory", "/data"]
               volumeMounts:
                 - name: vol-xdmod-conf
                   mountPath: /etc/xdmod
