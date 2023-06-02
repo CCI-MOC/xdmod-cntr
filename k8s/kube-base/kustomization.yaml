@@ -15,8 +15,10 @@ resources:
   - pvc-clouds-yaml.yaml
   - pvc-httpd-conf.yaml
   - svc-mariadb.yaml
+  - svc-mongo.yaml
   - svc-xdmod.yaml
   - deployment-mariadb.yaml
+  - deployment-mongo.yaml
   - deployment-xdmod.yaml
   - route-xdmod.yaml
   - secret-xdmod-openshift-prod.yaml
