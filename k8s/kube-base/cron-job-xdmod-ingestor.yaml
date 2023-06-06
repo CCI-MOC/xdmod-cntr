@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: xdmod-ingestor
 spec:
-  schedule: "@daily"
+  schedule: "0 14 */1 * *"
   jobTemplate:
     spec:
       backoffLimit: 1
