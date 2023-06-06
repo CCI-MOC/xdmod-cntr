@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: xdmod-openshift-prod-job
 spec:
-  schedule: "0 1 */1 * *"
+  schedule: "0 13 */1 * *"
   concurrencyPolicy: "Forbid"
   jobTemplate:
     spec:
