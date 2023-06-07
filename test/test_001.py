@@ -218,9 +218,12 @@ dataset = {
 }
 
 
-def test_empty_dataset(mocker):
+def setup_function(func):
     delete_hierarchy_db.delete_db()
-    ds = dataset["0"]
+
+
+def set_input(mocker, dataset_id):
+    ds = dataset[dataset_id]
     mocker.patch(
         "get_users_from_keycloak.get_coldfront_data", return_value=ds["coldfront_data"]
     )
@@ -228,48 +231,30 @@ def test_empty_dataset(mocker):
         "get_users_from_keycloak.get_keycloak_data", return_value=ds["keycloak_data"]
     )
     mocker.patch("process_hierarchy.get_args", return_value=ds["cli_args"])
-    process_hierarchy.main()
+
+
+def check_output(dataset_id):
     output = {}
     for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
         with open(filename, "r", encoding="utf-8") as file:
             output[filename] = file.readlines()
-        assert output[filename] == ds[filename]
+        assert output[filename] == dataset[dataset_id][filename]
+
+
+def test_empty_dataset(mocker):
+    set_input(mocker, "0")
+    process_hierarchy.main()
+    check_output("0")
 
 
 def test_2PIs_3Projects(mocker):
-    delete_hierarchy_db.delete_db()
-    ds = dataset["1"]
-    mocker.patch(
-        "get_users_from_keycloak.get_coldfront_data", return_value=ds["coldfront_data"]
-    )
-    mocker.patch(
-        "get_users_from_keycloak.get_keycloak_data", return_value=ds["keycloak_data"]
-    )
-    mocker.patch("process_hierarchy.get_args", return_value=ds["cli_args"])
+    set_input(mocker, "1")
     process_hierarchy.main()
-    output = {}
-    for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
-        with open(filename, "r", encoding="utf-8") as file:
-            output[filename] = file.readlines()
-        assert output[filename] == ds[filename]
+    check_output("1")
 
 
 def test_removal_project_and_pi(mocker):
-    delete_hierarchy_db.delete_db()
     for ds_id in ["1", "2"]:
-        ds = dataset[ds_id]
-        mocker.patch(
-            "get_users_from_keycloak.get_coldfront_data",
-            return_value=ds["coldfront_data"],
-        )
-        mocker.patch(
-            "get_users_from_keycloak.get_keycloak_data",
-            return_value=ds["keycloak_data"],
-        )
-        mocker.patch("process_hierarchy.get_args", return_value=ds["cli_args"])
+        set_input(mocker, ds_id)
         process_hierarchy.main()
-        output = {}
-        for filename in ["hierarchy.csv", "group.csv", "pi2project.csv", "names.csv"]:
-            with open(filename, "r", encoding="utf-8") as file:
-                output[filename] = file.readlines()
-            assert output[filename] == ds[filename]
+        check_output(ds_id)

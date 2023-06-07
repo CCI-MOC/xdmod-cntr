@@ -405,7 +405,8 @@ def process_data(cursor, hierarchy, keycloak_info, coldfront_info):
 
         project_rec = {
             "name": record["attributes"]["Allocated Project Name"],
-            "display_name": f"{record['project']['title']} - {record['attributes']['Allocated Project Name']}",
+            # "display_name": f"{record['project']['title']} - {record['attributes']['Allocated Project Name']}",  # too long
+            "display_name": record["attributes"]["Allocated Project Name"],
             "parent_id": pi_id,
             "status": record["status"],
         }
