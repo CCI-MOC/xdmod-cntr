@@ -7,6 +7,7 @@ namespace: xdmod
 resources:
   - ns-xdmod.yaml
   - pvc-mariadb.yaml
+  - pvc-mongo.yaml
   - pvc-xdmod-conf.yaml
   - pvc-xdmod-src.yaml
   - pvc-xdmod-data.yaml
