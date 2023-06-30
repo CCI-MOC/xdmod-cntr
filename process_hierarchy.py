@@ -250,6 +250,10 @@ def create_hierarchy_files(hierarchy, coldfront2resource):
             if l4_rec["status"] == "Active":
                 l3_rec = hierarchy["pi"][l4_rec["parent_id"]]
                 group_file.write(f'"{l4_rec["name"]}", "{l4_rec["parent_id"]}"\n')
+                if l4_rec["type"] == "NERC-OCP-OpenShift":
+                    group_file.write(
+                        f'"{l4_rec["display_name"]}", "{l4_rec["parent_id"]}"\n'
+                    )
 
     # construct pi2project
     with open("pi2project.csv", "w", encoding="utf-8") as pi2project_file:
@@ -405,8 +409,9 @@ def process_data(cursor, hierarchy, keycloak_info, coldfront_info):
 
         project_rec = {
             "name": record["attributes"]["Allocated Project Name"],
+            # This is sometimes too long for xdmod
             # "display_name": f"{record['project']['title']} - {record['attributes']['Allocated Project Name']}",  # too long
-            "display_name": record["attributes"]["Allocated Project Name"],
+            "display_name": record["project"]["title"],
             "parent_id": pi_id,
             "status": record["status"],
         }
