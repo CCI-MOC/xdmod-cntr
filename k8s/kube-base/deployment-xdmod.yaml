@@ -27,7 +27,7 @@ spec:
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+              mountPath: /data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -59,7 +59,7 @@ spec:
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+              mountPath: /data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -92,7 +92,7 @@ spec:
             - name: vol-xdmod-src
               mountPath: /mnt/xdmod_src
             - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+              mountPath: /data
             - name: vol-httpd-cm
               mountPath: /root/httpd
             - name: vol-xdmod-init
