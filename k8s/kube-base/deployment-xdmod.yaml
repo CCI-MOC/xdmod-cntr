@@ -27,7 +27,7 @@ spec:
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+              mountPath: /data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -59,7 +59,40 @@ spec:
             - name: vol-xdmod-src
               mountPath: /usr/share/xdmod
             - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+              mountPath: /data
+            - name: vol-httpd-conf
+              mountPath: /etc/httpd
+            - name: vol-clouds-yaml
+              mountPath: /etc/openstack
+            - name: vol-httpd-conf
+              mountPath: /root/httpd
+            - name: vol-var-log-xdmod
+              mountPath: /var/log/xdmod
+            - name: vol-var-log-httpd
+              mountPath: /var/log/httpd
+            - name: vol-run-httpd
+              mountPath: /run/httpd
+            - name: vol-php-session
+              mountPath: /var/lib/php/session
+        - image: moc-xdmod:latest
+          name: xdmod-run-data-export
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - |
+              cd /data
+              while true; do
+                /usr/lib64/xdmod/batch_export_manager.php
+                sleep 21600
+              done
+          volumeMounts:
+            - name: vol-xdmod-conf
+              mountPath: /etc/xdmod
+            - name: vol-xdmod-src
+              mountPath: /usr/share/xdmod
+            - name: vol-xdmod-data
+              mountPath: /data
             - name: vol-httpd-conf
               mountPath: /etc/httpd
             - name: vol-clouds-yaml
@@ -92,7 +125,7 @@ spec:
             - name: vol-xdmod-src
               mountPath: /mnt/xdmod_src
             - name: vol-xdmod-data
-              mountPath: /root/xdmod_data
+              mountPath: /data
             - name: vol-httpd-cm
               mountPath: /root/httpd
             - name: vol-xdmod-init
