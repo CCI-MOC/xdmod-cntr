@@ -22,9 +22,14 @@ def delete_hdb(cursor):
 
 
 def delete_db():
-    config = {"host": "localhost", "xdmod_password": "pass", "admin_password": "pass"}
+    # read in the xdmod_init.json file to get the database and resource configs
+    try:
+        with open("/etc/xdmod/xdmod_init.json", "r", encoding="utf-8") as file:
+            config = json.load(file)
+    except IOError:
+        print("Ensure the xdmod-init.json file is in /etc/xdmod/xdmod_init.json")
 
-    cnx = moc_db_helper_functions.connect_to_db(config)
+    cnx = moc_db_helper_functions.connect_to_db(config["database"])
     cursor = cnx.cursor(dictionary=True)
     if moc_db_helper_functions.db_exist(cursor, "hierarchy_db"):
         delete_hdb(cursor)
