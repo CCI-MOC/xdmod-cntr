@@ -27,6 +27,13 @@ def connect_to_db(database):
     admin_acct = "root"
     admin_pass = database["admin_password"]
     # it is ok if the file doesn't as the clouds.yaml is possibly empty or manually updated
+    if admin_pass is None and host is None:
+        print("Admin password and host are None")
+        return mysql.connector.connect(user=admin_acct, unix_socket="/var/run/mysqld/mysqld.sock")
+    elif admin_pass is None and host:
+        print("Admin password is None")
+        return mysql.connector.connect(host=host, user=admin_acct)
+    print(f"admind password is {admin_pass}")
     return mysql.connector.connect(host=host, user=admin_acct, password=admin_pass)
 
 
