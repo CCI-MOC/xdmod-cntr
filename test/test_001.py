@@ -1,6 +1,7 @@
 """ This is to test the basic functions of """
 import pytest
 import json
+import os
 import process_hierarchy
 import delete_hierarchy_db
 import get_users_from_keycloak
@@ -139,11 +140,12 @@ dataset = {
             '"Test Project 1-ff0e78e", "5"\n',
             '"Test Project 2-ff0e78e", "9"\n',
             '"test-project-3", "9"\n',
+            '"Test-Project-3", "9"\n',
         ],
         "names.csv": [
-            '"Test Project 1-ff0e78e", , "Test-Project-1 - Test Project 1-ff0e78e"\n',
-            '"Test Project 2-ff0e78e", , "Test-Project-2 - Test Project 2-ff0e78e"\n',
-            '"test-project-3", , "Test-Project-3 - test-project-3"\n',
+            '"Test Project 1-ff0e78e", , "Test-Project-1"\n',
+            '"Test Project 2-ff0e78e", , "Test-Project-2"\n',
+            '"test-project-3", , "Test-Project-3"\n',
         ],
         "pi2project.csv": [
             '"Test Project 1-ff0e78e", "Test Project 1-ff0e78e", "nerc_openstack"\n',
@@ -209,7 +211,7 @@ dataset = {
             '"Test Project 1-ff0e78e", "5"\n',
         ],
         "names.csv": [
-            '"Test Project 1-ff0e78e", , "Test-Project-1 - Test Project 1-ff0e78e"\n',
+            '"Test Project 1-ff0e78e", , "Test-Project-1"\n',
         ],
         "pi2project.csv": [
             '"Test Project 1-ff0e78e", "Test Project 1-ff0e78e", "nerc_openstack"\n',
@@ -242,19 +244,25 @@ def check_output(dataset_id):
 
 
 def test_empty_dataset(mocker):
+    starting_directory = os.getcwd()
     set_input(mocker, "0")
     process_hierarchy.main()
     check_output("0")
+    os.chdir(starting_directory)
 
 
 def test_2PIs_3Projects(mocker):
+    starting_directory = os.getcwd()
     set_input(mocker, "1")
     process_hierarchy.main()
     check_output("1")
+    os.chdir(starting_directory)
 
 
 def test_removal_project_and_pi(mocker):
+    starting_directory = os.getcwd()
     for ds_id in ["1", "2"]:
         set_input(mocker, ds_id)
         process_hierarchy.main()
         check_output(ds_id)
+        os.chdir(starting_directory)
