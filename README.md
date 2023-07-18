@@ -1,6 +1,11 @@
 # xdmod-cntr
 A project to deploy XDMoD on kubernetes/OpenShift.
 
+## Testing:
+docker build -f Dockerfile.docker-test -t test .
+docker run --entrypoint /bin/bash -it test
+
+/usr/bin/mysqld_safe --basedir=/usr --init-file=/app/test_mariadb_init.sql &
 
 ## deploying xdmod on minikube
 1) Start minikube (not needed for kubernetes):
