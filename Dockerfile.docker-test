@@ -1,0 +1,36 @@
+FROM python:3.11.4-bullseye
+
+RUN apt-get update \
+    && apt-get install -y apt-transport-https \
+    && apt-get install -y default-mysql-client \
+    && apt-get install -y tar gzip \
+    && pip3 install --upgrade pip \
+    && pip3 install mysql mysql-connector-python-rf pexpect \
+    && pip3 install -I mysql-connector-python==8.0.29 \
+    # &&  pip3 install mariadb==1.1.7 \
+    && curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash \
+    && apt-get install mariadb-server mariadb-client -y \
+    && pip install pyTest pytest-mock requests
+RUN mkdir /app \
+    && mkdir /app/test \
+    && mkdir /app/test/data \
+    && mkdir /etc/xdmod \
+    && chmod 777 /var/run \
+    && chmod 777 /run \
+    && chmod 777 /app \
+    && chmod 777 /app/test \
+    && chmod 777 /app/test/data \
+    && chmod 777 /etc/xdmod \
+    && /usr/bin/mysql_install_db
+
+COPY test_mariadb_init.sql /app/test_mariadb_init.sql
+
+
+COPY process_hierarchy.py /app/process_hierarchy.py
+COPY xdmod_init_test.json /etc/xdmod/xdmod_init.json
+COPY delete_hierarchy_db.py /app/delete_hierarchy_db.py
+COPY moc_db_helper_functions.py /app/moc_db_helper_functions.py
+COPY get_users_from_keycloak.py /app/get_users_from_keycloak.py
+COPY test/*.py /app/test
+
+WORKDIR /app
