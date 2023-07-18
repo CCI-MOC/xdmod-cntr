@@ -58,5 +58,8 @@
         "url": null,
         "client_id": null,
         "client_secret": null
-    }
+    },
+    "coldfront_info": {
+        "url": null
+    },
 }
