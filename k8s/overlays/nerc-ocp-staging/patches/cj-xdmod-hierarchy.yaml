@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cj-xdmod-hierarchy
+spec:
+  schedule: "@daily"
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          initContainers:
+            - name: download-config
+              image: image-registry.openshift-image-registry.svc:5000/xdmod-staging/xdmod-openstack
+            - name: process-hierarchy-data
+              image: image-registry.openshift-image-registry.svc:5000/xdmod-staging/xdmod-openstack
+          containers:
+            - name: cj-xdmod-openstack
+              image: image-registry.openshift-image-registry.svc:5000/xdmod-staging/moc-xdmod

@@ -1,0 +1,34 @@
+{
+    "organization": {
+        "name": "Mass Open Cloud",
+        "abbreviation": "MOC"
+    },
+    "database": {
+        "host": null,
+        "xdmod_password": "password",
+        "admin_password": null
+    },
+    "resource": [
+        {
+            "name": "nerc_openstack",
+            "formal_name": "NERC OpenStack",
+            "ColdFront": "NERC-OpenStack",
+            "auth_url": null,
+            "type": "cloud"
+        },
+        {
+            "name": "nerc_openshift_staging",
+            "formal_name": "NERC OpenShift Staging",
+            "ColdFront": "NERC-OCP-OpenShift",
+            "type": "hpc"
+        }
+    ],
+    "keycloak_info": {
+        "url": null,
+        "client_id": null,
+        "client_secret": null
+    },
+    "coldfront_info": {
+        "url": null
+    }
+}

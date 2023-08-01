@@ -30,6 +30,7 @@
         {
             "name": "nerc_openstack",
             "formal_name": "NERC OpenStack",
+            "ColdFront": "NERC-OpenStack",
             "auth_url": "https://stack.nerc.mghpcc.org:13000",
             "type": "cloud"
         },
@@ -52,5 +53,13 @@
             "timezone": "US/Eastern",
             "shared_jobs": true
         }
-    ]
+    ],
+    "keycloak_info": {
+        "url": null,
+        "client_id": null,
+        "client_secret": null
+    },
+    "coldfront_info": {
+        "url": null
+    },
 }

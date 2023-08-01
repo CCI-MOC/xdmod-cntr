@@ -11,6 +11,7 @@ spec:
         spec:
           initContainers:
             - name: cj-init-xdmod-openstack
+              image: image-registry.openshift-image-registry.svc:5000/xdmod-staging/xdmod-openstack
               env:
                 - name: OPENSTACK_INSTANCE
                   value: "nerc-openstack"
