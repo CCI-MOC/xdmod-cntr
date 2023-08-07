@@ -47,7 +47,8 @@ plans to up date this but so far they have not.  They used ceilometer to pull
 the data from openstack.  As the current version of openstack does not include
 ceilometer, this required rework.
 
-Even though they handle many more
+Even though they handle many more events (like, creation, power on, power off, ... ),
+their test data had a limited set of events.
 
 #Dockerfiles
 
@@ -193,3 +194,5 @@ Interesting to note, to dump all of the data from mariadb, tends to be quick, Us
 this the last time, I kiecked off the mysqldump command and after creating the pod to pull the PV data, came back
 to find the dump process had finished.  The bigger issue was copying the data off as and unexpected EOF occurred
 several times later that evening.  In the morning, running the same command worked without issue.
+
+#Getting data out
