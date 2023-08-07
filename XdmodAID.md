@@ -17,22 +17,22 @@ similar manner to how you would run them in kubernetes.  This project formed
 a basis for the work to deploy xdmod on the nerc.
 
 There are some common problems we have with our current environment
-
+```
     1. The lack of performance for writes to our volumes
     2. Our environemnt doesn't have Read Write Many volumes
-
+```
 ##Lack of Perforamnce for writes to the file system
 
 The lack of performance for writes affects many of the database operations
 For example,
-
+```
     1. Processes occasionally fail due to a falure to get a lock
     2. Prcessess occasionally take excessive amounts of time
         - restoring the database took 12 hours to run create table
           and simple insert statements
     3. processing that took less than 5 minutes on ocp-staging runing
        within the moc, took 15-20 minutes.
-
+```
 This lack of performance for writing will impact a large number applications
 It could be partially worked around if the database was cached in memory or
 could be run from ephemeral storage.
@@ -40,6 +40,16 @@ could be run from ephemeral storage.
 From my perspective, this lack of performance on writes will make the cluster
 unusable for a wider array of applications and will a distinct pain point for
 early adopters.
+
+##Lack of read write many volumes (RWX persistent volumes)
+Although this wont be as painful as the non performant volumes, it is something
+that I have had to work around.  For example:
+```
+  1.  running acl-config in a parallel container with the xdmod-ui container
+  2.  running the data export script in parallel container with the xdmod-ui container
+  3.  running xdmod-openshift script as an init container, and shredding
+      in the main container.
+```
 
 ##Some things to realize about xdmod's openstack integration
 For starters, it is using an older unsuppported version of openstack.  They have
@@ -81,6 +91,27 @@ moving xdmod-openshift into it's own dockerfile.
 
 #Basic Processing
 
+The overall processing flow is as follows
+```
+                  OpenStack                               OpenShift                 KeyCloak        ColdFront
+
+      xdmod-openstack   xdmod-openstack-hypervisors     xdmod-openshift                  xdmod-hierarchy
+
+      xdmod-shredder        xdmod-shredder              xdmod-shredder                   xdmod-import-csv
+
+
+                           xdmod-ingestor
+
+                                                       aggregate-supremm
+
+                                      acl-config
+
+                                      xdmod-ui
+
+                                batch_export_manager.php
+```
+
+
 #xdmod-openstack-hypervisors
 This script fetches the hypervisor information from openstack used in calculating
 percent usage.
@@ -88,8 +119,26 @@ percent usage.
 This was the simpliest script and required very few changes to work.
 
 There was a bug in the command line section of this script that is present in the
-upstream version, which we decided to fix with our version of the script.
+upstream version, which we decided to fix with our version of the script. So our
+version will be different and possibly incompatible with the upstream version.
 
+This script produces a file specified on the command line that will need to be
+shredded.
+
+#acl-config
+This is a small utility that rebuilds the consistency between the configuration files
+and the database.  It is needed to be run as there are several processes that
+modify one or the other but not both.  It is an example of a work-a-round that
+became part of the processing.  From a conversation I had in a meeting with one of
+the xdmod developers, it is expected to eventually be eliminated, however it is
+currently low priority.
+
+As the xdmod-ui requires the database and configration files to be consistent,
+and we do not currently support RWX volumes, this needs to be run in parallel
+to the UI.
+
+Most of the time it runs withing a couple of minutes, sometimes it takes longer
+and will ocassionally fail due to a time out when it cannot lock certain tables.
 
 #xdmod-openstack
 
@@ -155,37 +204,55 @@ Furthermore, we would have to a query for each hierarchy_id in the hierarchy tab
 rejected this as the best way to speed this up is to refactor the code to have an
 aforemented table dedicated to the currently active items.
 
+As output, the xdmod-hierarchy script will produce the following files:
+```
+    hierarchy.csv  - specifies the 3 level hierarcy of institution, field of study, PI
+    group.csv      - has the mapping of nerc project to PIs
+    names.csv      - has the mapping of openshift namespaces and openstack projects to
+                     the nerc project
+    pi2project.csv - maps the openstack project to the openstack project
+```
+And here are the commands that load the CSVs into the xdmod database:
+```
+    xdmod-import-csv -t hierarchy -i hierarchy.csv
+    xdmod-import-csv -t group-to-hierarchy -i group.csv
+    xdmod-import-csv -t names -i names.csv
+    xdmod-import-csv -t cloud-project-to-pi -i pi2project.csv
+    acl-config
+```
+
 #Backup
 
 I've manually done this process to create and restore a backup multiplie times.
 Here are the manual steps that I planned on automating:
 
 ## Backup
-'''
+```
   1   tar -zcvf etc-xdmod.tgz /etc/xdmod
   2   tar -zcvf usr-share-xdmod.tgz /usr/share/xdmod
   3.0 mysqldump -h maraidb -u root -p --databases  file_share_db mod_hpcdb mod_logger mod_shredder moddb modw modw_aggregates modw_cloud modw_etl modw_filters modw_jobefficiency modw_supremm > xdmod-db-backup.sql
   3.1 gzip xdmod-db-backup.sql
   4 create a pod, mounting the volumes used by xdmod-openstack and xdmod-shift to back up the files created by the cronjobs
-'''
+```
 
 ## Restore:
- '''
+```
   0. cd /
   1. tar -zxvf /root/xdmod_data/etc-xdmod.tgz
   2. tar -zxvf /root/xdmod_data/usr-share-xdmod.tgz
   3. mysql -h mariadb -u root -pass
      > source xdmod-db-backup.sql
   4. create a pod, mounting the volumes used by xdmod-openstack and xdmod-shift to back up the files created by the cronjobs
-'''
+```
 
 In the future, there will be no need to backup the /usr/shar/xdmod as these are the sources and I expect these to be
 immuntable.  However, there are several applicationstions that modify both the database and the config file, namely:
-'''
+```
 xdmod-shredder
 xdmod-ingestor
+xdmod-import-csv
 ...
-'''
+```
 Although acl-config will sync the config files with the database state, at this time I am not recommending that
 limitations to acl-config be unintentionally found, and so the current recomendation would be to back up the
 config directory at the same time as the database.
