@@ -95,6 +95,21 @@ Currently, I am uncertain if the original dockerfile would still work for us, or
 could drop in the xdmod team's dockerfile.  I had planned to do this after
 moving xdmod-openshift into it's own dockerfile.
 
+#Basic setup
+##relams
+###jobs
+###cloud
+
+#xdmod-setup
+
+xdmod-setup is a tool used to configure/reconfiure parts of xdmod.  It is an
+interactive tool that is used to setup the databases, parts of supremm and
+to update configuration files.
+
+
+#xdmod-init
+
+
 #Basic Processing
 
 The overall processing flow is as follows
@@ -195,14 +210,69 @@ I did get the staging mariadb setup by restoring from a backup of production
 
 #xdmod-hierarchy
 
+In order to report to insititutions, departments and PIs; a system wide hierarchy can
+be defined to aggreate statistics at the appropriate level.  This is done using
+csv files that define each level - the xdmod documentation  explaination can be
+found in (https://open.xdmod.org/10.0/hierarchy.html,
+https://open.xdmod.org/10.0/user-names.html, https://open.xdmod.org/10.0/cloud.html).
+I will try to cosolidate and explain this a bit better.
+
+Depending on if it is a HPC job or a cloud resource there are different levels to
+the hierarchy.  This is due to jobs not having a project name associated with
+them.  To side by side compare:
+```
+        Job(OpenShift)              cloud(OpenStack)             file
+        -----------------------------------------------------------------------
+        Unit                        Unit                         hierarchy.csv
+          division                    division                   hierarchy.csv
+             department                 department               hierarchy.csv
+               PI                         PI                     group.csv
+                 group name                 group name           names.csv
+                                              project name       pi2project.csv
+```
+Since we have OpenShift implemented as an HPC resoource and openstack as a cloud
+resource, we need to effectively remove a layer of the cloud hierarchy.  This was
+done by mapping OpenStack projects to OpenStack projects in the pi2project.csv
+file.
+
+Defining the first 3 levels of the hierarchy is done via the hierarchy.json file
+just as explained in the xdmod documentation.
+
+Unfortunately, when developing this used different names to define the PI
+layer.  They will use PI and group interchangably.  This is confusing and hopefully
+they will fix this in a future release with a better hierarchy system.
+
+We decided on the following hierarchy:
+```
+    Instititution
+        field of science
+            PI
+                Coldfront Project
+                    OpenStack/OpenShift project
+```
+
 What was implemented was a basic history table.  This was done in a simplistic way possible,
 while being mindful of the non-perofromant file system.
 
-I anticipate the need to recreate the hierarchy files some arbitary date.  This could be for
-testing the system with real world data, replicating problems or auditing the system.
+I anticipate the need to recreate the hierarchy files some arbitary date.  Although this feature
+is not implmented, it can easily be implemented by selecting all of the records prior to an arbitary
+date.  Use cases would be for testing the system with real world data, replicating problems or
+auditing the system.
 
 The structure is as follows:
 ```
+hierarchy_rec
++--------------+--------------+------+-----+---------+-------+
+| Field        | Type         | Null | Key | Default | Extra |
++--------------+--------------+------+-----+---------+-------+
+| id           | bigint(20)   | NO   | PRI | NULL    |       |
+| create_ts    | datetime(6)  | NO   | PRI | NULL    |       |
+| type         | varchar(100) | NO   |     | NULL    |       |
+| name         | varchar(500) | NO   |     | NULL    |       |
+| status       | varchar(100) | YES  |     | NULL    |       |
+| display_name | varchar(500) | YES  |     | NULL    |       |
+| parent_id    | bigint(20)   | YES  |     | NULL    |       |
++--------------+--------------+------+-----+---------+-------+
 ```
 
 In the begining, most of the records will need to be fetched, so the current code just
@@ -214,8 +284,8 @@ it out, we are never writing to the filesystem.
 The obvious way to speed this up is to create a table that just has the most recent
 active entires. With such a table, you don't need to do any processing after selecting
 from it, and it is just a select, so this will be a fast operation giving our backend
-filesystem.  Inserting/updating does become more complicated, but this is relatively
-straightforward.
+filesystem.  Inserting/updating does become more complicated, but is still relatively
+straightforward.  This tactic would work well with SQL, or with an ORM.
 
 It was suggested that we use the ORM SQLAlchemy.  I considered this, and since it supports
 multiple databases, I would assume that it crafts SQL differetnly baseed on which database
@@ -223,12 +293,14 @@ it is connecting to.  For example, to get good performance from OracleRDB (forme
 relation database system), queries are written differently than for Oracle.  Although I
 hope it supports a file system that reads qucikly, but doesn't write quickly, I can find
 no guarentee of this, so I have created an issue to explore this in the future when we
-have more actual data (and the backend supports reasonable writing speeds).
+have more actual data (and the backend supports reasonable writing speeds).  To effectively
+add this in the future would require performance testing to ensure that SQLAlchemy is
+doing what we think it is doing.
 
 It was also suggested that I use a "limit by 1" since all I'm interested in just the most
 recent entry.  Although, on the surface this seems reasonable, there are some problems
-with it.  To pull of the most recent one will require a order implies creating and
-writing a virtual table to perform the sort in and then to return the first record.
+with it.  To pull of the most recent one will require a sorting (an order by) which creats
+and writing a virtual table to perform the sort in and then to return the first record.
 Furthermore, we would have to a query for each hierarchy_id in the hierarchy table.  I
 rejected this as the best way to speed this up is to refactor the code to have an
 aforemented table dedicated to the currently active items.
@@ -241,6 +313,71 @@ As output, the xdmod-hierarchy script will produce the following files:
                      the nerc project
     pi2project.csv - maps the openstack project to the openstack project
 ```
+
+##An example set of files
+###hierarchy.csv
+```
+"1", "Boston University",
+"2", "Harvard University",
+"3", "Boston University - physical_sciences", "1"
+"4", "Harvard University - physical_sciences", "2"
+"5", "Rob Baron", "3"
+```
+###group.csv
+```
+"Rob's Cold Front Project","5"
+```
+###names.csv
+```
+"RobOpenstackProject-f123abc", "Rob's Cold Front Project"
+"robs-pen-shift-project-f123abd", "Rob's Cold Front Project"
+```
+###pi2project.csv
+```
+"RobOpenstackProject-f123abc", "RobOpenstackProject-f123abc"
+```
+
+The format of the hierarchy file is as follows:
+```
+id, Name, parent_id
+```
+"Boston University" has an id of "1", and is at the root level.  On level 2
+we have field of science which has to be a cartesean as field of science
+has a many to many relationship with institution.  That is any given university
+can have many fields of science and any given field of science can be associated
+with many universities.  Finally, I used my name at the PI level in the hierarchy
+file.
+
+The group.csv file relates cold front project names to the id of the PI in the hierarchy
+file.
+
+The names.csv file relates the openstack or openshift project name to the
+cold front project name found in the group.csv
+
+And finally for openstack, we need to effectively squash a layer of the hierarchy
+in order to match the jobs side, so pi2project just maps an openstack project
+to an openstack project that is found in the names.csv.
+
+The examples found in the xdmod documentation use abbreviations for unique keys. This
+doesn't suite an automated system as there are cases where there are multiple
+colleges/universities with the same name.  For example, I went to westminster college,
+at the time there were 5 westminster colleges.  Since, we really don't need a
+human readable ID, I found using numbers to be more convienent.
+
+After working throught that example, it is obvious that many of the hierarchy items
+need to have unique IDs.  Initially, I was under the impression that
+RegApp/ColdFront/KeyCloak would also need to have unique ids for this data, however,
+this was not the case.
+
+It was suggested that we use a cryptological signiture to give unique ids as the possiblity
+of a data collision is miniscule. The advantage here would be that there would be no
+database access to determine what the ID would be.  It turned out to be a bit more
+complicated, as each item in the hierarchy needed it's own unique.  It was simpler create
+a sequencer in the database and look up the keys when needed.  We needed a database
+anyways as we need to track the history of the hierarcy for potential audits and
+I am uncertain how long the information will be kept in coldfront or keycloak when
+users and projects are deleted.
+
 And here are the commands that load the CSVs into the xdmod database:
 ```
     xdmod-import-csv -t hierarchy -i hierarchy.csv
