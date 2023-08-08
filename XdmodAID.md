@@ -2,11 +2,13 @@
 
 Xdmod is currently developed and used in the HPC community as a way to show
 system usage for an HPC cluster back to uses.  They have build support for
-OpenStack into it, but not OpenShift.
+OpenStack into it, but not OpenShift.  It holds the promise of being a unified
+platform for consoldating HPC and Cloud services.
 
 As it is currently being used for billing and showback on a HPC cluster
 at Harvard, and it initally seemed to be a turnkey type system, we started
-to set this it up on an openshift cluster.
+to set this it up on an openshift cluster.  Unfortunately, we have found that it
+is not exactly a turn key system.
 
 Xdmod is currently designed to work on a stand alone
 server.  The do use docker to develop and to test it. Although to distruite it,
@@ -16,7 +18,11 @@ to run xdmod and assocated applications in separate docker contains in a
 similar manner to how you would run them in kubernetes.  This project formed
 a basis for the work to deploy xdmod on the nerc.
 
-There are some common problems we have with our current environment
+On the xdmod side, there is no support for OpenShift, and the OpenStack
+support is for an old version of OpenStack.
+
+Addtionally, there the environment the environment that we are deploying
+to has some difficulties related to storage.
 ```
     1. The lack of performance for writes to our volumes
     2. Our environemnt doesn't have Read Write Many volumes
@@ -142,9 +148,32 @@ and will ocassionally fail due to a time out when it cannot lock certain tables.
 
 #xdmod-openstack
 
+The script xdmod-openstack required to be rewritten as the one that was there
+was using ceilometer.  In the first iteration I was using the structure
+documented in the documentation, however, after discussing it with the xdmod team
+it was recommended that I use their "openstack" structure.  It is a bit different
+and it is the one that they provide test data for.  I went with their recommendation
+and changed the code to use the openstack structure.
+
+Once I found their test data, I was able to use that to confirm my setup was working
+for cloud data.  I was also able to use their test data to understand the details of
+the format and
+
+There seem to be 2 stages of verification.  The first is to confirm that file has
+the correct format.  Generally, the file should have strings.  The second stage
+will unpack the data from the first stage and ensure that the second stage has
+the correct format before it is inserted into database.
+
+
+
+
 #xdmod-openshift
+
 This was mainn's constribution to this project.  Currently it runs within the container that
 is built from the Docker.moc-xdmod docker file.
+
+What this script does is to make openshift look like a slurm cluster to xdmod.  The log
+files can be shreadded and ingested in the same manner
 
 My current recommendations (also in the issues),
 
@@ -221,6 +250,26 @@ And here are the commands that load the CSVs into the xdmod database:
     acl-config
 ```
 
+In termas of testing what I was originally attempting to do was to create a test
+container that was derived from the dockerfile that contained xdmod-hierarchy and
+included mariadb with all of the pytest moducles.  This could eventually be
+incorporated in to test sequence in github to run pytest each time the container
+was built on github as part of our CI process.
+
+This would also work with how I deploy xdmod on openshift using build
+configurations to test before actual deployment.  Furthermore, it could be used
+to test the production system insitu.
+
+As I was having difficulty with getting this to work I simplifed it a great
+deal, just to have the tests run inside a container.  In the process, found that
+for stand-a-lone installs, mariadb was creating root accounts without a password
+that had to be accessed from the root account on that system.  After trying
+several ways suggested by the mariadb documentation and from stack exchange,
+settled on using it the way it was designed.
+
+Another option would be to use a service container to host mariadb, however,
+this initially seemed a bit more complicated than just
+
 #Backups
 
 I've manually done this process to create and restore a backup multiplie times.
@@ -263,3 +312,5 @@ to find the dump process had finished.  The bigger issue was copying the data of
 several times later that evening.  In the morning, running the same command worked without issue.
 
 #Getting data out
+
+#storgae reporting
