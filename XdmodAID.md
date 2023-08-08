@@ -221,7 +221,7 @@ And here are the commands that load the CSVs into the xdmod database:
     acl-config
 ```
 
-#Backup
+#Backups
 
 I've manually done this process to create and restore a backup multiplie times.
 Here are the manual steps that I planned on automating:
