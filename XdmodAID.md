@@ -66,6 +66,30 @@ ceilometer, this required rework.
 Even though they handle many more events (like, creation, power on, power off, ... ),
 their test data had a limited set of events.
 
+##Transaction logs
+
+One thing that I have tried to find and been unsuccessful so far is to get
+transaction logs.  The closest thing that I have hear of is the OpenShift
+audit log, but OpenShift doesn't really enable this in any useful manner by default.
+However for OpenStack, it might be found by processing the rabbit mq messages - not
+entirely sure though.
+
+This is important as it should have the following formt
+```
+Timestamp         | username          | Action
+------------------+-------------------+------------------------------------------------------
+09-AUG-2023 11:18 | <robbaron@bu.edu> | logged in to kaizen (openstack) project: RbbTest (id)
+09-AUG-2023 11:19 | <robbaron@bu.edu> | create cinder volume (vol id)
+09-AUG-2023 11:20 | <robbaron@bu.edu> | created VM (vm id) flavor (...) from volume (vol id)
+```
+The transaction log should be simple to read and understand, while giving changes
+to the state of the system.  Generally it is ordered by timestamp and have the actions
+of all users on the system.  When explaining things to customers who are paying money, it is
+the easiest and fastest way to point out to the customer why a charge appeared on their invoice.
+
+It is quite painful to explain things to customers without an easy to digest transaction
+log.
+
 #Dockerfiles
 
 Here are the dockerfiles to the project:
@@ -108,6 +132,9 @@ to update configuration files.
 
 
 #xdmod-init
+
+In lieu of modifying xdmod-setup to add a non-interactive option, I went with
+using pexpect script with the input being
 
 
 #Basic Processing
@@ -164,22 +191,40 @@ and will ocassionally fail due to a time out when it cannot lock certain tables.
 #xdmod-openstack
 
 The script xdmod-openstack required to be rewritten as the one that was there
-was using ceilometer.  In the first iteration I was using the structure
-documented in the documentation, however, after discussing it with the xdmod team
-it was recommended that I use their "openstack" structure.  It is a bit different
-and it is the one that they provide test data for.  I went with their recommendation
-and changed the code to use the openstack structure.
+was using ceilometer.  Ceilometer collected metrics that could be used for
+billing.  With ceilometer we could have had usage based billing.  Unfortunately,
+ceilometer is no longer included in OpenStack.
+
+In order to get the information about VMs, we went with the nova API.  Since the
+Nova API only gives information on VMs that are not deleted, by collectings data
+every 5 minutes, we expected to to catch when VMs topped running/were deleted.
+over time we have had to relax the performance requirements as due to the
+non-performant filesystem.  It is currently set to run every 20 minutes, but
+even that is probably a bit optimistic.
+
+In the first iteration I was using the structure documented in the documentation,
+however, after discussing it with the xdmod team it was recommended that I use
+their "openstack" structure.  It is a bit different and it is the one that they
+provide test data for.  I went with their recommendation and changed the code to
+use the openstack structure.
 
 Once I found their test data, I was able to use that to confirm my setup was working
 for cloud data.  I was also able to use their test data to understand the details of
-the format and
+the format.
 
 There seem to be 2 stages of verification.  The first is to confirm that file has
 the correct format.  Generally, the file should have strings.  The second stage
 will unpack the data from the first stage and ensure that the second stage has
-the correct format before it is inserted into database.
+the correct format before it is inserted into database.  There were several
+fields that required an integer inside of a string.
 
 
+
+Despite the xdmod team saying that it doesn't matter what a particular field is,
+what they mean is that as long as it can pass valication, it isn't currently being
+used.  In any case, for all values I tried to make them as consistent as possible
+to potentially avoid going to a new version and finding that a particular value
+is causing issues.
 
 
 #xdmod-openshift
