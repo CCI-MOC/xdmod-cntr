@@ -121,9 +121,64 @@ could drop in the xdmod team's dockerfile.  I had planned to do this after
 moving xdmod-openshift into it's own dockerfile.
 
 #Basic setup
-##relams
-###jobs
-###cloud
+
+Installation and initial configuration is handled in the Dockerfile.moc-xdmod
+
+##realms and resources
+A realm is the main reporting area.  Here are the list of realms
+```
+    job     - handles basic openshift
+    cloud   - handles openstack
+    supremm - should give some performance metrics for openshift
+```
+A resource can be a part of the realms, as I haven't really started to work on the
+storage resources (possibly part of a storage realm), I have confirmed this yet
+by actually setting them up.
+
+The list of resources are as follows:
+```
+    1. xdmodtest          openstack test data that the xdmod team uses
+    2. openstack          openstack instance (CPU and Memory) in the nerc
+    3. openshift_staging  staging openshift (not used in production)
+    4. openshift_prod     production openshift (CPU and Memory)
+    5. cinder             Allocated cinder storage (not implemented)
+    6. S3                 Allocated S3 storage (not implemented)
+    7. glance             Allocated glance storage (not implemented)
+    8. snapshots          Allocated space for snapshots (not implemented)
+```
+
+The resource are configured usings the /etc/resources.json file which is as follows:
+```
+[
+    {
+        "resource": "xdmodtest",
+        "resource_type": "Cloud",
+        "name": "XDMod OpenStack Test Data"
+    },
+    {
+        "resource": "openstack",
+        "resource_type": "Cloud",
+        "name": "OpenStack"
+    },
+    {
+        "resource": "openshift_staging",
+        "resource_type": "HPC",
+        "name": "OpenShift Staging",
+        "timezone": "US/Eastern",
+        "shared_jobs": true
+    },
+    {
+        "resource": "openshift_prod",
+        "resource_type": "HPC",
+        "name": "OpenShift Prod",
+        "timezone": "US/Eastern",
+        "shared_jobs": true
+    }
+]
+```
+The shared_jobs will tell xdmod that the HPC cluster is shared
+amoung many jobs, and is used by Supremm to know which resources
+need to be aggregated and included on the spremm realm.
 
 #xdmod-setup
 
@@ -243,6 +298,17 @@ My current recommendations (also in the issues),
         following structure:
             i. create a generic manifest within the main directory for xdmod-openshift
            ii. create specific overlays in each of the supported overlay directires
+
+It wasn't until we actually started looking at the data in May that we realized that
+CPU was not appearning for jobs in the interface.  As this was something that I was very
+focused on in getting data in on the OpenStack side and how I found the flavors that
+were deleted, I was surprised that it wasn't noticed by anyone until we were gathering
+data.  So I started looking in to this.
+
+With kim, we looked at the database structure and the data that was being pulled from
+OpenShift.
+
+
 
 I have just started to work with the data that is processed here as it was not inserting any
 CPU data into the jobs table.  This was due to the data coming from openshift often in
@@ -474,26 +540,48 @@ Here are the manual steps that I planned on automating:
   2. tar -zxvf /root/xdmod_data/usr-share-xdmod.tgz
   3. mysql -h mariadb -u root -pass
      > source xdmod-db-backup.sql
-  4. create a pod, mounting the volumes used by xdmod-openstack and xdmod-shift to back up the files created by the cronjobs
+  4. create a pod, mounting the volumes used by xdmod-openstack and xdmod-shift
+     to back up the files created by the cronjobs
 ```
 
-In the future, there will be no need to backup the /usr/shar/xdmod as these are the sources and I expect these to be
-immuntable.  However, there are several applicationstions that modify both the database and the config file, namely:
+In the future, there will be no need to backup the /usr/shar/xdmod as these are
+the sources and I expect these to be immuntable.  However, there are several
+applicationstions that modify both the database and the config file, namely:
 ```
 xdmod-shredder
 xdmod-ingestor
 xdmod-import-csv
 ...
 ```
-Although acl-config will sync the config files with the database state, at this time I am not recommending that
-limitations to acl-config be unintentionally found, and so the current recomendation would be to back up the
-config directory at the same time as the database.
+Although acl-config will sync the config files with the database state, at this
+time I am not recommending that limitations to acl-config be unintentionally
+found, and so the current recomendation would be to back up the config directory
+at the same time as the database.
 
-Interesting to note, to dump all of the data from mariadb, tends to be quick, Usually less than an hour.  When I did
-this the last time, I kiecked off the mysqldump command and after creating the pod to pull the PV data, came back
-to find the dump process had finished.  The bigger issue was copying the data off as and unexpected EOF occurred
-several times later that evening.  In the morning, running the same command worked without issue.
+Interesting to note, to dump all of the data from mariadb, tends to be quick,
+Usually less than an hour.  When I did this the last time, I kiecked off the
+mysqldump command and after creating the pod to pull the PV data, came back to
+find the dump process had finished.  The bigger issue was copying the data off
+as and unexpected EOF occurred several times later that evening.  In the
+morning, running the same command worked without issue.
 
 #Getting data out
+For VM/pod level reporting, the data export should aggregate the sessions (the )
 
+At this time there is no facility to pull session level data from xdmod aside from
+dumping specific tables that hold the session data.
+
+For cloud sessions:
+```
+select * from modw_cloud.session_records;
+```
+For job sessions:
+```
+select * from mod_hpcdb.hpcdb_jobs;
+```
+
+However based on the new requirment for reporting on computation units.  In order to
+do this we will need a custom report.
 #storgae reporting
+
+There is a section of xdmod used for reporting on storage.
