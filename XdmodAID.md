@@ -78,9 +78,10 @@ This is important as it should have the following formt
 ```
 Timestamp         | username          | Action
 ------------------+-------------------+------------------------------------------------------
-09-AUG-2023 11:18 | <robbaron@bu.edu> | logged in to kaizen (openstack) project: RbbTest (id)
+09-AUG-2023 11:18 | <robbaron@bu.edu> | logged on to kaizen (openstack) project: RbbTest (id)
 09-AUG-2023 11:19 | <robbaron@bu.edu> | create cinder volume (vol id)
 09-AUG-2023 11:20 | <robbaron@bu.edu> | created VM (vm id) flavor (...) from volume (vol id)
+09-AUG-2023 11:56 | <robbaron@bu.edu> | logged off from kaizen (openstack) project: RbbTest (id)
 ```
 The transaction log should be simple to read and understand, while giving changes
 to the state of the system.  Generally it is ordered by timestamp and have the actions
