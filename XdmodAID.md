@@ -91,6 +91,31 @@ the easiest and fastest way to point out to the customer why a charge appeared o
 It is quite painful to explain things to customers without an easy to digest transaction
 log.
 
+##advantages to using xdmod
+```
+  1. community of users
+  2. Seems to have a reeasonable database structure
+  3. does more of what we want to do than cloud forms did
+  4. cloud be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
+     and HPC clusters
+```
+##disavantages to using xdmod
+```
+  1. Not turnkey for cloud services
+  2. No built in support for openshift
+  3. OpenStack support is for a version that is no longer maintained
+  4. The xdmod team does not seem responsive to their ticketing system
+  5. Xdmod is a very large package and it doesn't have much flexibility.
+```
+Like any legacy system, there are parts of xdmod that are done well and parts
+that are not.  I have the impression that the xdmod team does not view cloud
+support as a priority as they themselves don't deploy any current cloud
+service.
+
+It would not suprise me if we decide to drop xdmod only to develop
+Furthermore, it would not suprise me if there was one application for OpenShift
+and another for OpenStack
+
 #Dockerfiles
 
 Here are the dockerfiles to the project:
@@ -274,13 +299,45 @@ will unpack the data from the first stage and ensure that the second stage has
 the correct format before it is inserted into database.  There were several
 fields that required an integer inside of a string.
 
-
-
 Despite the xdmod team saying that it doesn't matter what a particular field is,
-what they mean is that as long as it can pass valication, it isn't currently being
+what they mean is that as long as it can pass validaction, it may not be currently
 used.  In any case, for all values I tried to make them as consistent as possible
 to potentially avoid going to a new version and finding that a particular value
 is causing issues.
+
+A couple of notible examples being the audit_period and the flavor_id.
+
+In the test data that is provided, an audit_period field is provided.  This could
+be tied to a yearly audit of a grant, or it could be tied to a quarterly audit
+period.  The xdmod team came back and stated it wasn't used.  Since it was filled
+out in the sample data, I just filled it in with something that makes sense.
+
+The flavor_id is actually tracked in xdmod, and is required to be an integer
+within a string or it will not pass the validation.  The version of OpenStack
+that they were using has it as a integer OpenStack.  In the current version
+the flavor id is a typcial openstack uuid.  In order to be able to go from
+the xdmod id to the openstack id, I changed the flavor name to
+"Unknown Flavor (flavor uuid)".
+
+The error messages that xdmod generates via the package they use for validation
+are confusing at best.  The error message will tell you that some type was expected
+where a different type was found.  Generally, I created files that 1 record
+per file and ran them until the error appeared.  Since I knew the type, I could
+focus on values of that type and incrementally work though the 1 record that was
+not working.  It was far easier getting though the first level validator than
+the second.
+
+##Some specific events that needed to be translated from current to past
+
+Becase xdmod suppored an older version of OpenStack, the many of the events
+have changed.
+
+For example, "compute.instance.create" gets converted to either a
+"compute.instance.error" or to 2 events - "compute.instance.start",
+"compute.instance.end"
+
+There were
+
 
 
 #xdmod-openshift
@@ -306,9 +363,9 @@ were deleted, I was surprised that it wasn't noticed by anyone until we were gat
 data.  So I started looking in to this.
 
 With kim, we looked at the database structure and the data that was being pulled from
-OpenShift.
-
-
+OpenShift.  The type coming from openshift is in fractions of a CPU which is a floating
+point type, where as the database field that this is stored in is an iteger.  Addtionoally,
+in the supremm database, this becomes a floating point.
 
 I have just started to work with the data that is processed here as it was not inserting any
 CPU data into the jobs table.  This was due to the data coming from openshift often in
@@ -316,9 +373,11 @@ fractional amounts of CPU.  One simple solution to this is to store the data in 
 multiplying by 1000.  This was tested in the xdmod-staging project on the nerc-infra cluster
 and seemed to work (ie, I got milli CPU in the jobs table).
 
-I then tried to setup Supremm, and the process failed when running from xdmod-setup.
+I then tried to setup Supremm on the staging project, and the process failed when running
+from xdmod-setup. I did get the staging mariadb setup by restoring from a backup of production
+though something is wrong with the configuration of mongo
 
-I did get the staging mariadb setup by restoring from a backup of production
+
 
 #xdmod-hierarchy
 
