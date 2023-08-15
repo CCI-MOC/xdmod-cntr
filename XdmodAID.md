@@ -66,6 +66,209 @@ ceilometer, this required rework.
 Even though they handle many more events (like, creation, power on, power off, ... ),
 their test data had a limited set of events.
 
+#Database Structure
+
+The database structure can be split into a logical structure and physical structure.
+The logical design of the database is located in the .json files that are then used
+to construct the physical structure.
+
+For example this json file, etl_tables.d/cloud_openstack/raw_event.json, defines a
+table in the modw_cloud database:
+```
+{
+    "#": "Raw event information from the Open Stack log files.",
+    "#": "Note that almost any field in the raw event logs can be NULL so most fields are nullable.",
+    "#": "These will be stored here and filtered out later. For example, several events with type",
+    "table_definition": {
+        "name": "openstack_raw_event",
+        "engine": "InnoDB",
+        "comment": "Raw events from Open Stack log events.",
+        "columns": [{
+                "name": "resource_id",
+                "type": "int(11)",
+                "nullable": false
+            },
+            {
+                "name": "provider_instance_identifier",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null,
+                "comment": "Optional instance event is associated with."
+            },
+            {
+                "name": "event_time_utc",
+                "type": "char(26)",
+                "nullable": false,
+                "default": "0000-00-00T00:00:00.000000",
+                "comment": "The time of the event in UTC."
+            },
+            {
+                "name": "create_time_utc",
+                "type": "char(26)",
+                "nullable": true,
+                "default": "0000-00-00T00:00:00.000000",
+                "comment": "The time of the event in UTC."
+            },
+            {
+                "name": "event_type",
+                "type": "varchar(64)",
+                "nullable": false
+            },
+            {
+                "name": "record_type",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "hostname",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "#": "human readable name at the time the log is written",
+                "name": "user_name",
+                "type": "varchar(255)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "#": "GUID for user",
+                "name": "user_id",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "instance_type",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null,
+                "comment": "Short version or abbrev"
+            },
+            {
+                "name": "provider_account",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "project_name",
+                "type": "varchar(256)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "project_id",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "request_id",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "event_data",
+                "type": "varchar(256)",
+                "nullable": true,
+                "default": null,
+                "comment": "Additional data specific to an event (e.g., volume, IP address, etc.)"
+            },
+            {
+                "name": "openstack_resource_id",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "disk_gb",
+                "type": "int(11)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "memory_mb",
+                "type": "int(11)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "num_cores",
+                "type": "int(11)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "size",
+                "type": "bigint(16)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "volume_id",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "state",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "domain",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            },
+            {
+                "name": "service_provider",
+                "type": "varchar(64)",
+                "nullable": true,
+                "default": null
+            }
+        "indexes": [{
+            "name": "resource_id",
+            "columns": [
+                "resource_id"
+            ],
+            "is_unique": false
+        }]
+    }
+}
+```
+the modw_cloud database is also formed from the tables defined in
+cloud_common and in cloud_generic.  Each of these directories logical groupings
+of tables when you consider the dataflow.  When data is shredded it is added to
+either the cloud_openstack (in the case of opnstack formatted data), or
+cloud_genderic (in the case of the "generic" format).  During ingestation the
+data flows from cloud_openstack and/or cloud_generic into the cloud_common
+
+The database field sizes are increased using the definitions within the json
+files as opposed using sql to alter the table definition.
+
+There are a similar set of files that seem to define the ETL processes.
+
+In both the "OpenShift" and the "Generic" structure there is a way to
+track mounted volumes to the VM.  From an initial glance, something like
+this should be done to track volume useage, doing so here will not track
+volumes that are allocated, but not mounted.
+
+Additionally, there are no instnaces that mount volumes in the test data.
+
+I did spend time on handling the volume events and was in the middle of
+debugging them, but never pulled the code out, as I figured it might
+be useful.  Need to add an issue on this.
+
+The better way to track volumes, which can also be done for any service
+that uses storage (glance, swift, S3, ... ) is to setup storage metrics.
+With storage metrics, each storage class will have it's own resource.
+
 ##Transaction logs
 
 One thing that I have tried to find and been unsuccessful so far is to get
@@ -343,7 +546,8 @@ There were
 #xdmod-openshift
 
 This was mainn's constribution to this project.  Currently it runs within the container that
-is built from the Docker.moc-xdmod docker file.
+is built from the Docker.moc-xdmod docker file.  It should be refactored to run in the
+python3.11 container like xdmod-openstack does.
 
 What this script does is to make openshift look like a slurm cluster to xdmod.  The log
 files can be shreadded and ingested in the same manner
