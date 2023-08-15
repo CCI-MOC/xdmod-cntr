@@ -1,18 +1,18 @@
 # Introduction
 
 Xdmod is currently developed and used in the HPC community as a way to show
-system usage for an HPC cluster back to uses.  They have build support for
+system usage for an HPC cluster back to users.  They have build support for
 OpenStack into it, but not OpenShift.  It holds the promise of being a unified
 platform for consoldating HPC and Cloud services.
 
 As it is currently being used for billing and showback on a HPC cluster
 at Harvard, and it initally seemed to be a turnkey type system, we started
-to set this it up on an openshift cluster.  Unfortunately, we have found that it
+to set this it on an openshift cluster.  Unfortunately, we have found that it
 is not exactly a turn key system.
 
 Xdmod is currently designed to work on a stand alone
-server.  The do use docker to develop and to test it. Although to distruite it,
-they perfer to use RPMs and sources.  However there is an project
+server.  They do use docker to develop and to test it. Although to distruite it,
+they perfer to use RPMs and sources.  However there is a project
 (https://github.com/rob-baron/hpc-toolset-tutorial) that uses docker compose
 to run xdmod and assocated applications in separate docker contains in a
 similar manner to how you would run them in kubernetes.  This project formed
@@ -21,7 +21,7 @@ a basis for the work to deploy xdmod on the nerc.
 On the xdmod side, there is no support for OpenShift, and the OpenStack
 support is for an old version of OpenStack.
 
-Addtionally, there the environment the environment that we are deploying
+Addtionally, the environment that we are deploying
 to has some difficulties related to storage.
 ```
     1. The lack of performance for writes to our volumes
