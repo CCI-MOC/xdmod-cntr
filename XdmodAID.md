@@ -1,4 +1,4 @@
-#Introduction
+# Introduction
 
 Xdmod is currently developed and used in the HPC community as a way to show
 system usage for an HPC cluster back to uses.  They have build support for
@@ -47,7 +47,7 @@ From my perspective, this lack of performance on writes will make the cluster
 unusable for a wider array of applications and will a distinct pain point for
 early adopters.
 
-##Lack of read write many volumes (RWX persistent volumes)
+## Lack of read write many volumes (RWX persistent volumes)
 Although this wont be as painful as the non performant volumes, it is something
 that I have had to work around.  For example:
 ```
@@ -57,7 +57,7 @@ that I have had to work around.  For example:
       in the main container.
 ```
 
-##Some things to realize about xdmod's openstack integration
+## Some things to realize about xdmod's openstack integration
 For starters, it is using an older unsuppported version of openstack.  They have
 plans to up date this but so far they have not.  They used ceilometer to pull
 the data from openstack.  As the current version of openstack does not include
@@ -66,7 +66,7 @@ ceilometer, this required rework.
 Even though they handle many more events (like, creation, power on, power off, ... ),
 their test data had a limited set of events.
 
-#Database Structure
+# Database Structure
 
 The database structure can be split into a logical structure and physical structure.
 The logical design of the database is located in the .json files that are then used
@@ -254,7 +254,7 @@ files as opposed using sql to alter the table definition.
 
 There are a similar set of files that seem to define the ETL processes.
 
-##Transaction logs
+## Transaction logs
 
 One thing that I have tried to find and been unsuccessful so far is to get
 transaction logs.  The closest thing that I have hear of is the OpenShift
@@ -279,7 +279,7 @@ the easiest and fastest way to point out to the customer why a charge appeared o
 It is quite painful to explain things to customers without an easy to digest transaction
 log.
 
-##advantages to using xdmod
+## advantages to using xdmod
 ```
   1. community of users
   2. Seems to have a reeasonable database structure
@@ -287,7 +287,7 @@ log.
   4. cloud be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
      and HPC clusters
 ```
-##disavantages to using xdmod
+## disavantages to using xdmod
 ```
   1. Not turnkey for cloud services
   2. No built in support for openshift
@@ -304,7 +304,7 @@ It would not suprise me if we decide to drop xdmod only to develop
 Furthermore, it would not suprise me if there was one application for OpenShift
 and another for OpenStack
 
-#Dockerfiles
+# Dockerfiles
 
 Here are the dockerfiles to the project:
 ```
@@ -314,7 +314,7 @@ Here are the dockerfiles to the project:
   4. Dockerfile.docker-test
 ```
 
-#Dockerfile.moc-xdmod
+# Dockerfile.moc-xdmod
 Initailly I copied over the docker files from the xdmod github repository as I
 figured there was the distinct possiblity that some restructuring would be
 necessary.  However, I also wanted to see if the original docker files could be used
@@ -333,11 +333,11 @@ Currently, I am uncertain if the original dockerfile would still work for us, or
 could drop in the xdmod team's dockerfile.  I had planned to do this after
 moving xdmod-openshift into it's own dockerfile.
 
-#Basic setup
+# Basic setup
 
 Installation and initial configuration is handled in the Dockerfile.moc-xdmod
 
-##realms and resources
+## realms and resources
 A realm is the main reporting area.  Here are the list of realms
 ```
     job     - handles basic openshift
@@ -393,20 +393,32 @@ The shared_jobs will tell xdmod that the HPC cluster is shared
 amoung many jobs, and is used by Supremm to know which resources
 need to be aggregated and included on the spremm realm.
 
-#xdmod-setup
+# xdmod-setup
 
 xdmod-setup is a tool used to configure/reconfiure parts of xdmod.  It is an
 interactive tool that is used to setup the databases, parts of supremm and
 to update configuration files.
 
 
-#xdmod-init
+# xdmod-init
 
 In lieu of modifying xdmod-setup to add a non-interactive option, I went with
-using pexpect script with the input being
+using pexpect script with the input being xdmod_init.json included as a
+configmap to the project.
+
+xdmod-init is expected to run as an initialization to the xdmod-ui everytime
+as the xdmod_init.json is expected to be updated and this is the most consistent
+way of updating xdmod by deleting the xdmod-ui pod.
+
+Alernatively, xdmod-init or xdmod-setup can be run from the command line if
+one uses rsh to gain access to the xdmod-ui container.  This often requires
+the additional step of restarting the xdmod-ui pod as the many changes require
+the web process to be retarted.
+
+## xdmod-init processing
 
 
-#Basic Processing
+# Basic Processing
 
 The overall processing flow is as follows
 ```
@@ -429,7 +441,7 @@ The overall processing flow is as follows
 ```
 
 
-#xdmod-openstack-hypervisors
+# xdmod-openstack-hypervisors
 This script fetches the hypervisor information from openstack used in calculating
 percent usage.
 
@@ -442,7 +454,7 @@ version will be different and possibly incompatible with the upstream version.
 This script produces a file specified on the command line that will need to be
 shredded.
 
-#acl-config
+# acl-config
 This is a small utility that rebuilds the consistency between the configuration files
 and the database.  It is needed to be run as there are several processes that
 modify one or the other but not both.  It is an example of a work-a-round that
@@ -457,7 +469,7 @@ to the UI.
 Most of the time it runs withing a couple of minutes, sometimes it takes longer
 and will ocassionally fail due to a time out when it cannot lock certain tables.
 
-#xdmod-openstack
+# xdmod-openstack
 
 The script xdmod-openstack required to be rewritten as the one that was there
 was using ceilometer.  Ceilometer collected metrics that could be used for
@@ -522,7 +534,7 @@ focus on values of that type and incrementally work though the 1 record that was
 not working.  It was far easier getting though the first level validator than
 the second.
 
-##Some specific events that needed to be translated from current to past
+## Some specific events that needed to be translated from current to past
 
 Becase xdmod suppored an older version of OpenStack, the many of the events
 have changed.
@@ -533,11 +545,11 @@ For example, "compute.instance.create" gets converted to either a
 
 The code has more instances of this.  This was particularly annoying
 
-##envents handeled
+## envents handeled
 
 
 
-##About volume events
+## About volume events
 I did spend time on handling the volume events and was in the middle of
 debugging them, but never pulled the code out, as I figured it might
 be useful.  Need to add an issue on this.
@@ -546,7 +558,7 @@ The better way to track volumes, which can also be done for any service
 that uses storage (glance, swift, S3, ... ) is to setup storage metrics.
 With storage metrics, each storage class will have it's own resource.
 
-#xdmod-openshift
+# xdmod-openshift
 
 This was mainn's constribution to this project.  Currently it runs within the container that
 is built from the Docker.moc-xdmod docker file.  It should be refactored to run in the
@@ -586,7 +598,7 @@ though something is wrong with the configuration of mongo
 
 
 
-#xdmod-hierarchy
+# xdmod-hierarchy
 
 In order to report to insititutions, departments and PIs; a system wide hierarchy can
 be defined to aggreate statistics at the appropriate level.  This is done using
@@ -692,8 +704,8 @@ As output, the xdmod-hierarchy script will produce the following files:
     pi2project.csv - maps the openstack project to the openstack project
 ```
 
-##An example set of files
-###hierarchy.csv
+## An example set of files
+### hierarchy.csv
 ```
 "1", "Boston University",
 "2", "Harvard University",
@@ -701,16 +713,16 @@ As output, the xdmod-hierarchy script will produce the following files:
 "4", "Harvard University - physical_sciences", "2"
 "5", "Rob Baron", "3"
 ```
-###group.csv
+### group.csv
 ```
 "Rob's Cold Front Project","5"
 ```
-###names.csv
+### names.csv
 ```
 "RobOpenstackProject-f123abc", "Rob's Cold Front Project"
 "robs-pen-shift-project-f123abd", "Rob's Cold Front Project"
 ```
-###pi2project.csv
+### pi2project.csv
 ```
 "RobOpenstackProject-f123abc", "RobOpenstackProject-f123abc"
 ```
@@ -785,7 +797,7 @@ settled on using it the way it was designed.
 Another option would be to use a service container to host mariadb, however,
 this initially seemed a bit more complicated than just
 
-#Backups
+# Backups
 
 I've manually done this process to create and restore a backup multiplie times.
 Here are the manual steps that I planned on automating:
@@ -831,7 +843,7 @@ find the dump process had finished.  The bigger issue was copying the data off
 as and unexpected EOF occurred several times later that evening.  In the
 morning, running the same command worked without issue.
 
-#Getting data out
+# Getting data out
 For VM/pod level reporting, the data export should aggregate the sessions (the )
 
 At this time there is no facility to pull session level data from xdmod aside from
@@ -848,6 +860,9 @@ select * from mod_hpcdb.hpcdb_jobs;
 
 However based on the new requirment for reporting on computation units.  In order to
 do this we will need a custom report.
-#storgae reporting
+# storgae reporting
 
-There is a section of xdmod used for reporting on storage.
+There is a section of xdmod used for reporting on storage.  It is covered here:
+```
+```
+Each storage class will require it's own resource.
