@@ -254,21 +254,6 @@ files as opposed using sql to alter the table definition.
 
 There are a similar set of files that seem to define the ETL processes.
 
-In both the "OpenShift" and the "Generic" structure there is a way to
-track mounted volumes to the VM.  From an initial glance, something like
-this should be done to track volume useage, doing so here will not track
-volumes that are allocated, but not mounted.
-
-Additionally, there are no instnaces that mount volumes in the test data.
-
-I did spend time on handling the volume events and was in the middle of
-debugging them, but never pulled the code out, as I figured it might
-be useful.  Need to add an issue on this.
-
-The better way to track volumes, which can also be done for any service
-that uses storage (glance, swift, S3, ... ) is to setup storage metrics.
-With storage metrics, each storage class will have it's own resource.
-
 ##Transaction logs
 
 One thing that I have tried to find and been unsuccessful so far is to get
@@ -486,6 +471,13 @@ over time we have had to relax the performance requirements as due to the
 non-performant filesystem.  It is currently set to run every 20 minutes, but
 even that is probably a bit optimistic.
 
+In both the "OpenShift" and the "Generic" structure there is a way to
+track mounted volumes to the VM.  From an initial glance, something like
+this should be done to track volume useage, doing so here will not track
+volumes that are allocated, but not mounted.
+
+Additionally, there are no instnaces that mount volumes in the test data.
+
 In the first iteration I was using the structure documented in the documentation,
 however, after discussing it with the xdmod team it was recommended that I use
 their "openstack" structure.  It is a bit different and it is the one that they
@@ -539,9 +531,20 @@ For example, "compute.instance.create" gets converted to either a
 "compute.instance.error" or to 2 events - "compute.instance.start",
 "compute.instance.end"
 
-There were
+The code has more instances of this.  This was particularly annoying
+
+##envents handeled
 
 
+
+##About volume events
+I did spend time on handling the volume events and was in the middle of
+debugging them, but never pulled the code out, as I figured it might
+be useful.  Need to add an issue on this.
+
+The better way to track volumes, which can also be done for any service
+that uses storage (glance, swift, S3, ... ) is to setup storage metrics.
+With storage metrics, each storage class will have it's own resource.
 
 #xdmod-openshift
 
