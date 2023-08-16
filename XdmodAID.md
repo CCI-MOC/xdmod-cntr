@@ -7,12 +7,12 @@ platform for consoldating HPC and Cloud services.
 
 As it is currently being used for billing and showback on a HPC cluster
 at Harvard, and it initally seemed to be a turnkey type system, we started
-to set this it on an openshift cluster.  Unfortunately, we have found that it
+to set this it on an OpenShift cluster.  Unfortunately, we have found that it
 is not exactly a turn key system.
 
-Xdmod is currently designed to work on a stand alone
-server.  They do use docker to develop and to test it. Although to distruite it,
-they perfer to use RPMs and sources.  However there is a project
+Xdmod is currently designed to work on a stand alone server. They do use docker
+to develop and to test it. Although to distruite it, they perfer to use RPMs
+and sources.  However there is a project
 (https://github.com/rob-baron/hpc-toolset-tutorial) that uses docker compose
 to run xdmod and assocated applications in separate docker contains in a
 similar manner to how you would run them in kubernetes.  This project formed
@@ -27,7 +27,7 @@ to has some difficulties related to storage.
     1. The lack of performance for writes to our volumes
     2. Our environemnt doesn't have Read Write Many volumes
 ```
-##Lack of Perforamnce for writes to the file system
+## Lack of Perforamnce for writes to the file system
 
 The lack of performance for writes affects many of the database operations
 For example,
@@ -44,7 +44,7 @@ It could be partially worked around if the database was cached in memory or
 could be run from ephemeral storage.
 
 From my perspective, this lack of performance on writes will make the cluster
-unusable for a wider array of applications and will a distinct pain point for
+unusable for a wider array of applications and will be a distinct pain point for
 early adopters.
 
 ## Lack of read write many volumes (RWX persistent volumes)
@@ -57,10 +57,10 @@ that I have had to work around.  For example:
       in the main container.
 ```
 
-## Some things to realize about xdmod's openstack integration
-For starters, it is using an older unsuppported version of openstack.  They have
+## Some things to realize about xdmod's OpenStack integration
+For starters, it is using an older unsuppported version of OpenStack.  They have
 plans to up date this but so far they have not.  They used ceilometer to pull
-the data from openstack.  As the current version of openstack does not include
+the data from OpenStack.  As the current version of OpenStack does not include
 ceilometer, this required rework.
 
 Even though they handle many more events (like, creation, power on, power off, ... ),
@@ -72,7 +72,7 @@ The database structure can be split into a logical structure and physical struct
 The logical design of the database is located in the .json files that are then used
 to construct the physical structure.
 
-For example this json file, etl_tables.d/cloud_openstack/raw_event.json, defines a
+For example this json file, etl_tables.d/cloud_OpenStack/raw_event.json, defines a
 table in the modw_cloud database:
 ```
 {
@@ -80,7 +80,7 @@ table in the modw_cloud database:
     "#": "Note that almost any field in the raw event logs can be NULL so most fields are nullable.",
     "#": "These will be stored here and filtered out later. For example, several events with type",
     "table_definition": {
-        "name": "openstack_raw_event",
+        "name": "OpenStack_raw_event",
         "engine": "InnoDB",
         "comment": "Raw events from Open Stack log events.",
         "columns": [{
@@ -179,7 +179,7 @@ table in the modw_cloud database:
                 "comment": "Additional data specific to an event (e.g., volume, IP address, etc.)"
             },
             {
-                "name": "openstack_resource_id",
+                "name": "OpenStack_resource_id",
                 "type": "varchar(64)",
                 "nullable": true,
                 "default": null
@@ -245,19 +245,19 @@ table in the modw_cloud database:
 the modw_cloud database is also formed from the tables defined in
 cloud_common and in cloud_generic.  Each of these directories logical groupings
 of tables when you consider the dataflow.  When data is shredded it is added to
-either the cloud_openstack (in the case of opnstack formatted data), or
+either the cloud_OpenStack (in the case of opnstack formatted data), or
 cloud_genderic (in the case of the "generic" format).  During ingestation the
-data flows from cloud_openstack and/or cloud_generic into the cloud_common
+data flows from cloud_OpenStack and/or cloud_generic into the cloud_common
 
 The database field sizes are increased using the definitions within the json
-files as opposed using sql to alter the table definition.
+files as opposed to using sql to alter the table definition.
 
 There are a similar set of files that seem to define the ETL processes.
 
 ## Transaction logs
 
 One thing that I have tried to find and been unsuccessful so far is to get
-transaction logs.  The closest thing that I have hear of is the OpenShift
+transaction logs.  The closest thing that I have found is the OpenShift
 audit log, but OpenShift doesn't really enable this in any useful manner by default.
 However for OpenStack, it might be found by processing the rabbit mq messages - not
 entirely sure though.
@@ -266,10 +266,10 @@ This is important as it should have the following formt
 ```
 Timestamp         | username          | Action
 ------------------+-------------------+------------------------------------------------------
-09-AUG-2023 11:18 | <robbaron@bu.edu> | logged on to kaizen (openstack) project: RbbTest (id)
+09-AUG-2023 11:18 | <robbaron@bu.edu> | logged on to kaizen (OpenStack) project: RbbTest (id)
 09-AUG-2023 11:19 | <robbaron@bu.edu> | create cinder volume (vol id)
 09-AUG-2023 11:20 | <robbaron@bu.edu> | created VM (vm id) flavor (...) from volume (vol id)
-09-AUG-2023 11:56 | <robbaron@bu.edu> | logged off from kaizen (openstack) project: RbbTest (id)
+09-AUG-2023 11:56 | <robbaron@bu.edu> | logged off from kaizen (OpenStack) project: RbbTest (id)
 ```
 The transaction log should be simple to read and understand, while giving changes
 to the state of the system.  Generally it is ordered by timestamp and have the actions
@@ -284,16 +284,16 @@ log.
   1. community of users
   2. Seems to have a reeasonable database structure
   3. does more of what we want to do than cloud forms did
-  4. cloud be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
+  4. could be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
      and HPC clusters
 ```
 ## disavantages to using xdmod
 ```
   1. Not turnkey for cloud services
-  2. No built in support for openshift
+  2. No built in support for OpenShift
   3. OpenStack support is for a version that is no longer maintained
   4. The xdmod team does not seem responsive to their ticketing system
-  5. Xdmod is a very large package and it doesn't have much flexibility.
+  5. Xdmod is a very large package - it needs to be broken into smaller services
 ```
 Like any legacy system, there are parts of xdmod that are done well and parts
 that are not.  I have the impression that the xdmod team does not view cloud
@@ -310,7 +310,7 @@ Here are the dockerfiles to the project:
 ```
   1. Dockerfile.moc-xdmod
   2. Dcokerfile.moc-xdmod-dev
-  3. Dockerfile.xdmod-openstack
+  3. Dockerfile.xdmodopenstack
   4. Dockerfile.docker-test
 ```
 
@@ -321,7 +321,7 @@ necessary.  However, I also wanted to see if the original docker files could be 
 as is, as this would potentally make upgrading easier as we would be using what
 their process developed.
 
-I had put some changes in to dockerfile to support xdmod-openstack and similar
+I had put some changes in to dockerfile to support xdmodopenstack and similar
 changes were done to support xdmod-shift.  Along the way, in order to get PRs
 approved, we decided that we needed to optimize the dockerfiles.
 
@@ -340,9 +340,9 @@ Installation and initial configuration is handled in the Dockerfile.moc-xdmod
 ## realms and resources
 A realm is the main reporting area.  Here are the list of realms
 ```
-    job     - handles basic openshift
-    cloud   - handles openstack
-    supremm - should give some performance metrics for openshift
+    job     - handles basic OpenShift
+    cloud   - handles OpenStack
+    supremm - should give some performance metrics for OpenShift
 ```
 A resource can be a part of the realms, as I haven't really started to work on the
 storage resources (possibly part of a storage realm), I have confirmed this yet
@@ -350,10 +350,10 @@ by actually setting them up.
 
 The list of resources are as follows:
 ```
-    1. xdmodtest          openstack test data that the xdmod team uses
-    2. openstack          openstack instance (CPU and Memory) in the nerc
-    3. openshift_staging  staging openshift (not used in production)
-    4. openshift_prod     production openshift (CPU and Memory)
+    1. xdmodtest          OpenStack test data that the xdmod team uses
+    2. OpenStack          OpenStack instance (CPU and Memory) in the nerc
+    3. openshift_staging  staging OpenShift (not used in production)
+    4. openshift_prod     production OpenShift (CPU and Memory)
     5. cinder             Allocated cinder storage (not implemented)
     6. S3                 Allocated S3 storage (not implemented)
     7. glance             Allocated glance storage (not implemented)
@@ -369,7 +369,7 @@ The resource are configured usings the /etc/resources.json file which is as foll
         "name": "XDMod OpenStack Test Data"
     },
     {
-        "resource": "openstack",
+        "resource": "OpenStack",
         "resource_type": "Cloud",
         "name": "OpenStack"
     },
@@ -424,7 +424,7 @@ The overall processing flow is as follows
 ```
                   OpenStack                               OpenShift                 KeyCloak        ColdFront
 
-      xdmod-openstack   xdmod-openstack-hypervisors     xdmod-openshift                  xdmod-hierarchy
+      xdmodopenstack   xdmodopenstack-hypervisors     xdmod-openshift                  xdmod-hierarchy
 
       xdmod-shredder        xdmod-shredder              xdmod-shredder                   xdmod-import-csv
 
@@ -441,8 +441,8 @@ The overall processing flow is as follows
 ```
 
 
-# xdmod-openstack-hypervisors
-This script fetches the hypervisor information from openstack used in calculating
+# xdmodopenstack-hypervisors
+This script fetches the hypervisor information from OpenStack used in calculating
 percent usage.
 
 This was the simpliest script and required very few changes to work.
@@ -466,19 +466,19 @@ As the xdmod-ui requires the database and configration files to be consistent,
 and we do not currently support RWX volumes, this needs to be run in parallel
 to the UI.
 
-Most of the time it runs withing a couple of minutes, sometimes it takes longer
+Most of the time it runs within a couple of minutes, sometimes it takes longer
 and will ocassionally fail due to a time out when it cannot lock certain tables.
 
-# xdmod-openstack
+# xdmodopenstack
 
-The script xdmod-openstack required to be rewritten as the one that was there
+The script xdmodopenstack required to be rewritten as the one that was there
 was using ceilometer.  Ceilometer collected metrics that could be used for
 billing.  With ceilometer we could have had usage based billing.  Unfortunately,
 ceilometer is no longer included in OpenStack.
 
 In order to get the information about VMs, we went with the nova API.  Since the
-Nova API only gives information on VMs that are not deleted, by collectings data
-every 5 minutes, we expected to to catch when VMs topped running/were deleted.
+Nova API only gives information on VMs that are not deleted, by collecting data
+every 5 minutes, we expected to catch when VMs stopped running/were deleted.
 over time we have had to relax the performance requirements as due to the
 non-performant filesystem.  It is currently set to run every 20 minutes, but
 even that is probably a bit optimistic.
@@ -492,16 +492,16 @@ Additionally, there are no instnaces that mount volumes in the test data.
 
 In the first iteration I was using the structure documented in the documentation,
 however, after discussing it with the xdmod team it was recommended that I use
-their "openstack" structure.  It is a bit different and it is the one that they
+their "OpenStack" structure.  It is a bit different and it is the one that they
 provide test data for.  I went with their recommendation and changed the code to
-use the openstack structure.
+use the OpenStack structure.
 
 Once I found their test data, I was able to use that to confirm my setup was working
 for cloud data.  I was also able to use their test data to understand the details of
 the format.
 
-There seem to be 2 stages of verification.  The first is to confirm that file has
-the correct format.  Generally, the file should have strings.  The second stage
+There seem to be 2 stages of verification.  The first is to confirm that the file has
+the correct format.  Generally, the data fields should be strings.  The second stage
 will unpack the data from the first stage and ensure that the second stage has
 the correct format before it is inserted into database.  There were several
 fields that required an integer inside of a string.
@@ -522,8 +522,8 @@ out in the sample data, I just filled it in with something that makes sense.
 The flavor_id is actually tracked in xdmod, and is required to be an integer
 within a string or it will not pass the validation.  The version of OpenStack
 that they were using has it as a integer OpenStack.  In the current version
-the flavor id is a typcial openstack uuid.  In order to be able to go from
-the xdmod id to the openstack id, I changed the flavor name to
+the flavor id is a typcial OpenStack uuid.  In order to be able to go from
+the xdmod id to the OpenStack id, I changed the flavor name to
 "Unknown Flavor (flavor uuid)".
 
 The error messages that xdmod generates via the package they use for validation
@@ -547,7 +547,38 @@ The code has more instances of this.  This was particularly annoying
 
 ## envents handeled
 
+Here are the the current events that are handled:
+    volume.attach
+    volume.detach
+    volume.create
+    volume.delete
+    compute.instance.volume.attach
+    compute.instance.volume.dettach
+    compute.instance.resume
+    compute.instance.suspend
+    compute.instance.unshelve
+    compute.instance.resize
+    compute.instance.create
+    compute.instance.delete
+    compute.instance.live_migration
+    compute.instance.power_off
+    compute.instance.power_on
+    compute.instance.shutdown
 
+As mentioned elsewhere, the volume events are not completely meaningful
+without knowing all of the unattached volumes.  So these probably
+should not be included.
+
+I suspect that live migration is not handled correctly by xdmod, so it
+should probably be translated to a power_off and a power_on events.
+
+I am also suspecting that we are not reporting on when the system was shutdown
+as either Nova didn't send that information out on the API, or we are not
+processing the right set of evens
+
+In all of the code reviews, I don't recall any conversation over which events
+need to be processed.  We did discuss why events get translated to different
+events
 
 ## About volume events
 I did spend time on handling the volume events and was in the middle of
@@ -562,9 +593,9 @@ With storage metrics, each storage class will have it's own resource.
 
 This was mainn's constribution to this project.  Currently it runs within the container that
 is built from the Docker.moc-xdmod docker file.  It should be refactored to run in the
-python3.11 container like xdmod-openstack does.
+python3.11 container like xdmodopenstack does.
 
-What this script does is to make openshift look like a slurm cluster to xdmod.  The log
+What this script does is to make OpenShift look like a slurm cluster to xdmod.  The log
 files can be shreadded and ingested in the same manner
 
 My current recommendations (also in the issues),
@@ -582,12 +613,12 @@ were deleted, I was surprised that it wasn't noticed by anyone until we were gat
 data.  So I started looking in to this.
 
 With kim, we looked at the database structure and the data that was being pulled from
-OpenShift.  The type coming from openshift is in fractions of a CPU which is a floating
+OpenShift.  The type coming from OpenShift is in fractions of a CPU which is a floating
 point type, where as the database field that this is stored in is an iteger.  Addtionoally,
 in the supremm database, this becomes a floating point.
 
 I have just started to work with the data that is processed here as it was not inserting any
-CPU data into the jobs table.  This was due to the data coming from openshift often in
+CPU data into the jobs table.  This was due to the data coming from OpenShift often in
 fractional amounts of CPU.  One simple solution to this is to store the data in milli CPU by
 multiplying by 1000.  This was tested in the xdmod-staging project on the nerc-infra cluster
 and seemed to work (ie, I got milli CPU in the jobs table).
@@ -620,7 +651,7 @@ them.  To side by side compare:
                  group name                 group name           names.csv
                                               project name       pi2project.csv
 ```
-Since we have OpenShift implemented as an HPC resoource and openstack as a cloud
+Since we have OpenShift implemented as an HPC resoource and OpenStack as a cloud
 resource, we need to effectively remove a layer of the cloud hierarchy.  This was
 done by mapping OpenStack projects to OpenStack projects in the pi2project.csv
 file.
@@ -699,9 +730,9 @@ As output, the xdmod-hierarchy script will produce the following files:
 ```
     hierarchy.csv  - specifies the 3 level hierarcy of institution, field of study, PI
     group.csv      - has the mapping of nerc project to PIs
-    names.csv      - has the mapping of openshift namespaces and openstack projects to
+    names.csv      - has the mapping of OpenShift namespaces and OpenStack projects to
                      the nerc project
-    pi2project.csv - maps the openstack project to the openstack project
+    pi2project.csv - maps the OpenStack project to the OpenStack project
 ```
 
 ## An example set of files
@@ -719,12 +750,12 @@ As output, the xdmod-hierarchy script will produce the following files:
 ```
 ### names.csv
 ```
-"RobOpenstackProject-f123abc", "Rob's Cold Front Project"
+"RobOpenStackProject-f123abc", "Rob's Cold Front Project"
 "robs-pen-shift-project-f123abd", "Rob's Cold Front Project"
 ```
 ### pi2project.csv
 ```
-"RobOpenstackProject-f123abc", "RobOpenstackProject-f123abc"
+"RobOpenStackProject-f123abc", "RobOpenStackProject-f123abc"
 ```
 
 The format of the hierarchy file is as follows:
@@ -741,12 +772,12 @@ file.
 The group.csv file relates cold front project names to the id of the PI in the hierarchy
 file.
 
-The names.csv file relates the openstack or openshift project name to the
+The names.csv file relates the OpenStack or OpenShift project name to the
 cold front project name found in the group.csv
 
-And finally for openstack, we need to effectively squash a layer of the hierarchy
-in order to match the jobs side, so pi2project just maps an openstack project
-to an openstack project that is found in the names.csv.
+And finally for OpenStack, we need to effectively squash a layer of the hierarchy
+in order to match the jobs side, so pi2project just maps an OpenStack project
+to an OpenStack project that is found in the names.csv.
 
 The examples found in the xdmod documentation use abbreviations for unique keys. This
 doesn't suite an automated system as there are cases where there are multiple
@@ -783,7 +814,7 @@ included mariadb with all of the pytest moducles.  This could eventually be
 incorporated in to test sequence in github to run pytest each time the container
 was built on github as part of our CI process.
 
-This would also work with how I deploy xdmod on openshift using build
+This would also work with how I deploy xdmod on OpenShift using build
 configurations to test before actual deployment.  Furthermore, it could be used
 to test the production system insitu.
 
@@ -808,7 +839,7 @@ Here are the manual steps that I planned on automating:
   2   tar -zcvf usr-share-xdmod.tgz /usr/share/xdmod
   3.0 mysqldump -h maraidb -u root -p --databases  file_share_db mod_hpcdb mod_logger mod_shredder moddb modw modw_aggregates modw_cloud modw_etl modw_filters modw_jobefficiency modw_supremm > xdmod-db-backup.sql
   3.1 gzip xdmod-db-backup.sql
-  4 create a pod, mounting the volumes used by xdmod-openstack and xdmod-shift to back up the files created by the cronjobs
+  4 create a pod, mounting the volumes used by xdmodopenstack and xdmod-shift to back up the files created by the cronjobs
 ```
 
 ## Restore:
@@ -818,7 +849,7 @@ Here are the manual steps that I planned on automating:
   2. tar -zxvf /root/xdmod_data/usr-share-xdmod.tgz
   3. mysql -h mariadb -u root -pass
      > source xdmod-db-backup.sql
-  4. create a pod, mounting the volumes used by xdmod-openstack and xdmod-shift
+  4. create a pod, mounting the volumes used by xdmodopenstack and xdmod-shift
      to back up the files created by the cronjobs
 ```
 
