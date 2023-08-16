@@ -666,7 +666,7 @@ file.
 Defining the first 3 levels of the hierarchy is done via the hierarchy.json file
 just as explained in the xdmod documentation.
 
-Unfortunately, when developing this used different names to define the PI
+Unfortunately, when developing this xdmod used different names to define the PI
 layer.  They will use PI and group interchangably.  This is confusing and hopefully
 they will fix this in a future release with a better hierarchy system.
 
@@ -718,7 +718,7 @@ it out, we are never writing to the filesystem.
 The obvious way to speed this up is to create a table that just has the most recent
 active entires (the current hirearchy table set).  With such a table, you don't need
 to do any processing after selecting from it, and it is just a select, so this will
-be a fast operation giving our backend filesystem.  Inserting/updating does become
+be a fast operation given our backend filesystem.  Inserting/updating does become
 more complicated, but is still relatively straightforward.  This tactic would work
 well with SQL, or with an ORM.
 
@@ -736,7 +736,7 @@ It was also suggested that I use a "limit by 1" since all I'm interested in is j
 recent entry.  Although, on the surface this seems reasonable, there are some problems
 with it.  To pull from the most recent one will require a sorting (an order by) which creats
 and writes a virtual table to perform the sort and then to return the first record.
-Furthermore, we would have to a query for each hierarchy_id in the hierarchy table.  I
+Furthermore, we would have to query for each hierarchy_id in the hierarchy table.  I
 rejected this as the best way to speed this up is to refactor the code to have an
 aforemented table dedicated to the currently active items.
 
@@ -807,9 +807,9 @@ this was not the case.
 It was suggested that we use a cryptological signiture to give unique ids as the possiblity
 of a data collision is miniscule.  The advantage here would be that there would be no
 database access to determine what the ID would be.  It turned out to be a bit more
-complicated, as each item in the hierarchy needed it's own unique.  It was simpler create
+complicated, as each item in the hierarchy needed its own unique ID.  It was simpler to create
 a sequencer in the database and look up the keys when needed.  We needed a database
-anyways as we need to track the history of the hierarcy for potential audits and
+anyway since we need to track the history of the hierarcy for potential audits as
 I am uncertain how long the information will be kept in ColdFront or keycloak when
 users and projects are deleted.
 
@@ -896,11 +896,14 @@ Interesting to note, to dump all of the data from mariadb, tends to be quick,
 Usually less than an hour.  When I did this the last time, I kiecked off the
 mysqldump command and after creating the pod to pull the PV data, came back to
 find the dump process had finished.  The bigger issue was copying the data off
-as and unexpected EOF occurred several times later that evening.  In the
+as an unexpected EOF occurred several times later that evening.  In the
 morning, running the same command worked without issue.
 
 # Getting data out
-For VM/pod level reporting, the data export should aggregate the sessions (the )
+For VM/pod level reporting, the data export should aggregate the sessions table
+(for OpenStack) or the jobs table (for OpenShift).  In particular, the data
+export section seems to be the least flexible/configurable of any other part
+of xdmod.
 
 At this time there is no facility to pull session level data from xdmod aside from
 dumping specific tables that hold the session data.
