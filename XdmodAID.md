@@ -10,8 +10,8 @@ at Harvard, and it initally seemed to be a turnkey type system, we started
 to set this it on an OpenShift cluster.  Unfortunately, we have found that it
 is not exactly a turn key system.
 
-Xdmod is currently designed to work on a stand alone server. They do use docker
-to develop and to test it. Although to distruite it, they perfer to use RPMs
+Xdmod is currently designed to work on a stand alone server.  They do use docker
+to develop and to test it.  Although to distruite it, they perfer to use RPMs
 and sources.  However there is a project
 (https://github.com/rob-baron/hpc-toolset-tutorial) that uses docker compose
 to run xdmod and assocated applications in separate docker contains in a
@@ -24,20 +24,20 @@ support is for an old version of OpenStack.
 Addtionally, the environment that we are deploying
 to has some difficulties related to storage.
 ```
-    1. The lack of performance for writes to our volumes
-    2. Our environemnt doesn't have Read Write Many volumes
+    1.  The lack of performance for writes to our volumes
+    2.  Our environemnt doesn't have Read Write Many volumes
 ```
 ## Lack of Perforamnce for writes to the file system
 
 The lack of performance for writes affects many of the database operations
 For example,
 ```
-    1. Processes occasionally fail due to a falure to get a lock
-    2. Prcessess occasionally take excessive amounts of time
-        - restoring the database took 12 hours to run create table
-          and simple insert statements
-    3. processing that took less than 5 minutes on ocp-staging runing
-       within the moc, took 15-20 minutes.
+    1.  Processes occasionally fail due to a falure to get a lock
+    2.  Prcessess occasionally take excessive amounts of time
+         - restoring the database took 12 hours to run create table
+           and simple insert statements
+    3.  processing that took less than 5 minutes on ocp-staging runing
+        within the moc, took 15-20 minutes.
 ```
 This lack of performance for writing will impact a large number applications
 It could be partially worked around if the database was cached in memory or
@@ -78,7 +78,7 @@ table in the modw_cloud database:
 {
     "#": "Raw event information from the Open Stack log files.",
     "#": "Note that almost any field in the raw event logs can be NULL so most fields are nullable.",
-    "#": "These will be stored here and filtered out later. For example, several events with type",
+    "#": "These will be stored here and filtered out later.  For example, several events with type",
     "table_definition": {
         "name": "OpenStack_raw_event",
         "engine": "InnoDB",
@@ -281,19 +281,19 @@ log.
 
 ## advantages to using xdmod
 ```
-  1. community of users
-  2. Seems to have a reeasonable database structure
-  3. does more of what we want to do than cloud forms did
-  4. could be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
-     and HPC clusters
+  1.  community of users
+  2.  Seems to have a reeasonable database structure
+  3.  does more of what we want to do than cloud forms did
+  4.  could be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
+      and HPC clusters
 ```
 ## disavantages to using xdmod
 ```
-  1. Not turnkey for cloud services
-  2. No built in support for OpenShift
-  3. OpenStack support is for a version that is no longer maintained
-  4. The xdmod team does not seem responsive to their ticketing system
-  5. Xdmod is a very large package - it needs to be broken into smaller services
+  1.  Not turnkey for cloud services
+  2.  No built in support for OpenShift
+  3.  OpenStack support is for a version that is no longer maintained
+  4.  The xdmod team does not seem responsive to their ticketing system
+  5.  Xdmod is a very large package - it needs to be broken into smaller services
 ```
 Like any legacy system, there are parts of xdmod that are done well and parts
 that are not.  I have the impression that the xdmod team does not view cloud
@@ -308,10 +308,10 @@ and another for OpenStack
 
 Here are the dockerfiles to the project:
 ```
-  1. Dockerfile.moc-xdmod
-  2. Dcokerfile.moc-xdmod-dev
-  3. Dockerfile.xdmodopenstack
-  4. Dockerfile.docker-test
+  1.  Dockerfile.moc-xdmod
+  2.  Dcokerfile.moc-xdmod-dev
+  3.  Dockerfile.xdmodopenstack
+  4.  Dockerfile.docker-test
 ```
 
 # Dockerfile.moc-xdmod
@@ -350,14 +350,14 @@ by actually setting them up.
 
 The list of resources are as follows:
 ```
-    1. xdmodtest          OpenStack test data that the xdmod team uses
-    2. OpenStack          OpenStack instance (CPU and Memory) in the nerc
-    3. openshift_staging  staging OpenShift (not used in production)
-    4. openshift_prod     production OpenShift (CPU and Memory)
-    5. cinder             Allocated cinder storage (not implemented)
-    6. S3                 Allocated S3 storage (not implemented)
-    7. glance             Allocated glance storage (not implemented)
-    8. snapshots          Allocated space for snapshots (not implemented)
+    1.  xdmodtest          OpenStack test data that the xdmod team uses
+    2.  OpenStack          OpenStack instance (CPU and Memory) in the nerc
+    3.  openshift_staging  staging OpenShift (not used in production)
+    4.  openshift_prod     production OpenShift (CPU and Memory)
+    5.  cinder             Allocated cinder storage (not implemented)
+    6.  S3                 Allocated S3 storage (not implemented)
+    7.  glance             Allocated glance storage (not implemented)
+    8.  snapshots          Allocated space for snapshots (not implemented)
 ```
 
 The resource are configured usings the /etc/resources.json file which is as follows:
@@ -448,7 +448,7 @@ percent usage.
 This was the simpliest script and required very few changes to work.
 
 There was a bug in the command line section of this script that is present in the
-upstream version, which we decided to fix with our version of the script. So our
+upstream version, which we decided to fix with our version of the script.  So our
 version will be different and possibly incompatible with the upstream version.
 
 This script produces a file specified on the command line that will need to be
@@ -503,11 +503,11 @@ the format.
 There seem to be 2 stages of verification.  The first is to confirm that the file has
 the correct format.  Generally, the data fields should be strings.  The second stage
 will unpack the data from the first stage and ensure that the second stage has
-the correct format before it is inserted into database.  There were several
+the correct format before it is inserted into the database.  There were several
 fields that required an integer inside of a string.
 
 Despite the xdmod team saying that it doesn't matter what a particular field is,
-what they mean is that as long as it can pass validaction, it may not be currently
+what they mean is that as long as it can pass validation, it may not be currently
 used.  In any case, for all values I tried to make them as consistent as possible
 to potentially avoid going to a new version and finding that a particular value
 is causing issues.
@@ -521,14 +521,14 @@ out in the sample data, I just filled it in with something that makes sense.
 
 The flavor_id is actually tracked in xdmod, and is required to be an integer
 within a string or it will not pass the validation.  The version of OpenStack
-that they were using has it as a integer OpenStack.  In the current version
+that they were using has it as an integer.  In the current version
 the flavor id is a typcial OpenStack uuid.  In order to be able to go from
 the xdmod id to the OpenStack id, I changed the flavor name to
 "Unknown Flavor (flavor uuid)".
 
 The error messages that xdmod generates via the package they use for validation
 are confusing at best.  The error message will tell you that some type was expected
-where a different type was found.  Generally, I created files that 1 record
+where a different type was found.  Generally, I created files with 1 record
 per file and ran them until the error appeared.  Since I knew the type, I could
 focus on values of that type and incrementally work though the 1 record that was
 not working.  It was far easier getting though the first level validator than
@@ -536,14 +536,17 @@ the second.
 
 ## Some specific events that needed to be translated from current to past
 
-Becase xdmod suppored an older version of OpenStack, the many of the events
+Because xdmod suppored an older version of OpenStack, many of the events
 have changed.
 
 For example, "compute.instance.create" gets converted to either a
 "compute.instance.error" or to 2 events - "compute.instance.start",
 "compute.instance.end"
 
-The code has more instances of this.  This was particularly annoying
+The code has more instances of this.  It isn't clear to me if this is due
+to ceilometer collecting events from RabbitMQ or if it is collecting events
+from Nova.  Ultimately, xdmod should be changed to hanle the event types
+that currently supported versions of OpenStack use.
 
 ## envents handeled
 
@@ -603,8 +606,8 @@ My current recommendations (also in the issues),
     1.  move this to a python 3.11 container as it is python only
     2.  fix the manifests, instead of having a ..._prod and a ..._staging manifest adopt the
         following structure:
-            i. create a generic manifest within the main directory for xdmod-openshift
-           ii. create specific overlays in each of the supported overlay directires
+            i.  create a generic manifest within the main directory for xdmod-openshift
+           ii.  create specific overlays in each of the supported overlay directires
 
 It wasn't until we actually started looking at the data in May that we realized that
 CPU was not appearning for jobs in the interface.  As this was something that I was very
@@ -624,16 +627,20 @@ multiplying by 1000.  This was tested in the xdmod-staging project on the nerc-i
 and seemed to work (ie, I got milli CPU in the jobs table).
 
 I then tried to setup Supremm on the staging project, and the process failed when running
-from xdmod-setup. I did get the staging mariadb setup by restoring from a backup of production
-though something is wrong with the configuration of mongo
+from xdmod-setup.  I did get the staging mariadb setup by restoring from a backup of production
+though something is wrong with the configuration of mongo.  I opened a ticket with xdmod
+as xdmod-setup failed to configure supremm - seems to have some issue.
 
-
+Although I opened tikets with the xdmod team about aggregate_supremm running to
+completion without aggregating anything in considering the data, there is nothing to
+aggregate, so while I was waiting for the xdmod team to get back in touch with me
+I was working on providing data to aggregate.
 
 # xdmod-hierarchy
 
 In order to report to insititutions, departments and PIs; a system wide hierarchy can
 be defined to aggreate statistics at the appropriate level.  This is done using
-csv files that define each level - the xdmod documentation  explaination can be
+csv files that define each level - the xdmod documentation explaination can be
 found in (https://open.xdmod.org/10.0/hierarchy.html,
 https://open.xdmod.org/10.0/user-names.html, https://open.xdmod.org/10.0/cloud.html).
 I will try to cosolidate and explain this a bit better.
@@ -668,14 +675,20 @@ We decided on the following hierarchy:
     Instititution
         field of science
             PI
-                Coldfront Project
+                ColdFront Project
                     OpenStack/OpenShift project
 ```
 
-What was implemented was a basic history table.  This was done in a simplistic way possible,
-while being mindful of the non-perofromant file system.
+What was implemented was a table to keep track of the history of the hierarchy.
+This was done as simplistic as possible, while being mindful of the non-perofromant
+file system.  Initially this set of tables will only have current records so
+implementing a current table with the history table seems a bit complicated
+especially given that the depth of the history table will be very minimal for
+the first year or so.  Without knowing how this set of tables grows, it is
+impossible to determine if the addtional complexity of a set of current hierarchy
+tables is worth the cost of development.
 
-I anticipate the need to recreate the hierarchy files some arbitary date.  Although this feature
+I anticipate the need to recreate the hierarchy files at some arbitary date.  Although this feature
 is not implmented, it can easily be implemented by selecting all of the records prior to an arbitary
 date.  Use cases would be for testing the system with real world data, replicating problems or
 auditing the system.
@@ -703,10 +716,11 @@ SQL statment doens't require a virtual table, it is just reading the table and s
 it out, we are never writing to the filesystem.
 
 The obvious way to speed this up is to create a table that just has the most recent
-active entires. With such a table, you don't need to do any processing after selecting
-from it, and it is just a select, so this will be a fast operation giving our backend
-filesystem.  Inserting/updating does become more complicated, but is still relatively
-straightforward.  This tactic would work well with SQL, or with an ORM.
+active entires (the current hirearchy table set).  With such a table, you don't need
+to do any processing after selecting from it, and it is just a select, so this will
+be a fast operation giving our backend filesystem.  Inserting/updating does become
+more complicated, but is still relatively straightforward.  This tactic would work
+well with SQL, or with an ORM.
 
 It was suggested that we use the ORM SQLAlchemy.  I considered this, and since it supports
 multiple databases, I would assume that it crafts SQL differetnly baseed on which database
@@ -718,10 +732,10 @@ have more actual data (and the backend supports reasonable writing speeds).  To 
 add this in the future would require performance testing to ensure that SQLAlchemy is
 doing what we think it is doing.
 
-It was also suggested that I use a "limit by 1" since all I'm interested in just the most
+It was also suggested that I use a "limit by 1" since all I'm interested in is just the most
 recent entry.  Although, on the surface this seems reasonable, there are some problems
-with it.  To pull of the most recent one will require a sorting (an order by) which creats
-and writing a virtual table to perform the sort in and then to return the first record.
+with it.  To pull from the most recent one will require a sorting (an order by) which creats
+and writes a virtual table to perform the sort and then to return the first record.
 Furthermore, we would have to a query for each hierarchy_id in the hierarchy table.  I
 rejected this as the best way to speed this up is to refactor the code to have an
 aforemented table dedicated to the currently active items.
@@ -746,12 +760,12 @@ As output, the xdmod-hierarchy script will produce the following files:
 ```
 ### group.csv
 ```
-"Rob's Cold Front Project","5"
+"Rob's ColdFront Project","5"
 ```
 ### names.csv
 ```
-"RobOpenStackProject-f123abc", "Rob's Cold Front Project"
-"robs-pen-shift-project-f123abd", "Rob's Cold Front Project"
+"RobOpenStackProject-f123abc", "Rob's ColdFront Project"
+"robs-pen-shift-project-f123abd", "Rob's ColdFront Project"
 ```
 ### pi2project.csv
 ```
@@ -769,34 +783,34 @@ can have many fields of science and any given field of science can be associated
 with many universities.  Finally, I used my name at the PI level in the hierarchy
 file.
 
-The group.csv file relates cold front project names to the id of the PI in the hierarchy
+The group.csv file relates ColdFront project names to the id of the PI in the hierarchy
 file.
 
 The names.csv file relates the OpenStack or OpenShift project name to the
-cold front project name found in the group.csv
+ColdFront project name found in the group.csv
 
 And finally for OpenStack, we need to effectively squash a layer of the hierarchy
 in order to match the jobs side, so pi2project just maps an OpenStack project
 to an OpenStack project that is found in the names.csv.
 
-The examples found in the xdmod documentation use abbreviations for unique keys. This
-doesn't suite an automated system as there are cases where there are multiple
+The examples found in the xdmod documentation use abbreviations for unique keys.  This
+doesn't suit an automated system as there are cases where there are multiple
 colleges/universities with the same name.  For example, I went to westminster college,
 at the time there were 5 westminster colleges.  Since, we really don't need a
 human readable ID, I found using numbers to be more convienent.
 
-After working throught that example, it is obvious that many of the hierarchy items
+After working through that example, it is obvious that many of the hierarchy items
 need to have unique IDs.  Initially, I was under the impression that
 RegApp/ColdFront/KeyCloak would also need to have unique ids for this data, however,
 this was not the case.
 
 It was suggested that we use a cryptological signiture to give unique ids as the possiblity
-of a data collision is miniscule. The advantage here would be that there would be no
+of a data collision is miniscule.  The advantage here would be that there would be no
 database access to determine what the ID would be.  It turned out to be a bit more
 complicated, as each item in the hierarchy needed it's own unique.  It was simpler create
 a sequencer in the database and look up the keys when needed.  We needed a database
 anyways as we need to track the history of the hierarcy for potential audits and
-I am uncertain how long the information will be kept in coldfront or keycloak when
+I am uncertain how long the information will be kept in ColdFront or keycloak when
 users and projects are deleted.
 
 And here are the commands that load the CSVs into the xdmod database:
@@ -816,7 +830,7 @@ was built on github as part of our CI process.
 
 This would also work with how I deploy xdmod on OpenShift using build
 configurations to test before actual deployment.  Furthermore, it could be used
-to test the production system insitu.
+to test the production system in situ.
 
 As I was having difficulty with getting this to work I simplifed it a great
 deal, just to have the tests run inside a container.  In the process, found that
@@ -826,7 +840,19 @@ several ways suggested by the mariadb documentation and from stack exchange,
 settled on using it the way it was designed.
 
 Another option would be to use a service container to host mariadb, however,
-this initially seemed a bit more complicated than just
+this initially seemed a bit more complicated than just adding mariadb to the
+python container and running the tests with the database as localhost.  In
+retrospect, since google actions can run mariadb in a service container
+adding the test code to the xdmod-openstack container would ahve been
+better.
+
+In considering this further, I was starting to plan to rename the python
+files from how they are currently named to names that match how they
+are deployed.  This way the test code could refer to the same files.
+
+By deploying a test container that is built from the container with
+the production code, the tests could be performed in the same
+environment as production as well as performed by github actions.
 
 # Backups
 
@@ -844,12 +870,11 @@ Here are the manual steps that I planned on automating:
 
 ## Restore:
 ```
-  0. cd /
-  1. tar -zxvf /root/xdmod_data/etc-xdmod.tgz
-  2. tar -zxvf /root/xdmod_data/usr-share-xdmod.tgz
-  3. mysql -h mariadb -u root -pass
-     > source xdmod-db-backup.sql
-  4. create a pod, mounting the volumes used by xdmodopenstack and xdmod-shift
+  0.  cd /
+  1.  tar -zxvf /root/xdmod_data/etc-xdmod.tgz
+  2.  tar -zxvf /root/xdmod_data/usr-share-xdmod.tgz
+  3.  mysql -h mariadb -u root -pass > source xdmod-db-backup.sql
+  4.  create a pod, mounting the volumes used by xdmodopenstack and xdmod-shift
      to back up the files created by the cronjobs
 ```
 
