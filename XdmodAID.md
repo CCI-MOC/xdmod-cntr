@@ -262,30 +262,40 @@ audit log, but OpenShift doesn't really enable this in any useful manner by defa
 However for OpenStack, it might be found by processing the rabbit mq messages - not
 entirely sure though.
 
-This is important as it should have the following formt
+This is important as it should have something like the following formt
 ```
-Timestamp         | username          | Action
-------------------+-------------------+------------------------------------------------------
-09-AUG-2023 11:18 | <robbaron@bu.edu> | logged on to kaizen (OpenStack) project: RbbTest (id)
-09-AUG-2023 11:19 | <robbaron@bu.edu> | create cinder volume (vol id)
-09-AUG-2023 11:20 | <robbaron@bu.edu> | created VM (vm id) flavor (...) from volume (vol id)
-09-AUG-2023 11:56 | <robbaron@bu.edu> | logged off from kaizen (OpenStack) project: RbbTest (id)
+Timestamp         | username          | project | Action
+------------------+-------------------+---------+---------------------------------------------
+01-AUG-2023 16:40 | <robbaron@bu.edu> | TEST II | ColdFront project created
+02-AUG-2023 08:00 | <ColdFront>       | TEST II | auto created OpenStack project (uuid)
+09-AUG-2023 11:18 | <robbaron@bu.edu> | TEST II | logged on to OpenStack project (uuid)
+09-AUG-2023 11:19 | <robbaron@bu.edu> | TEST II | create cinder volume (vol id)
+09-AUG-2023 11:20 | <robbaron@bu.edu> | TEST II | created VM (vm id) flavor (...) from volume (vol id)
+09-AUG-2023 11:56 | <robbaron@bu.edu> | TEST II | logged off from kaizen (OpenStack) project: RbbTest (id)
+...
+20-AUG-2023 12:00 | <robbaron@bu.edu> | TEST II | <fritz> added to project TEST II
+20-AUG-2023 12:30 | <robbaron@bu.edu> | TEST II | <fritz> set at PI
+21-AUG-2023 08:00 | <fritz>           | TEST II | logged on to OpenStack Porject (uuid)
 ```
-The transaction log should be simple to read and understand, while giving changes
-to the state of the system.  Generally it is ordered by timestamp and have the actions
+The transaction log should be simple for a human to read and understand.  Detailed enough to explain
+how the system changed over time.  Generally it is ordered by timestamp and have the actions
 of all users on the system.  When explaining things to customers who are paying money, it is
 the easiest and fastest way to point out to the customer why a charge appeared on their invoice.
 
-It is quite painful to explain things to customers without an easy to digest transaction
+It is quite painful to explain things to customers without an easy to understand transaction
 log.
+
+I would highly recommend that such a log is developed.
 
 ## advantages to using xdmod
 ```
   1.  community of users
-  2.  Seems to have a reeasonable database structure
-  3.  does more of what we want to do than cloud forms did
-  4.  could be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
+  2.  Is currently used by NSF to track utilization of HPC clusters
+  3.  Seems to have a reeasonable database structure
+  4.  does more of what we want to do than cloud forms did
+  5.  could be a unified platform for collecting and storing metrics on OpenShfit, OpenStack
       and HPC clusters
+  6.  It does the hard part - that is the data wharehousing, tracking history ...
 ```
 ## disavantages to using xdmod
 ```
@@ -295,6 +305,12 @@ log.
   4.  The xdmod team does not seem responsive to their ticketing system
   5.  Xdmod is a very large package - it needs to be broken into smaller services
 ```
+
+By keeping track of the history of a project it automatically takes care of
+any of number of use cases.  For example, if a PI changes Instituition taking
+the project with them, or a project changes PI or a project that was closed
+get a new grant and is reopened or ... .
+
 Like any legacy system, there are parts of xdmod that are done well and parts
 that are not.  I have the impression that the xdmod team does not view cloud
 support as a priority as they themselves don't deploy any current cloud
@@ -417,10 +433,12 @@ the web process to be retarted.
 
 ## xdmod-init processing
 
+The setup of xdmod and supremm present their own challenges.  For one, xdmod a
+The setup of xdmod and supremm present their own challenges.  For one, xdmod awwwi
 
 # Basic Processing
 
-The overall processing flow is as follows
+The overall processing flow top to down is as follows
 ```
                   OpenStack                               OpenShift                 KeyCloak        ColdFront
 
@@ -429,15 +447,15 @@ The overall processing flow is as follows
       xdmod-shredder        xdmod-shredder              xdmod-shredder                   xdmod-import-csv
 
 
-                           xdmod-ingestor
+                                          xdmod-ingestor
 
-                                                       aggregate-supremm
+                                         aggregate-supremm
 
-                                      acl-config
+                                            acl-config
 
-                                      xdmod-ui
+                                            xdmod-ui
 
-                                batch_export_manager.php
+                                       batch_export_manager.php
 ```
 
 
@@ -468,6 +486,9 @@ to the UI.
 
 Most of the time it runs within a couple of minutes, sometimes it takes longer
 and will ocassionally fail due to a time out when it cannot lock certain tables.
+
+The fix for this utility is to refactor xdmod to pickup it's configuration
+solely from the database making acl-config
 
 # xdmodopenstack
 
@@ -613,7 +634,7 @@ It wasn't until we actually started looking at the data in May that we realized 
 CPU was not appearning for jobs in the interface.  As this was something that I was very
 focused on in getting data in on the OpenStack side and how I found the flavors that
 were deleted, I was surprised that it wasn't noticed by anyone until we were gathering
-data.  So I started looking in to this.
+data on the OpenShift(job) side.  So I started looking in to this.
 
 With kim, we looked at the database structure and the data that was being pulled from
 OpenShift.  The type coming from OpenShift is in fractions of a CPU which is a floating
@@ -923,5 +944,33 @@ do this we will need a custom report.
 
 There is a section of xdmod used for reporting on storage.  It is covered here:
 ```
+https://open.xdmod.org/10.0/storage.html
 ```
-Each storage class will require it's own resource.
+The file format is, at least in the documentation, simpler:
+
+```
+    [
+        {
+            "resource": "nfs",
+            "mountpoint": "/home",
+            "user": "jdoe",
+            "pi": "pi_username",
+            "dt": "2017-01-01T00:00:00Z",
+            "soft_threshold": 1000000,
+            "hard_threshold": 1200000,
+            "file_count": 10000,
+            "logical_usage": 100000,
+            "physical_usage": 100000
+        },
+
+        ...
+    ]
+````
+
+Each storage class will require it's own resource.  It is basically what you have used at the given time.
+
+In order to tie it into the hierarchy, the "pi" field should probably be the NERC project name, with the "user" field being either the OpenStack or OpenShift project name.  The resource is probably the name of the specific resource in the resources.json file.
+
+As these resources need to be different that OpenStack or OpenShift resources, they could be named, NercProdCinder, NercProdSwift, NercOcpPV, NercInfraPV ... .
+
+No work was done on this as it was not needed for the MVP, however this will be required to achieve parity with the custom scripts that naved and kristi have written.
