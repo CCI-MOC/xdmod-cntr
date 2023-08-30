@@ -58,6 +58,7 @@ that I have had to work around.  For example:
 ```
 
 ## Some things to realize about xdmod's OpenStack integration
+
 For starters, it is using an older unsuppported version of OpenStack.  They have
 plans to up date this but so far they have not.  They used ceilometer to pull
 the data from OpenStack.  As the current version of OpenStack does not include
@@ -65,6 +66,72 @@ ceilometer, this required rework.
 
 Even though they handle many more events (like, creation, power on, power off, ... ),
 their test data had a limited set of events.
+
+# What does XDMoD get right
+
+The overall structure of the data base and the processing is generally correct.
+The cloud part seems to be more evolved and easier to deal with than the part that deals
+with jobs.  Furthermore, the event model of the cloud is a great starting point for
+a general transaction log.
+
+It is able to import from muliple sources and process the data from muliple sources
+It does this though a very rigorous validation of inputs.  The cloud part keeps
+data for a long time while slowly increasing in size due to tracking events as opposed
+to individule time slots as it does with the job side.
+
+It has a simple to use interface that presents views of the data, as well as a
+simple to use export.
+
+Furthermore, they have a community of users, so there is a wider community that
+we could interact with and have a positive impact.
+
+Overall, it is a much better foundation to build off of than the other packages that
+we have evaluated in the past (like cloud forms) and I have the impression that it
+is auditable as they really don't delete any information needed to track data back to
+the log files.  They are doing the hard stuff in an acceptable manner
+
+# Advantages of setting up XDMoD on OpenShift
+
+The advantages that I see for setting up XDMoD on OpenShift are that:
+
+```
+    1. It is a actual application that we can use to confirm that our OpenShift
+       cluster is useable for database heavy applications
+
+    2. The types of problems we encounter when containerizing XDMoD are going
+       to be encountered by our users - and not just for database heavy
+       applications.
+
+    3. It has given insights as to how XDMoD could be improved to better suit
+       both the monolithic and kubernets installations.  By implication it
+       also gives insights how other applications can be modified to better
+       suit running on kubernetes.
+```
+
+Argueably, setting up XDMoD on OpenShift has exposed:
+
+```
+    1. That NESSE is not suitable for database applications, or any application
+       that writes to the disk.
+
+    2. That read write many (RWX) volumes are not just syntatic sugar.  You
+       either need to specifically code around them or assume that they
+       are there.
+```
+
+As for point 1, I suspect that NESSE was optimized for accessing large datasets
+and not for general use.  I cannot assert this to be the case as I am uncertain
+as to the specific configuration options of Ceph.
+
+As for point 2, I have had to find creative ways around this in deploying
+XDMoD.  For example, there are cases where I would have liked to have deployed
+a certain service as kubernets cron job, however, I had to deploy it as a
+parallel container as it required access to same disk as another container.
+
+For example, anything two processes that use the producer consumer pattern.
+In XDMoD this is done between the UI and the process that generates the data
+downloads, which the UI then consumes when the user downloads them.  I've
+had to code around this in the past using a blob
 
 # Database Structure
 
