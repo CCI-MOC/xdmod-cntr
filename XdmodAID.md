@@ -398,6 +398,7 @@ Here are the dockerfiles to the project:
 ```
 
 # Dockerfile.moc-xdmod
+
 Initailly I copied over the docker files from the xdmod github repository as I
 figured there was the distinct possiblity that some restructuring would be
 necessary.  However, I also wanted to see if the original docker files could be used
@@ -421,6 +422,7 @@ moving xdmod-openshift into it's own dockerfile.
 Installation and initial configuration is handled in the Dockerfile.moc-xdmod
 
 ## realms and resources
+
 A realm is the main reporting area.  Here are the list of realms
 ```
     job     - handles basic OpenShift
@@ -527,6 +529,7 @@ The overall processing flow top to down is as follows
 
 
 # xdmodopenstack-hypervisors
+
 This script fetches the hypervisor information from OpenStack used in calculating
 percent usage.
 
@@ -540,6 +543,7 @@ This script produces a file specified on the command line that will need to be
 shredded.
 
 # acl-config
+
 This is a small utility that rebuilds the consistency between the configuration files
 and the database.  It is needed to be run as there are several processes that
 modify one or the other but not both.  It is an example of a work-a-round that
@@ -672,13 +676,22 @@ need to be processed.  We did discuss why events get translated to different
 events
 
 ## About volume events
-I did spend time on handling the volume events and was in the middle of
-debugging them, but never pulled the code out, as I figured it might
-be useful.  Need to add an issue on this.
 
-The better way to track volumes, which can also be done for any service
-that uses storage (glance, swift, S3, ... ) is to setup storage metrics.
-With storage metrics, each storage class will have it's own resource.
+I did spend time on handling the volume events and was in the middle of
+debugging them, but never pulled the code out, as I initially thought that
+this would track all of the disk usage, though I was confused by the data
+structure.  After working through How volumes are actually tracked I
+discovered that this was not going to provide anything that could be
+used, though it might be important for showback.  It is for this reason
+that I kept the code in place and didn't remove it.
+
+I've added an issue to either remove or fix the volume evens.
+
+The way that seems to be used by xdmod to account for volumes, is via
+storage metrics.  With storage metrics, each storage class will have it's
+own resource.  This is more general than just volumes as it could be
+used to track any storage (glance, swift, S3, ... ) by giving it a
+specific resource name.
 
 # xdmod-openshift
 
@@ -948,6 +961,17 @@ I've manually done this process to create and restore a backup multiplie times.
 Here are the manual steps that I planned on automating:
 
 ## Backup
+
+I had quickly implemented a backup process, but this process was deemed
+not production ready as it used the database as an intermedeary stage
+as opposed to writing directy to an S3 storage.  The S3 storage that
+was initially to be used was recinded and it was decided that we couldn't
+use the s3 storage that is associated with the MOC as it was going
+away.  So automating the backups became a lower priority until an
+appropriate backup location could be found.
+
+Here is the manual backup process.
+
 ```
   1   tar -zcvf etc-xdmod.tgz /etc/xdmod
   2   tar -zcvf usr-share-xdmod.tgz /usr/share/xdmod
