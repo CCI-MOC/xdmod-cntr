@@ -15,6 +15,7 @@ resources:
   - pvc-xdmod-openshift-data.yaml
   - pvc-clouds-yaml.yaml
   - pvc-httpd-conf.yaml
+  - pvc-xdmod-hierarchy-data.yaml
   - svc-mariadb.yaml
   - svc-mongo.yaml
   - svc-xdmod.yaml
@@ -26,6 +27,7 @@ resources:
   - cron-job-xdmod-ingestor.yaml
   - cron-job-xdmod-openshift-prod.yaml
   - cj-xdmod-openstack-shred.yaml
+  - cj-xdmod-hierarchy.yaml
 
 configMapGenerator:
   - name: cm-xdmod-init-json
