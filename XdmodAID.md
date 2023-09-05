@@ -383,9 +383,21 @@ that are not.  I have the impression that the xdmod team does not view cloud
 support as a priority as they themselves don't deploy any current cloud
 service.
 
-It would not suprise me if we decide to drop xdmod only to develop
-Furthermore, it would not suprise me if there was one application for OpenShift
-and another for OpenStack
+It would not suprise me if we decide to drop xdmod only to develop a set of
+custom scripts that are specific to our business logic and less capable than
+xdmod currently is.  I also have the impression that these scripts will not
+be auditable and will require a paper record in order which can be referred
+to in a future audit.
+
+Interestily, in my most recent conversation over zoom, a possibility of
+a collaboration between the xdmod team and us was floated.  This was
+reported to michael.  Based on that conversation, I have the impression
+that many of the goals of the xdmod team and our goals align in more ways
+than either of have been able to verablize.
+
+As an example, they do have the goal of being able to run xdmod on kubernetes,
+something that we have already demonstrated.  However, I have the suspeicion
+deployment of xdmod on kubernetes is a low priority for them.
 
 # Dockerfiles
 
