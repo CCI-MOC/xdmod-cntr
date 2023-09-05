@@ -499,7 +499,7 @@ way of updating xdmod by deleting the xdmod-ui pod.
 Alernatively, xdmod-init or xdmod-setup can be run from the command line if
 one uses rsh to gain access to the xdmod-ui container.  This often requires
 the additional step of restarting the xdmod-ui pod as the many changes require
-the web process to be retarted.
+the web process to be restarted.
 
 ## xdmod-init processing
 
