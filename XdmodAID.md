@@ -401,13 +401,14 @@ Here are the dockerfiles to the project:
 
 Initailly I copied over the docker files from the xdmod github repository as I
 figured there was the distinct possiblity that some restructuring would be
-necessary.  However, I also wanted to see if the original docker files could be used
+necessary.  I also wanted to see if the original docker files could be used
 as is, as this would potentally make upgrading easier as we would be using what
 their process developed.
 
 I had put some changes in to dockerfile to support xdmodopenstack and similar
 changes were done to support xdmod-shift.  Along the way, in order to get PRs
-approved, we decided that we needed to optimize the dockerfiles.
+approved, we decided that we needed to optimize the dockerfiles.  This substantially
+changed the docker files.
 
 Subsequently, I have moved the changes that I made to the original dockerfile
 to a different one based on python 3.11 dockerfile.  Likewise, the xdmod-openshift
