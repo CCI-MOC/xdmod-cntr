@@ -430,21 +430,24 @@ A realm is the main reporting area.  Here are the list of realms
     cloud   - handles OpenStack
     supremm - should give some performance metrics for OpenShift
 ```
-A resource can be a part of the realms, as I haven't really started to work on the
-storage resources (possibly part of a storage realm), I have confirmed this yet
-by actually setting them up.
+A resource can be a part of a realm.  For example, I have setup multiple
+OpenStack clusters within the cloud relam.  This allows viwing data from
+Kaizen, nerc-ocp-infra, and xdmodtest as resources under the cloud
+realm.
 
-The list of resources are as follows:
+A non-inclusive list of potential realm/resources are as follows:
 ```
-    1.  xdmodtest          OpenStack test data that the xdmod team uses
-    2.  OpenStack          OpenStack instance (CPU and Memory) in the nerc
-    3.  openshift_staging  staging OpenShift (not used in production)
-    4.  openshift_prod     production OpenShift (CPU and Memory)
-    5.  cinder             Allocated cinder storage (not implemented)
-    6.  S3                 Allocated S3 storage (not implemented)
-    7.  glance             Allocated glance storage (not implemented)
-    8.  snapshots          Allocated space for snapshots (not implemented)
+    1.  Cloud/xdmodtest        OpenStack test data that the xdmod team uses
+    2.  Cloud/OpenStack        OpenStack instance (CPU and Memory) in the nerc
+    3.  Job/openshift_infra    nerc-ocp-infra OpenShift
+    4.  Job/openshift_prod     production OpenShift (CPU and Memory)
+    5.  Storage/cinder         Allocated cinder storage (not implemented)
+    6.  Storage/S3             Allocated S3 storage (not implemented)
+    7.  Storage/glance         Allocated glance storage (not implemented)
+    8.  Storage/snapshots      Allocated space for snapshots (not implemented)
 ```
+
+Currently on the nerc we have 1, 2, and 4 setup.  Openshift_staging no
 
 The resource are configured usings the /etc/resources.json file which is as follows:
 ```
@@ -475,6 +478,9 @@ The resource are configured usings the /etc/resources.json file which is as foll
     }
 ]
 ```
+
+Note: openshift_staging no longer exists.
+
 The shared_jobs will tell xdmod that the HPC cluster is shared
 amoung many jobs, and is used by Supremm to know which resources
 need to be aggregated and included on the spremm realm.
