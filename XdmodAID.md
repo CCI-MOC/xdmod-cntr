@@ -385,9 +385,10 @@ service.
 
 It would not suprise me if we decide to drop xdmod only to develop a set of
 custom scripts that are specific to our business logic and less capable than
-xdmod currently is.  I also have the impression that these scripts will not
-be auditable and will require a paper record in order which can be referred
-to in a future audit.
+xdmod currently is.  Granted, Xdmod will require some modification in order
+to meet our current business logic, however xdmod should require less work overall
+as the current scripts don't save history nor do they have any sense
+of data warehousing.
 
 Interestily, in my most recent conversation over zoom, a possibility of
 a collaboration between the xdmod team and us was floated.  This was
@@ -398,6 +399,13 @@ than either of have been able to verablize.
 As an example, they do have the goal of being able to run xdmod on kubernetes,
 something that we have already demonstrated.  However, I have the suspeicion
 deployment of xdmod on kubernetes is a low priority for them.
+
+I also don't see a collaboration happening as the design sensibilities
+of the MOC and xdmod team don't really align all that well.  Based on
+my review of their source code and database structure, I have the viewpoint
+that it does somethings well and does somethings not quite as well.
+They have allowed some questionable code in, and although it is not
+perfect, it does seem to work.
 
 # Dockerfiles
 
