@@ -394,18 +394,18 @@ Interestily, in my most recent conversation over zoom, a possibility of
 a collaboration between the xdmod team and us was floated.  This was
 reported to michael.  Based on that conversation, I have the impression
 that many of the goals of the xdmod team and our goals align in more ways
-than either of have been able to verablize.
+than either of us have been able to verablize.
 
 As an example, they do have the goal of being able to run xdmod on kubernetes,
 something that we have already demonstrated.  However, I have the suspeicion
-deployment of xdmod on kubernetes is a low priority for them.
+the deployment of xdmod on kubernetes is a low priority for them.
 
 I also don't see a collaboration happening as the design sensibilities
 of the MOC and xdmod team don't really align all that well.  Based on
 my review of their source code and database structure, I have the viewpoint
 that it does somethings well and does somethings not quite as well.
-They have allowed some questionable code in, and although it is not
-perfect, it does seem to work.
+Although it is not perfect, it does seem to work.  I have
+the suspicion it would never pass the MOC's code review process.
 
 # Dockerfiles
 
