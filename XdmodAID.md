@@ -422,7 +422,7 @@ Here are the dockerfiles to the project:
 Initailly I copied over the docker files from the xdmod github repository as I
 figured there was the distinct possiblity that some restructuring would be
 necessary.  I also wanted to see if the original docker files could be used
-as is, as this would potentally make upgrading easier as we would be using what
+as is, this would potentally make upgrading easier as we would be using what
 their process developed.
 
 I had put some changes in to dockerfile to support xdmodopenstack and similar
